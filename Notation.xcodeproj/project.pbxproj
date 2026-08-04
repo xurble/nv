@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A20000000000000000000021 /* ModernSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* ModernSettings.swift */; };
+		A20000000000000000000023 /* SettingsBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* SettingsBridge.m */; };
+		A20000000000000000000024 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
+		A20000000000000000000041 /* ModernSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000031 /* ModernSettingsTests.swift */; };
+		A20000000000000000000042 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
+		A20000000000000000000043 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
 		210A10690B66720F005BE981 /* BookmarksTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 210A10670B66720F005BE981 /* BookmarksTable.m */; };
 		210C07530B6BF0A2005D23A8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 210C07230B6BF0A1005D23A8 /* WebKit.framework */; };
 		210D88CB12FE658B00ED7730 /* 使用概览.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 210D88C312FE658B00ED7730 /* 使用概览.nvhelp */; };
@@ -222,6 +228,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A20000000000000000000011 /* ModernSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettings.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* SettingsBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SettingsBridge.h; sourceTree = "<group>"; };
+		A20000000000000000000013 /* SettingsBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SettingsBridge.m; sourceTree = "<group>"; };
+		A20000000000000000000014 /* Settings-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Settings-Bridging-Header.h"; sourceTree = "<group>"; };
+		A20000000000000000000015 /* SettingsCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCompatibility.swift; sourceTree = "<group>"; };
+		A20000000000000000000031 /* ModernSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettingsTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000032 /* NotationSettingsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationSettingsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000033 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		210A10660B66720F005BE981 /* BookmarksTable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = BookmarksTable.h; sourceTree = "<group>"; };
 		210A10670B66720F005BE981 /* BookmarksTable.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = BookmarksTable.m; sourceTree = "<group>"; };
@@ -620,6 +634,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A20000000000000000000063 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000000000000000000042 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8D11072E0486CEB800E47090 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -644,6 +666,11 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000011 /* ModernSettings.swift */,
+				A20000000000000000000015 /* SettingsCompatibility.swift */,
+				A20000000000000000000012 /* SettingsBridge.h */,
+				A20000000000000000000013 /* SettingsBridge.m */,
+				A20000000000000000000014 /* Settings-Bridging-Header.h */,
 				214498800AE1931700E2A2B6 /* UI Decision Classes */,
 				2191930609CFBED200586B15 /* View Classes */,
 				21D60126098FDB46007440DF /* GlobalPrefs.h */,
@@ -731,6 +758,7 @@
 		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000033 /* XCTest.framework */,
 				212EEAB812F085D100F89538 /* AutoHyperlinks.framework */,
 				21B54C011134F2E800E163A1 /* IOKit.framework */,
 				213623E50B92AA4E008C0830 /* Sparkle.framework */,
@@ -753,6 +781,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Spiral.app */,
+				A20000000000000000000032 /* NotationSettingsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1021,6 +1050,7 @@
 		29B97314FDCFA39411CA2CEA /* Notation */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000051 /* NotationSettingsTests */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -1096,9 +1126,34 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		A20000000000000000000051 /* NotationSettingsTests */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000031 /* ModernSettingsTests.swift */,
+			);
+			path = NotationSettingsTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A20000000000000000000071 /* NotationSettingsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A20000000000000000000084 /* Build configuration list for PBXNativeTarget "NotationSettingsTests" */;
+			buildPhases = (
+				A20000000000000000000061 /* Sources */,
+				A20000000000000000000063 /* Frameworks */,
+				A20000000000000000000062 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotationSettingsTests;
+			productName = NotationSettingsTests;
+			productReference = A20000000000000000000032 /* NotationSettingsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		8D1107260486CEB800E47090 /* Notation */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 212B842309780B5000F3597F /* Build configuration list for PBXNativeTarget "Notation" */;
@@ -1144,11 +1199,19 @@
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Notation */,
+				A20000000000000000000071 /* NotationSettingsTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A20000000000000000000062 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8D1107290486CEB800E47090 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1257,10 +1320,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A20000000000000000000061 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000000000000000000041 /* ModernSettingsTests.swift in Sources */,
+				A20000000000000000000043 /* SettingsCompatibility.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8D11072C0486CEB800E47090 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000000000000000000021 /* ModernSettings.swift in Sources */,
+				A20000000000000000000023 /* SettingsBridge.m in Sources */,
+				A20000000000000000000024 /* SettingsCompatibility.swift in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				2114C11609575BD400614E74 /* AppController.m in Sources */,
 				A10000000000000000000001 /* ApplicationBranding.m in Sources */,
@@ -1808,6 +1883,42 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		A20000000000000000000081 /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity.settings-tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Development;
+		};
+		A20000000000000000000082 /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity.settings-tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Deployment;
+		};
+		A20000000000000000000083 /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity.settings-tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Default;
+		};
 		212B842409780B5000F3597F /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1878,6 +1989,8 @@
 				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
 				STRIP_STYLE = "non-global";
+				SWIFT_OBJC_BRIDGING_HEADER = "Settings-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				WARNING_CFLAGS = "-pg";
 				WARNING_LDFLAGS = "";
 				WRAPPER_EXTENSION = app;
@@ -1959,6 +2072,8 @@
 				);
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = all;
+				SWIFT_OBJC_BRIDGING_HEADER = "Settings-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
@@ -2025,6 +2140,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
 				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Settings-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Default;
@@ -2169,6 +2286,16 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A20000000000000000000084 /* Build configuration list for PBXNativeTarget "NotationSettingsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A20000000000000000000082 /* Deployment */,
+				A20000000000000000000081 /* Development */,
+				A20000000000000000000083 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Deployment;
+		};
 		212B842309780B5000F3597F /* Build configuration list for PBXNativeTarget "Notation" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

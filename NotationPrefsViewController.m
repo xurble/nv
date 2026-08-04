@@ -597,4 +597,47 @@ enum {VERIFY_NOT_ATTEMPTED, VERIFY_FAILED, VERIFY_IN_PROGRESS, VERIFY_SUCCESS};
 	}
 }
 
+- (void)requestStorageFormatFromModernSettings:(NSInteger)format {
+	(void)[self view];
+	[storageFormatPopupButton selectItemWithTag:format];
+	[self changedFileStorageFormat:storageFormatPopupButton];
+}
+
+- (void)requestEncryptionToggleFromModernSettings {
+	(void)[self view];
+	[self toggledEncryption:self];
+}
+
+- (void)requestPassphraseChangeFromModernSettings {
+	(void)[self view];
+	if ([notationPrefs doesEncryption])
+		[self changePassphrase:self];
+}
+
+- (void)setSyncEnabledFromModernSettings:(BOOL)enabled {
+	(void)[self view];
+	[enabledSyncButton setState:enabled ? NSControlStateValueOn : NSControlStateValueOff];
+	[self toggledSyncing:enabledSyncButton];
+}
+
+- (void)setSyncUsernameFromModernSettings:(NSString *)username {
+	(void)[self view];
+	[syncAccountField setStringValue:username ? username : @""];
+	[self syncCredentialsDidChange:[NSNotification notificationWithName:NSControlTextDidChangeNotification
+															 object:syncAccountField]];
+}
+
+- (void)setSyncPasswordFromModernSettings:(NSString *)password {
+	(void)[self view];
+	[syncPasswordField setStringValue:password ? password : @""];
+	[self syncCredentialsDidChange:[NSNotification notificationWithName:NSControlTextDidChangeNotification
+															 object:syncPasswordField]];
+}
+
+- (void)setSyncFrequencyFromModernSettings:(NSUInteger)minutes {
+	(void)[self view];
+	[syncingFrequency selectItemWithTag:minutes];
+	[self syncFrequencyChange:nil];
+}
+
 @end

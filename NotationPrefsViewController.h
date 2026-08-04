@@ -119,4 +119,17 @@
 - (void)enableEncryption;
 - (void)_disableEncryption;
 - (void)disableEncryptionWithWarning:(BOOL)warning;
+
+/*
+ * Compatibility hooks used by the Swift settings screen. They deliberately
+ * route data-sensitive operations through the existing, proven sheet and
+ * passphrase workflows.
+ */
+- (void)requestStorageFormatFromModernSettings:(NSInteger)format;
+- (void)requestEncryptionToggleFromModernSettings;
+- (void)requestPassphraseChangeFromModernSettings;
+- (void)setSyncEnabledFromModernSettings:(BOOL)enabled;
+- (void)setSyncUsernameFromModernSettings:(NSString *)username;
+- (void)setSyncPasswordFromModernSettings:(NSString *)password;
+- (void)setSyncFrequencyFromModernSettings:(NSUInteger)minutes;
 @end
