@@ -18,6 +18,7 @@
 		211344C00B3551BD0081B064 /* BlorPasswordRetriever.nib in Resources */ = {isa = PBXBuildFile; fileRef = 211344BA0B3551BD0081B064 /* BlorPasswordRetriever.nib */; };
 		211345AB0B35D8540081B064 /* broken_md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 211345A90B35D8540081B064 /* broken_md5.c */; };
 		2114C11609575BD400614E74 /* AppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C11509575BD400614E74 /* AppController.m */; };
+		A10000000000000000000001 /* ApplicationBranding.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* ApplicationBranding.m */; };
 		2114C13F0957732800614E74 /* NotationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C13E0957732800614E74 /* NotationController.m */; };
 		2114C1460957733200614E74 /* NoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C1450957733200614E74 /* NoteObject.m */; };
 		2114C23E095883A600614E74 /* NSData_transformations.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C23C095883A600614E74 /* NSData_transformations.m */; };
@@ -255,6 +256,8 @@
 		211345AA0B35D8540081B064 /* broken_md5.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = broken_md5.h; sourceTree = "<group>"; };
 		2114C11409575BD400614E74 /* AppController.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = AppController.h; sourceTree = "<group>"; };
 		2114C11509575BD400614E74 /* AppController.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = AppController.m; sourceTree = "<group>"; };
+		A10000000000000000000002 /* ApplicationBranding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplicationBranding.h; sourceTree = "<group>"; };
+		A10000000000000000000003 /* ApplicationBranding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApplicationBranding.m; sourceTree = "<group>"; };
 		2114C13D0957732800614E74 /* NotationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NotationController.h; sourceTree = "<group>"; };
 		2114C13E0957732800614E74 /* NotationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NotationController.m; sourceTree = "<group>"; };
 		2114C1440957733200614E74 /* NoteObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoteObject.h; sourceTree = "<group>"; };
@@ -611,7 +614,7 @@
 		6E6AFB7624DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Este é o título de uma nota.nvhelp"; sourceTree = "<group>"; };
 		6E6AFB7724DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Informações de Contato.nvhelp"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		8D1107320486CEB800E47090 /* Notational Velocity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Notational Velocity.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D1107320486CEB800E47090 /* Spiral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spiral.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVPasswordGenerator.m; sourceTree = "<group>"; };
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -659,6 +662,8 @@
 				213621F00B92414F008C0830 /* MultiTextFinder.m */,
 				2114C11409575BD400614E74 /* AppController.h */,
 				2114C11509575BD400614E74 /* AppController.m */,
+				A10000000000000000000002 /* ApplicationBranding.h */,
+				A10000000000000000000003 /* ApplicationBranding.m */,
 				21A30EA50971D11D0071E9AF /* FastListDataSource.h */,
 				21A30EA60971D11D0071E9AF /* FastListDataSource.m */,
 				21A6E6FB0974204F008436A9 /* LabelsListController.h */,
@@ -747,7 +752,7 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D1107320486CEB800E47090 /* Notational Velocity.app */,
+				8D1107320486CEB800E47090 /* Spiral.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1110,7 +1115,7 @@
 			name = Notation;
 			productInstallPath = "$(HOME)/Applications";
 			productName = Notation;
-			productReference = 8D1107320486CEB800E47090 /* Notational Velocity.app */;
+			productReference = 8D1107320486CEB800E47090 /* Spiral.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -1258,6 +1263,7 @@
 			files = (
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				2114C11609575BD400614E74 /* AppController.m in Sources */,
+				A10000000000000000000001 /* ApplicationBranding.m in Sources */,
 				2114C13F0957732800614E74 /* NotationController.m in Sources */,
 				2114C1460957733200614E74 /* NoteObject.m in Sources */,
 				2114C23E095883A600614E74 /* NSData_transformations.m in Sources */,
@@ -1856,21 +1862,20 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LD_GENERATE_MAP_FILE = YES;
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = "2.0 β7";
 				OTHER_CFLAGS = (
 					"-I/usr/local/opt/openssl/include",
 					"-I/opt/homebrew/opt/openssl/include",
 				);
 				OTHER_LDFLAGS = (
-					"-whatsloaded",
 					"-weak_framework",
 					PDFKit,
 					"-L/usr/local/opt/openssl/lib",
 					"-L/opt/homebrew/opt/openssl/lib",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
-				PRODUCT_NAME = "Notational Velocity";
+				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
 				STRIP_STYLE = "non-global";
 				WARNING_CFLAGS = "-pg";
@@ -1886,7 +1891,7 @@
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_IDENTITY = "-";
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 10;
 				DEAD_CODE_STRIPPING = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
@@ -1928,7 +1933,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				"MACOSX_DEPLOYMENT_TARGET[arch=x86_64]" = 10.9;
 				MARKETING_VERSION = "2.0 β7";
 				ONLY_ACTIVE_ARCH = NO;
@@ -1941,7 +1946,7 @@
 					"-L/opt/homebrew/opt/openssl/lib",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
-				PRODUCT_NAME = "Notational Velocity";
+				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
 				"SDKROOT[arch=x86_64]" = macosx;
 				SECTORDER_FLAGS = (
@@ -1965,6 +1970,7 @@
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 10;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2004,7 +2010,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = "2.0 β7";
 				OTHER_CFLAGS = (
 					"-I/usr/local/opt/openssl/include",
@@ -2017,7 +2023,7 @@
 					"-L/opt/homebrew/opt/openssl/lib",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
-				PRODUCT_NAME = "Notational Velocity";
+				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = app;
 			};

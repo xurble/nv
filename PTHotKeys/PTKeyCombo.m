@@ -17,6 +17,11 @@
 	return [self keyComboWithKeyCode: -1 modifiers: -1];
 }
 
++ (id)defaultHotKeyCombo
+{
+	return [self keyComboWithKeyCode:kVK_Space modifiers:optionKey];
+}
+
 + (id)keyComboWithKeyCode: (int)keyCode modifiers: (int)modifiers
 {
 	return [[[self alloc] initWithKeyCode: keyCode modifiers: modifiers] autorelease];
@@ -56,7 +61,7 @@
 				nil];
 }
 
-- (id)copyWithZone:(NSZone*)zone;
+- (id)copyWithZone:(NSZone*)zone
 {
 	return [self retain];
 }
@@ -81,7 +86,10 @@
 
 - (BOOL)isValidHotKeyCombo
 {
-	return mKeyCode >= 0 && mModifiers > 0;
+	const int supportedModifiers = cmdKey | optionKey | controlKey | shiftKey;
+	return mKeyCode >= 0 &&
+		(mModifiers & supportedModifiers) != 0 &&
+		(mModifiers & ~supportedModifiers) == 0;
 }
 
 - (BOOL)isClearCombo

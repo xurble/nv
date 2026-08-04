@@ -130,7 +130,11 @@
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>Notational Velocity</string>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Based on 2.0 β5, Copyright © 2011 Zachary Schneirov, All Rights Reserved.</string>
 	<key>CFBundleIconFile</key>
@@ -199,7 +203,7 @@
 			<key>NSMessage</key>
 			<string>createFromSelection</string>
 			<key>NSPortName</key>
-			<string>Notational Velocity</string>
+			<string>Spiral</string>
 			<key>NSSendTypes</key>
 			<array>
 				<string>NSRTFDPboardType</string>

@@ -99,14 +99,17 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 - (id)init {
 	if ([super init]) {
 	
-		runCallbacksIMP = [self methodForSelector:@selector(notifyCallbacksForSelector:excludingSender:)];
+		runCallbacksIMP = (void (*)(GlobalPrefs *, SEL, SEL, id))[self methodForSelector:@selector(notifyCallbacksForSelector:excludingSender:)];
 		selectorObservers = [[NSMutableDictionary alloc] init];
 		
 		defaults = [NSUserDefaults standardUserDefaults];
+		PTKeyCombo *defaultActivationKeyCombo = [PTKeyCombo defaultHotKeyCombo];
 		
 		tableColumns = nil;
 		
 		[defaults registerDefaults:[NSDictionary dictionaryWithObjectsAndKeys:
+			[NSNumber numberWithInt:[defaultActivationKeyCombo keyCode]], AppActivationKeyCodeKey,
+			[NSNumber numberWithInt:[defaultActivationKeyCombo modifiers]], AppActivationModifiersKey,
 			[NSNumber numberWithBool:YES], AutoSuggestLinksKey,
 			[NSNumber numberWithBool:YES], AutoFormatsDoneTagKey,
 			[NSNumber numberWithBool:YES], AutoFormatsMarkdownHeadingsKey,

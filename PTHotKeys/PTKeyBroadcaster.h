@@ -17,4 +17,4 @@
 
 @end
 
-__private_extern__ NSString* PTKeyBroadcasterKeyEvent; //keys: keyCombo as PTKeyCombo
+FOUNDATION_EXPORT NSString * const PTKeyBroadcasterKeyEvent; //keys: keyCombo as PTKeyCombo

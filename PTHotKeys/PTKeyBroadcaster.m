@@ -10,7 +10,7 @@
 #import "PTKeyCombo.h"
 #import <Carbon/Carbon.h>
 
-NSString* PTKeyBroadcasterKeyEvent = @"PTKeyBroadcasterKeyEvent";
+NSString * const PTKeyBroadcasterKeyEvent = @"PTKeyBroadcasterKeyEvent";
 
 @implementation PTKeyBroadcaster
 
@@ -54,22 +54,20 @@ NSString* PTKeyBroadcasterKeyEvent = @"PTKeyBroadcasterKeyEvent";
 
 + (long)cocoaModifiersAsCarbonModifiers: (long)cocoaModifiers
 {
-	static long cocoaToCarbon[6][2] =
+	static long cocoaToCarbon[4][2] =
 	{
-		{ NSCommandKeyMask, cmdKey},
-		{ NSAlternateKeyMask, optionKey},
-		{ NSControlKeyMask, controlKey},
-		{ NSShiftKeyMask, shiftKey},
-		{ NSFunctionKeyMask, rightControlKey},
-		//{ NSAlphaShiftKeyMask, alphaLock }, //Ignore this?
+		{ NSEventModifierFlagCommand, cmdKey},
+		{ NSEventModifierFlagOption, optionKey},
+		{ NSEventModifierFlagControl, controlKey},
+		{ NSEventModifierFlagShift, shiftKey},
 	};
 
 	long carbonModifiers = 0;
 	int i;
 	
-	for( i = 0 ; i < 6; i++ )
+	for( i = 0 ; i < 4; i++ )
 		if( cocoaModifiers & cocoaToCarbon[i][0] )
-			carbonModifiers += cocoaToCarbon[i][1];
+			carbonModifiers |= cocoaToCarbon[i][1];
 	
 	return carbonModifiers;
 }

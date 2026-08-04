@@ -16,6 +16,7 @@
 
 
 #import "AppController.h"
+#import "ApplicationBranding.h"
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
 #import "AlienNoteImporter.h"
@@ -73,6 +74,7 @@
 
 - (void)awakeFromNib {
 	prefsController = [GlobalPrefs defaultPrefs];
+	NVApplyApplicationNameToMenu([NSApp mainMenu], @"Notational Velocity", [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleExecutable"]);
 	
 	[NSColor setIgnoresAlpha:NO];
 	

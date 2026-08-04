@@ -16,6 +16,7 @@
 }
 
 + (id)clearKeyCombo;
++ (id)defaultHotKeyCombo;
 + (id)keyComboWithKeyCode: (int)keyCode modifiers: (int)modifiers;
 - (id)initWithKeyCode: (int)keyCode modifiers: (int)modifiers;
 
