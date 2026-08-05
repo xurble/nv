@@ -48,7 +48,7 @@
 				<int key="NSWindowBacking">2</int>
 				<string key="NSWindowRect">{{280, 392}, {397, 464}}</string>
 				<int key="NSWTFlags">1618477056</int>
-				<string key="NSWindowTitle">Notation</string>
+				<string key="NSWindowTitle">Spiral</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<object class="NSMutableString" key="NSViewClass">
 					<characters key="NS.bytes">View</characters>
@@ -417,7 +417,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 					<bool key="EncodedWithXMLCoder">YES</bool>
 					<object class="NSMenuItem" id="896225021">
 						<reference key="NSMenu" ref="828948142"/>
-						<string key="NSTitle">Notational Velocity</string>
+						<string key="NSTitle">Spiral</string>
 						<string key="NSKeyEquiv"/>
 						<int key="NSKeyEquivModMask">1048576</int>
 						<int key="NSMnemonicLoc">2147483647</int>
@@ -431,12 +431,12 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 						</object>
 						<string key="NSAction">submenuAction:</string>
 						<object class="NSMenu" key="NSSubmenu" id="94599857">
-							<string key="NSTitle">Notational Velocity</string>
+							<string key="NSTitle">Spiral</string>
 							<object class="NSMutableArray" key="NSMenuItems">
 								<bool key="EncodedWithXMLCoder">YES</bool>
 								<object class="NSMenuItem" id="302895410">
 									<reference key="NSMenu" ref="94599857"/>
-									<string key="NSTitle">Über Notational Velocity</string>
+									<string key="NSTitle">Über Spiral</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="259802817"/>
@@ -524,7 +524,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 								</object>
 								<object class="NSMenuItem" id="116148528">
 									<reference key="NSMenu" ref="94599857"/>
-									<string key="NSTitle">Notational Velocity ausblenden</string>
+									<string key="NSTitle">Spiral ausblenden</string>
 									<string key="NSKeyEquiv">h</string>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -562,7 +562,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 								</object>
 								<object class="NSMenuItem" id="803154628">
 									<reference key="NSMenu" ref="94599857"/>
-									<string key="NSTitle">Notational Velocity beenden</string>
+									<string key="NSTitle">Spiral beenden</string>
 									<string key="NSKeyEquiv">q</string>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -1468,7 +1468,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 								</object>
 								<object class="NSMenuItem" id="366482696">
 									<reference key="NSMenu" ref="562662757"/>
-									<string key="NSTitle">Notational Velocity Webseite</string>
+									<string key="NSTitle">Spiral Webseite</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="259802817"/>

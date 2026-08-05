@@ -124,7 +124,7 @@
 				<string>blor</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>Notational Velocity BLOR</string>
+			<string>Spiral BLOR</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 		</dict>
@@ -137,8 +137,6 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Based on 2.0 β5, Copyright © 2011 Zachary Schneirov, All Rights Reserved.</string>
-	<key>CFBundleIconFile</key>
-	<string>Notality</string>
 	<key>CFBundleIdentifier</key>
 	<string>net.notational.velocity</string>
 	<key>CFBundleInfoDictionaryVersion</key>

@@ -277,7 +277,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="340659744">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">272629760</int>
-								<string key="NSContents">Notational Velocity 假设当前文件 “%@” 以下列编码保存:</string>
+								<string key="NSContents">Spiral 假设当前文件 “%@” 以下列编码保存:</string>
 								<reference key="NSSupport" ref="577853267"/>
 								<reference key="NSControlView" ref="197896125"/>
 								<object class="NSColor" key="NSBackgroundColor">

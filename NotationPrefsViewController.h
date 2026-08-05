@@ -26,7 +26,6 @@
 @class NotationPrefs;
 @class PassphrasePicker;
 @class PassphraseChanger;
-@class SyncResponseFetcher;
 
 @interface FileKindListView : NSTableView {
     IBOutlet NSPopUpButton *storageFormatPopupButton;
@@ -75,14 +74,10 @@
 	PassphrasePicker *passphrasePicker;
 	PassphraseChanger *changer;
 
-	BOOL verificationAttempted;
-	SyncResponseFetcher *loginVerifier;
-	
 	NSString *disableEncryptionString, *enableEncryptionString;
 }
 
 - (NSView*)view;
-- (void)setSyncControlsState:(BOOL)syncState;
 - (void)setEncryptionControlsState:(BOOL)encryptionState;
 - (void)setSeparateFileControlsState:(BOOL)separateFileControlsState;
 - (void)initializeControls;
@@ -100,18 +95,9 @@
 - (void)notesStorageFormatDidChange;
 - (int)notesStorageFormatInProgress;
 - (void)runQueuedStorageFormatChangeInvocation;
-- (IBAction)visitSimplenoteSite:(id)sender;
 - (IBAction)makeDefaultExtension:(id)sender;
 - (IBAction)removedExtension:(id)sender;
 - (IBAction)removedType:(id)sender;
-
-- (IBAction)toggledSyncing:(id)sender;
-- (IBAction)syncFrequencyChange:(id)sender;
-
-- (void)startVerifyingAfterDelay;
-- (void)startLoginVerifier;
-- (void)cancelLoginVerifier;
-- (void)setVerificationStatus:(int)status withString:(NSString*)aString;
 
 - (void)encryptionFormatMismatchSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode 
 								contextInfo:(void *)contextInfo;
@@ -128,8 +114,4 @@
 - (void)requestStorageFormatFromModernSettings:(NSInteger)format;
 - (void)requestEncryptionToggleFromModernSettings;
 - (void)requestPassphraseChangeFromModernSettings;
-- (void)setSyncEnabledFromModernSettings:(BOOL)enabled;
-- (void)setSyncUsernameFromModernSettings:(NSString *)username;
-- (void)setSyncPasswordFromModernSettings:(NSString *)password;
-- (void)setSyncFrequencyFromModernSettings:(NSUInteger)minutes;
 @end

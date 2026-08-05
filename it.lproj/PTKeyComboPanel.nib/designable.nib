@@ -150,7 +150,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="844881720">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">4194304</int>
-								<string key="NSContents">Digita una combinazione di tasti per portare Notational Velocity in primo piano.</string>
+								<string key="NSContents">Digita una combinazione di tasti per portare Spiral in primo piano.</string>
 								<object class="NSFont" key="NSSupport">
 									<string key="NSName">LucidaGrande-Bold</string>
 									<double key="NSSize">13</double>

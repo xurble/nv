@@ -43,7 +43,7 @@
 				<int key="NSWindowBacking">2</int>
 				<string key="NSWindowRect">{{201, 181}, {399, 560}}</string>
 				<int key="NSWTFlags">1618477056</int>
-				<string key="NSWindowTitle">Notation</string>
+				<string key="NSWindowTitle">Spiral</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<object class="NSMutableString" key="NSViewClass">
 					<characters key="NS.bytes">View</characters>
@@ -403,7 +403,7 @@
 					<bool key="EncodedWithXMLCoder">YES</bool>
 					<object class="NSMenuItem" id="25331689">
 						<reference key="NSMenu" ref="57983083"/>
-						<string key="NSTitle">Notational Velocity</string>
+						<string key="NSTitle">Spiral</string>
 						<string key="NSKeyEquiv"/>
 						<int key="NSKeyEquivModMask">1048576</int>
 						<int key="NSMnemonicLoc">2147483647</int>
@@ -417,12 +417,12 @@
 						</object>
 						<string key="NSAction">submenuAction:</string>
 						<object class="NSMenu" key="NSSubmenu" id="888907522">
-							<string key="NSTitle">Notational Velocity</string>
+							<string key="NSTitle">Spiral</string>
 							<object class="NSMutableArray" key="NSMenuItems">
 								<bool key="EncodedWithXMLCoder">YES</bool>
 								<object class="NSMenuItem" id="109653182">
 									<reference key="NSMenu" ref="888907522"/>
-									<string key="NSTitle">A propos de Notational Velocity</string>
+									<string key="NSTitle">A propos de Spiral</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="107850111"/>
@@ -512,7 +512,7 @@
 								</object>
 								<object class="NSMenuItem" id="917419704">
 									<reference key="NSMenu" ref="888907522"/>
-									<string key="NSTitle">Masquer Notational Velocity</string>
+									<string key="NSTitle">Masquer Spiral</string>
 									<string key="NSKeyEquiv">h</string>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -550,7 +550,7 @@
 								</object>
 								<object class="NSMenuItem" id="160422691">
 									<reference key="NSMenu" ref="888907522"/>
-									<string key="NSTitle">Quitter Notational Velocity</string>
+									<string key="NSTitle">Quitter Spiral</string>
 									<string key="NSKeyEquiv">q</string>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>

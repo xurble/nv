@@ -11,6 +11,11 @@ final class ModernSettingsTests: XCTestCase {
     func testUnknownPreferencePaneFallsBackToGeneral() {
         XCTAssertEqual(SettingsPane(legacyValue: nil), .general)
         XCTAssertEqual(SettingsPane(legacyValue: "Removed Pane"), .general)
+        XCTAssertEqual(SettingsPane(legacyValue: "Sync"), .general)
+    }
+
+    func testSettingsSidebarDoesNotExposeRetiredSyncIntegration() {
+        XCTAssertEqual(SettingsPane.allCases, [.general, .notes, .editing, .appearance])
     }
 
     func testStorageFormatIdentifiersRemainCompatibleWithNotationPrefs() {

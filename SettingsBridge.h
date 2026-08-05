@@ -35,11 +35,6 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 @property(nonatomic, readonly, copy) NSArray<NSString *> *allowedTypes;
 @property(nonatomic, readonly) NSUInteger defaultExtensionIndex;
 
-@property(nonatomic, readonly) BOOL syncEnabled;
-@property(nonatomic, readonly, copy) NSString *syncUsername;
-@property(nonatomic, readonly, copy) NSString *syncPassword;
-@property(nonatomic, readonly) NSUInteger syncFrequency;
-
 @property(nonatomic, readonly, retain) NSView *legacyWorkflowView;
 @property(nonatomic, readonly, retain) NSMenu *externalEditorMenu;
 
@@ -78,10 +73,6 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 - (void)removeAllowedTypeAtIndex:(NSUInteger)index;
 - (BOOL)makeDefaultExtensionAtIndex:(NSUInteger)index;
 
-- (void)setSyncEnabled:(BOOL)value;
-- (void)setSyncUsername:(NSString *)value;
-- (void)setSyncPassword:(NSString *)value;
-- (void)setSyncFrequency:(NSUInteger)value;
 - (void)synchronize;
 
 @end

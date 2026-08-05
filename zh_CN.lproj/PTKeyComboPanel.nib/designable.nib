@@ -145,7 +145,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="955774006">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">4194304</int>
-								<string key="NSContents">请输入用于激活 Notational Velocity 窗口的热键。</string>
+								<string key="NSContents">请输入用于激活 Spiral 窗口的热键。</string>
 								<object class="NSFont" key="NSSupport">
 									<string key="NSName">STHeitiSC-Medium</string>
 									<double key="NSSize">13</double>

@@ -61,7 +61,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="896040101">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">272629760</int>
-								<string key="NSContents">下列文件已经从笔记文件夹中丢失，请选择从磁盘恢复，或从 Notational Velocity 中删除。</string>
+								<string key="NSContents">下列文件已经从笔记文件夹中丢失，请选择从磁盘恢复，或从 Spiral 中删除。</string>
 								<object class="NSFont" key="NSSupport">
 									<string key="NSName">STHeitiTC-Light</string>
 									<double key="NSSize">13</double>

@@ -92,7 +92,7 @@
 "No notes were selected for exporting." = "No se han seleccionado notas para ser exportadas.";
 
 /* No comment provided by engineer. */
-"Notational Velocity should assume the file quotemark%@quotemark was saved with the encoding:" = "Notational Velocity debe asumir que el archivo “%@” fue salvado con esta codificación:";
+"Notational Velocity should assume the file quotemark%@quotemark was saved with the encoding:" = "Spiral debe asumir que el archivo “%@” fue salvado con esta codificación:";
 
 /* No comment provided by engineer. */
 "Note Importing Cancelled" = "Importanción de notas cancelada";
@@ -197,7 +197,7 @@
 "Select" = "Seleccionar";
 
 /* No Comment */
-"Select the folder that Notational Velocity should use for reading and storing notes." = "Seleccione la carpeta que Notational Velocity debe usar para gestionar las notas.";
+"Select the folder that Notational Velocity should use for reading and storing notes." = "Seleccione la carpeta que Spiral debe usar para gestionar las notas.";
 
 /* description for no key combination */
 "(None)" = "(Ninguno)";
@@ -231,7 +231,7 @@
 
 /* no comment */
 "Warning: this database was created by a newer version of Notational Velocity. Continue anyway?" =
-"Cuidado: esta base de datos ha sido creada por una versión más moderna de Notational Velocity. ¿Continuar igualmente?";
+"Cuidado: esta base de datos ha sido creada por una versión más moderna de Spiral. ¿Continuar igualmente?";
 
 /* no comment */
 "If you make changes, some settings and metadata could be lost." = "Si realizas cambios se pueden perder configuraciones y metadatos.";
@@ -362,22 +362,22 @@
 "Quedan archivos sueltos en la carpeta de las notas. ¿Los dejamos ahí o los enviamos a la papelera?";
 
 /* no comment */
-"<Feedback loop warning title>" = "Atención: esta carpeta de notas está siendo sincronizada con %@ y %@. Si hay otras copias de Notational Velocity usando esta carpeta, se creará un lazo de retroalimentación.";
+"<Feedback loop warning title>" = "Atención: esta carpeta de notas está siendo sincronizada con %@ y %@. Si hay otras copias de Spiral usando esta carpeta, se creará un lazo de retroalimentación.";
 
 /* no comment */
 "<Feedback loop warning message>" = "Para evitar este problema, escoja una ubicación diferente para la carpeta de notas en este equipo, o desactive la sincronización con %@.";
 
 /* No comment provided by engineer. */
-"The %@ server holds a different set of notes. Replace all %u notes in Notational Velocity with the %u notes on the server, or merge both sets together?" = "El servidor %@ mantiene una copia diferente de notas. ¿Reemplazar todas las %u notas en Notational Velocity con las %u notas del servidor, o combinar ambas copias?";
+"The %@ server holds a different set of notes. Replace all %u notes in Notational Velocity with the %u notes on the server, or merge both sets together?" = "El servidor %@ mantiene una copia diferente de notas. ¿Reemplazar todas las %u notas en Spiral con las %u notas del servidor, o combinar ambas copias?";
 
 /* No comment provided by engineer. */
-"The %@ server reports that no notes exist. Delete all %u notes in Notational Velocity to match it, or re-upload them now?" = "El servidor %@ informa que no hay notas. Borrar todas las %u notas que hay en Notational Velocity para corresponder con él o añadirlas al servidor de nuevo?";
+"The %@ server reports that no notes exist. Delete all %u notes in Notational Velocity to match it, or re-upload them now?" = "El servidor %@ informa que no hay notas. Borrar todas las %u notas que hay en Spiral para corresponder con él o añadirlas al servidor de nuevo?";
 
 /* No comment provided by engineer. */
-"Replacing will remove all %u notes from Notational Velocity. Merging will upload all notes to %@, omitting duplicates." = "Reemplazar borrará las %u notas que hay en Notational Velocity. Combinar añadirá todas las notas a %@ omitiendo las que estén duplicadas.";
+"Replacing will remove all %u notes from Notational Velocity. Merging will upload all notes to %@, omitting duplicates." = "Reemplazar borrará las %u notas que hay en Spiral. Combinar añadirá todas las notas a %@ omitiendo las que estén duplicadas.";
 
 /* No comment provided by engineer. */
-"If your %@ account is different, you may prefer to create a new database in Notational Velocity instead." = "Si tu cuenta %@ es diferente, puede ser que prefieras crear una nueva base de datos en Notational Velocity.";
+"If your %@ account is different, you may prefer to create a new database in Notational Velocity instead." = "Si tu cuenta %@ es diferente, puede ser que prefieras crear una nueva base de datos en Spiral.";
 
 /* default button in the dialog above */
 "Turn Off Syncing" = "Desactivar sincronización";
@@ -506,7 +506,7 @@
 "No note selected." = "No hay ninguna nota seleccionada.";
 
 /* No comment provided by engineer. */
-"Notational Velocity supports encryption only for notes stored in a database file." = "Notational Velocity solo puede cifrar las notas si están guardadas en una base de datos.";
+"Notational Velocity supports encryption only for notes stored in a database file." = "Spiral solo puede cifrar las notas si están guardadas en una base de datos.";
 
 /* No comment provided by engineer. */
 "Open Console in /Applications/Utilities/ for more information." = "Abra Consola en /Aplicaciones/Utilidades/ para más información.";
@@ -566,7 +566,7 @@
 "Unable to create an FSRef from the chosen directory." = "Imposible crear una FSRef del directorio escogido.";
 
 /* No comment provided by engineer. */
-"Unable to create or access the Interim Note-Changes file. Is another copy of Notational Velocity currently running?" = "Imposible crear o acceder al archivo Interim Note-Changes. ¿Se está ejecutando alguna otra copia de Notational Velocity?";
+"Unable to create or access the Interim Note-Changes file. Is another copy of Notational Velocity currently running?" = "Imposible crear o acceder al archivo Interim Note-Changes. ¿Se está ejecutando alguna otra copia de Spiral?";
 
 /* No comment provided by engineer. */
 "Strikethrough" = "Tachado";
@@ -641,7 +641,7 @@
 "Switch to Horizontal Layout" = "Cambiar a la disposición horizontal";
 
 /* for warning about incompatibility with TextExpander, Typinator, etc. */
-"Secure Text Entry will prevent %@, which is currently installed on this computer, from working in Notational Velocity." = "Entrada de Texto Seguro impedirá a %@, que está instalado en este equipo, funcionar en Notational Velocity.";
+"Secure Text Entry will prevent %@, which is currently installed on this computer, from working in Notational Velocity." = "Entrada de Texto Seguro impedirá a %@, que está instalado en este equipo, funcionar en Spiral.";
 
 /* Status message after downloading a URL */
 "Importing content..." = "Importando contenidos…";

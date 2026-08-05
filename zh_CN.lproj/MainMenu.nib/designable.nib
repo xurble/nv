@@ -423,7 +423,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 					<bool key="EncodedWithXMLCoder">YES</bool>
 					<object class="NSMenuItem" id="817044718">
 						<reference key="NSMenu" ref="657691538"/>
-						<string key="NSTitle">Notational Velocity</string>
+						<string key="NSTitle">Spiral</string>
 						<string key="NSKeyEquiv"/>
 						<int key="NSKeyEquivModMask">1048576</int>
 						<int key="NSMnemonicLoc">2147483647</int>
@@ -437,12 +437,12 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 						</object>
 						<string key="NSAction">submenuAction:</string>
 						<object class="NSMenu" key="NSSubmenu" id="789159888">
-							<string key="NSTitle">Notational Velocity</string>
+							<string key="NSTitle">Spiral</string>
 							<object class="NSMutableArray" key="NSMenuItems">
 								<bool key="EncodedWithXMLCoder">YES</bool>
 								<object class="NSMenuItem" id="701056338">
 									<reference key="NSMenu" ref="789159888"/>
-									<string key="NSTitle">关于 Notational Velocity</string>
+									<string key="NSTitle">关于 Spiral</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="838981797"/>
@@ -530,7 +530,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 								</object>
 								<object class="NSMenuItem" id="481781740">
 									<reference key="NSMenu" ref="789159888"/>
-									<string key="NSTitle">隐藏 Notational Velocity</string>
+									<string key="NSTitle">隐藏 Spiral</string>
 									<string key="NSKeyEquiv">h</string>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -568,7 +568,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 								</object>
 								<object class="NSMenuItem" id="373033928">
 									<reference key="NSMenu" ref="789159888"/>
-									<string key="NSTitle">退出 Notational Velocity</string>
+									<string key="NSTitle">退出 Spiral</string>
 									<string key="NSKeyEquiv">q</string>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -1519,7 +1519,7 @@ cHlyaWdodCBBcHBsZSBDb21wdXRlciwgSW5jLiwgMjAwNQAAAAA</bytes>
 								</object>
 								<object class="NSMenuItem" id="571868197">
 									<reference key="NSMenu" ref="617511002"/>
-									<string key="NSTitle">Notational Velocity 网站</string>
+									<string key="NSTitle">Spiral 网站</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="838981797"/>

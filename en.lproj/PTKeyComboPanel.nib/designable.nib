@@ -150,7 +150,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="834387121">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">4194304</int>
-								<string key="NSContents">Press a key combination to bring Notational Velocity to the foreground.</string>
+								<string key="NSContents">Press a key combination to bring Spiral to the foreground.</string>
 								<object class="NSFont" key="NSSupport">
 									<string key="NSName">LucidaGrande-Bold</string>
 									<double key="NSSize">13</double>

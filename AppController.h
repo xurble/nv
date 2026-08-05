@@ -31,7 +31,6 @@
 @class DualField;
 @class RBSplitView;
 @class RBSplitSubview;
-@class TitlebarButton;
 @class LinearDividerShader;
 
 @interface AppController : NSObject 
@@ -51,8 +50,6 @@
 	IBOutlet NSProgressIndicator *syncWaitSpinner;
 	NSToolbar *toolbar;
 	NSToolbarItem *dualFieldItem;
-	TitlebarButton *titleBarButton;
-	
 	BOOL waitedForUncommittedChanges;
 	
 	NSImage *verticalDividerImg;

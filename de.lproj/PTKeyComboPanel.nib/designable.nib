@@ -145,7 +145,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="844881720">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">4194304</int>
-								<string key="NSContents">Wähle eine Tastenkombination, um Notational Velocity damit jeweils ein- und ausblenden zu können.</string>
+								<string key="NSContents">Wähle eine Tastenkombination, um Spiral damit jeweils ein- und ausblenden zu können.</string>
 								<object class="NSFont" key="NSSupport">
 									<string key="NSName">LucidaGrande-Bold</string>
 									<double key="NSSize">13</double>

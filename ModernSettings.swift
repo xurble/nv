@@ -35,11 +35,6 @@ private final class SettingsModel: ObservableObject {
     @Published var allowedTypes: [String] = []
     @Published var defaultExtensionIndex = 0
 
-    @Published var syncEnabled = false
-    @Published var syncUsername = ""
-    @Published var syncPassword = ""
-    @Published var syncFrequency = 15
-
     private var observers: [NSObjectProtocol] = []
 
     init() {
@@ -97,10 +92,6 @@ private final class SettingsModel: ObservableObject {
         allowedTypes = bridge.allowedTypes
         defaultExtensionIndex = Int(bridge.defaultExtensionIndex)
 
-        syncEnabled = bridge.syncEnabled
-        syncUsername = bridge.syncUsername
-        syncPassword = bridge.syncPassword
-        syncFrequency = Int(bridge.syncFrequency)
     }
 }
 
@@ -162,7 +153,6 @@ private struct SettingsRootView: View {
                 case .notes: NotesSettingsView(model: model)
                 case .editing: EditingSettingsView(model: model)
                 case .appearance: AppearanceSettingsView(model: model)
-                case .sync: SyncSettingsView(model: model)
                 }
             }
             .navigationTitle(model.selectedPane.title)
@@ -378,54 +368,6 @@ private struct AppearanceSettingsView: View {
                 action(color)
             }
         )
-    }
-}
-
-private struct SyncSettingsView: View {
-    @ObservedObject var model: SettingsModel
-
-    var body: some View {
-        SettingsForm {
-            Section("Simplenote") {
-                SettingsToggle("Synchronize notes", isOn: Binding(
-                    get: { model.syncEnabled },
-                    set: { model.syncEnabled = $0; model.bridge.setSyncEnabled($0) }
-                ))
-
-                TextField("Email", text: Binding(
-                    get: { model.syncUsername },
-                    set: { model.syncUsername = $0; model.bridge.setSyncUsername($0) }
-                ))
-                .textContentType(.username)
-                .disabled(!model.syncEnabled)
-
-                SecureField("Password", text: Binding(
-                    get: { model.syncPassword },
-                    set: { model.syncPassword = $0; model.bridge.setSyncPassword($0) }
-                ))
-                .textContentType(.password)
-                .disabled(!model.syncEnabled)
-
-                Picker("Sync frequency", selection: Binding(
-                    get: { model.syncFrequency },
-                    set: { model.syncFrequency = $0; model.bridge.setSyncFrequency(UInt($0)) }
-                )) {
-                    Text("Every minute").tag(1)
-                    Text("Every 5 minutes").tag(5)
-                    Text("Every 15 minutes").tag(15)
-                    Text("Every 30 minutes").tag(30)
-                    Text("Every hour").tag(60)
-                }
-                .disabled(!model.syncEnabled)
-            }
-
-            if model.encryptionEnabled && model.syncEnabled {
-                Section {
-                    Label("Simplenote synchronization does not preserve Spiral's local note encryption.", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                }
-            }
-        }
     }
 }
 

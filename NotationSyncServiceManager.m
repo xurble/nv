@@ -180,7 +180,7 @@
 					[locallyChangedNotes addObject:note];
 				}
 			} else {
-				//this note _was_ synced, but is no longer on the server; it was _probably_ deleted--that or simplenote is glitching
+				//this note was synced, but is no longer on the server; it was probably deleted remotely
 				//if all notes end up here, pass control to -handleSyncingWithAllMissingAndRemoteNoteCount:fromSession:
 				[remotelyMissingNotes addObject:note];
 			}
@@ -418,5 +418,4 @@ ended:
 }
 
 @end
-
 

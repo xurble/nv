@@ -50,7 +50,7 @@ New and refactored functionality should move behind explicit modules or service 
 - **NoteCore:** typed note values, labels, search rules, filename rules, and format-independent transformations;
 - **NoteStore:** URL-based file access, atomic writes, metadata, change observation, WAL recovery, and migration coordination;
 - **LegacyCrypto:** a small, thoroughly tested compatibility layer for reading and writing existing encrypted formats;
-- **Sync:** typed requests and responses, authentication, conflict resolution, retries, and cancellation;
+- **Legacy Sync Compatibility:** retain the ability to read historical per-note and account metadata without activating a remote service; any future synchronization provider should be introduced as a new, separately tested module;
 - **Application UI:** the AppKit editor and window shell, with SwiftUI used selectively for new auxiliary views; and
 - **Update and Distribution:** current Sparkle integration, signing, hardened runtime, notarization, and release automation.
 
@@ -70,7 +70,7 @@ Add fixtures and characterization tests for:
 - WAL replay, interrupted writes, and recovery after a simulated crash;
 - search matching, ordering, and highlighting;
 - import and export paths;
-- synchronization merges, deletions, and conflicts;
+- loading archives containing historical synchronization metadata without starting a remote service or rewriting that metadata;
 - old encrypted databases and known plaintext/ciphertext pairs; and
 - launching against a temporary, disposable notes directory.
 
@@ -141,7 +141,7 @@ ARC migration should be separate from Swift migration so memory-management regre
 
 Swift is the preferred language for new code and for refactored components with clear boundaries. Good early candidates include:
 
-- `URLSession` networking and synchronization transport;
+- typed networking for any newly introduced remote service;
 - typed request and response models using `Codable`;
 - preference models and new settings UI;
 - import/export helpers and format-independent transformations;

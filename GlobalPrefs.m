@@ -139,7 +139,7 @@ static void sendCallbacksForGlobalPrefs(GlobalPrefs* self, SEL selector, id orig
 			[NSArchiver archivedDataWithRootObject:[NSColor textBackgroundColor]], BackgroundTextColorKey,
 			
 			[NSArchiver archivedDataWithRootObject:
-			 [NSColor colorWithCalibratedRed:0.945 green:0.702 blue:0.702 alpha:1.0f]], SearchTermHighlightColorKey,
+			 [NSColor colorWithCalibratedRed:1.0 green:0.55294 blue:0.15686 alpha:1.0f]], SearchTermHighlightColorKey,
 			
 			[NSNumber numberWithFloat:[NSFont smallSystemFontSize]], TableFontSizeKey, 
 			[NSArray arrayWithObjects:NoteTitleColumnString, NoteDateModifiedColumnString, nil], NoteAttributesVisibleKey,

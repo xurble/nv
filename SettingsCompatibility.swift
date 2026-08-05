@@ -5,7 +5,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     case notes
     case editing
     case appearance
-    case sync
 
     var id: String { rawValue }
 
@@ -15,7 +14,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .notes: return String(localized: "Notes")
         case .editing: return String(localized: "Editing")
         case .appearance: return String(localized: "Appearance")
-        case .sync: return String(localized: "Sync")
         }
     }
 
@@ -25,7 +23,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .notes: return "doc.text"
         case .editing: return "pencil.and.outline"
         case .appearance: return "paintpalette"
-        case .sync: return "arrow.triangle.2.circlepath"
         }
     }
 
@@ -34,7 +31,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case "notes": self = .notes
         case "editing": self = .editing
         case "fonts & colors", "appearance": self = .appearance
-        case "sync": self = .sync
         default: self = .general
         }
     }

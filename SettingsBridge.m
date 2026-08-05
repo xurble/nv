@@ -11,7 +11,6 @@
 #import "NotationPrefsViewController.h"
 #import "PTHotKeys/PTKeyCombo.h"
 #import "PTHotKeys/PTKeyComboPanel.h"
-#import "SimplenoteSession.h"
 
 NSNotificationName const NVSettingsBridgeDidChangeNotification = @"NVSettingsBridgeDidChangeNotification";
 
@@ -147,7 +146,6 @@ NSNotificationName const NVSettingsBridgeDidChangeNotification = @"NVSettingsBri
             return;
 
         [self.globalPrefs setAliasDataForDefaultDirectory:aliasData sender:self];
-        [[self notationPrefs] checkForKnownRedundantSyncConduitsAtPath:panel.URL.path];
         [self changed];
     }];
 }
@@ -193,15 +191,6 @@ NSNotificationName const NVSettingsBridgeDidChangeNotification = @"NVSettingsBri
 - (BOOL)removeAllowedExtensionAtIndex:(NSUInteger)index { BOOL result = [[self notationPrefs] removeAllowedPathExtensionAtIndex:(unsigned int)index]; [self changed]; return result; }
 - (void)removeAllowedTypeAtIndex:(NSUInteger)index { [[self notationPrefs] removeAllowedTypeAtIndex:(unsigned int)index]; [self changed]; }
 - (BOOL)makeDefaultExtensionAtIndex:(NSUInteger)index { BOOL result = [[self notationPrefs] setChosenPathExtensionAtIndex:(unsigned int)index]; [self changed]; return result; }
-
-- (BOOL)syncEnabled { return [[self notationPrefs] syncServiceIsEnabled:SimplenoteServiceName]; }
-- (NSString *)syncUsername { return [[[self notationPrefs] syncAccountForServiceName:SimplenoteServiceName] objectForKey:@"username"] ?: @""; }
-- (NSString *)syncPassword { return [[self notationPrefs] syncPasswordForServiceName:SimplenoteServiceName] ?: @""; }
-- (NSUInteger)syncFrequency { return [[self notationPrefs] syncFrequencyInMinutesForServiceName:SimplenoteServiceName]; }
-- (void)setSyncEnabled:(BOOL)value { [self.workflowController setSyncEnabledFromModernSettings:value]; [self changed]; }
-- (void)setSyncUsername:(NSString *)value { [self.workflowController setSyncUsernameFromModernSettings:value]; }
-- (void)setSyncPassword:(NSString *)value { [self.workflowController setSyncPasswordFromModernSettings:value]; }
-- (void)setSyncFrequency:(NSUInteger)value { [self.workflowController setSyncFrequencyFromModernSettings:value]; [self changed]; }
 
 - (NSMenu *)externalEditorMenu { return [[ExternalEditorListController sharedInstance] addEditorPrefsMenu]; }
 - (void)synchronize { [self.globalPrefs synchronize]; }

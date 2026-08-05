@@ -283,7 +283,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="470850298">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">272629760</int>
-								<string key="NSContents">Notational Velocity soll voraussetzen, dass die Datei “%@” mit folgender Kodierung gespeichert wurde:</string>
+								<string key="NSContents">Spiral soll voraussetzen, dass die Datei “%@” mit folgender Kodierung gespeichert wurde:</string>
 								<reference key="NSSupport" ref="788241007"/>
 								<reference key="NSControlView" ref="1022219770"/>
 								<object class="NSColor" key="NSBackgroundColor">

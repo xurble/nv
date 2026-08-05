@@ -37,7 +37,6 @@
 #import "LinkingEditor.h"
 #import "EmptyView.h"
 #import "DualField.h"
-#import "TitlebarButton.h"
 #import "RBSplitView/RBSplitView.h"
 #import "AugmentedScrollView.h"
 #import "BookmarksController.h"
@@ -97,8 +96,6 @@
 	[window setToolbar:toolbar];
 	
 	[window setShowsToolbarButton:NO];
-	titleBarButton = [[TitlebarButton alloc] initWithFrame:NSMakeRect(0, 0, 17.0, 17.0) pullsDown:YES];
-	[titleBarButton addToWindow:window];
 	
 //	if (IsLeopardOrLater)
 //		[window setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
@@ -321,8 +318,6 @@ terminateApp:
     if (newNotation) {
 		if (notationController) {
 			[notationController closeAllResources];
-			[[NSNotificationCenter defaultCenter] removeObserver:self name:SyncSessionsChangedVisibleStatusNotification 
-														  object:[notationController syncSessionController]];
 		}
 		
 		NotationController *oldNotation = notationController;
@@ -357,14 +352,6 @@ terminateApp:
 			[self _forceRegeneratePreviewsForTitleColumn];
 			[notesTableView setNeedsDisplay:YES];
 		}
-		[titleBarButton setMenu:[[notationController syncSessionController] syncStatusMenu]];
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(syncSessionsChangedVisibleStatus:) 
-													 name:SyncSessionsChangedVisibleStatusNotification 
-												   object:[notationController syncSessionController]]; 
-		
-		//these should probably be triggered from within NotationController:
-		[notationController performSelector:@selector(startSyncServices) withObject:nil afterDelay:0.0];
-		
 		if ([[notationController notationPrefs] secureTextEntry]) {
 			[[SecureTextEntryManager sharedInstance] enableSecureTextEntry];
 		} else {
@@ -1658,17 +1645,6 @@ terminateApp:
 	if (NSContainsRect(visibleRect, rowRect) || NSIntersectsRect(visibleRect, rowRect)) {
 		[notesTableView setNeedsDisplayInRect:rowRect];
 	}
-}
-
-- (void)syncSessionsChangedVisibleStatus:(NSNotification*)aNotification {
-	SyncSessionController *syncSessionController = [aNotification object];
-	if ([syncSessionController hasErrors]) {
-		[titleBarButton setStatusIconType:AlertIcon];
-	} else if ([syncSessionController hasRunningSessions]) {
-		[titleBarButton setStatusIconType:SynchronizingIcon];
-	} else {
-		[titleBarButton setStatusIconType: [[NSUserDefaults standardUserDefaults] boolForKey:@"ShowSyncMenu"] ? DownArrowIcon : NoIcon ];
-	}	
 }
 
 
