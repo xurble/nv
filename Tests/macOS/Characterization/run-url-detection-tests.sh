@@ -3,7 +3,8 @@
 set -eu
 
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-project_directory=$(dirname -- "$script_directory")
+repository_root=$(CDPATH= cd -- "$script_directory/../../.." && pwd)
+source_directory="$repository_root/Apps/macOS/Sources"
 test_binary=/tmp/SpiralURLDetectionTests
 
 xcrun clang \
@@ -11,11 +12,11 @@ xcrun clang \
     -Wall \
     -Wextra \
     -Werror \
-    -I "$project_directory" \
+    -I "$source_directory" \
     -framework AppKit \
     -framework Foundation \
-    "$project_directory/URLDetection.m" \
-    "$project_directory/Tests/URLDetectionTests.m" \
+    "$source_directory/URLDetection.m" \
+    "$script_directory/URLDetectionTests.m" \
     -o "$test_binary"
 
 "$test_binary"

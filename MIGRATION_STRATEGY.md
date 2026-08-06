@@ -2,13 +2,16 @@
 
 ## Purpose
 
-Modernize Notational Velocity into a reliable, maintainable macOS application without losing its keyboard-driven workflow, changing existing note formats unexpectedly, or putting user data at risk.
+Modernize Notational Velocity into a reliable, maintainable macOS application and prepare a future universal iPhone and iPad application, without losing the Mac's keyboard-driven workflow, changing existing note formats unexpectedly, or putting user data at risk. The macOS and iOS applications should use iCloud Drive as their shared data store while remaining usable offline and interoperable with existing local note collections.
 
-The objective is not to rewrite the application for its own sake. Success means that the app:
+The objective is not to rewrite the application for its own sake. Success means that the modernized product family:
 
-- builds reproducibly with a current Xcode and macOS SDK;
+- builds reproducibly with current Xcode, macOS, and iOS SDKs as the corresponding targets are introduced;
 - is self-contained, signed, hardened, and notarizable;
 - preserves existing notes, encrypted data, metadata, and recovery behaviour;
+- exposes a tested, platform-neutral storage boundary that both the macOS and future iOS applications can use;
+- can place a user-approved note collection in iCloud Drive without silently moving, rewriting, duplicating, or losing existing data;
+- handles delayed downloads, offline edits, coordinated writes, external changes, and file conflicts explicitly;
 - no longer depends on unsupported Carbon APIs or obsolete binary frameworks;
 - has automated coverage for important behaviour and compatibility formats; and
 - uses Swift for new and substantially refactored code where Swift improves safety and clarity.
@@ -48,13 +51,29 @@ The near-term architecture should remain a native AppKit application, retaining 
 New and refactored functionality should move behind explicit modules or service boundaries:
 
 - **NoteCore:** typed note values, labels, search rules, filename rules, and format-independent transformations;
-- **NoteStore:** URL-based file access, atomic writes, metadata, change observation, WAL recovery, and migration coordination;
+- **NoteStore:** a platform-neutral storage contract covering URL-based file access, atomic writes, metadata, change observation, WAL recovery, conflict representation, and migration coordination. It should support both a local directory and an iCloud Drive container without exposing AppKit or UIKit;
 - **LegacyCrypto:** a small, thoroughly tested compatibility layer for reading and writing existing encrypted formats;
 - **Legacy Sync Compatibility:** retain the ability to read historical per-note and account metadata without activating a remote service; any future synchronization provider should be introduced as a new, separately tested module;
+- **Shared iCloud Drive Storage:** platform-specific adapters should locate and coordinate access to the shared ubiquity container while `NoteStore` owns file-format and recovery semantics. Treat iCloud Drive as a coordinated, eventually available filesystem rather than as an immediately consistent database;
 - **Application UI:** the AppKit editor and window shell, with SwiftUI used selectively for new auxiliary views; and
 - **Update and Distribution:** current Sparkle integration, signing, hardened runtime, notarization, and release automation.
 
 Objective-C and Swift can coexist in the application target. C should remain where it provides a small, stable compatibility implementation. Boundaries between these areas should use explicit types and errors rather than dynamic selector dispatch.
+
+## Repository Layout and Future iOS Application
+
+The repository is organized around explicit product and sharing boundaries:
+
+- `Apps/macOS` contains the existing AppKit application, including its sources, resources, supporting files, and macOS-only dependencies;
+- `Apps/iOS` is reserved for a future universal iPhone and iPad application with a platform-appropriate user interface;
+- `Shared` is reserved for deliberately extracted, tested code that has no AppKit or UIKit dependency, including the storage contract, compatibility models, and conflict rules shared by the two applications; and
+- `Tests/macOS` contains the existing macOS XCTest and characterization suites. Future shared and iOS tests should be placed beside it at the equivalent boundary.
+
+The existing application must not be treated as a multiplatform target merely because an iOS application is planned. Keep separate macOS and iOS app targets while their UI frameworks, life cycles, resources, and platform integrations differ substantially. Share code through narrow core, persistence, compatibility, and service boundaries only after those boundaries are characterized by tests.
+
+The future iOS application should normally use one universal target for both iPhone and iPad. Device-specific layouts may differ, but separate application targets should only be introduced if the products genuinely require different identities, capabilities, or release lifecycles. The macOS and iOS targets should use the same versioned note formats and shared `NoteStore` behavior, while each target owns its iCloud container access, lifecycle integration, user interface, and platform-specific capabilities.
+
+Moving an existing local collection into iCloud Drive must be an explicit, reversible migration with a preflight check, backup, progress reporting, failure recovery, and a documented rollback path. Tests and development builds must use temporary local directories and controlled coordination doubles rather than a developer's or user's live iCloud Drive data.
 
 ## Phased Plan
 
@@ -71,12 +90,15 @@ Add fixtures and characterization tests for:
 - search matching, ordering, and highlighting;
 - import and export paths;
 - loading archives containing historical synchronization metadata without starting a remote service or rewriting that metadata;
-- old encrypted databases and known plaintext/ciphertext pairs; and
+- old encrypted databases and known plaintext/ciphertext pairs;
+- simulated iCloud Drive states including unavailable files, delayed downloads, concurrent edits, conflicts, and interrupted migration; and
 - launching against a temporary, disposable notes directory.
 
 Add a shared scheme and continuous integration that builds and tests Development and release configurations. Record the current warning baseline and reject newly introduced warnings.
 
 **Exit criterion:** Critical file formats and behaviours can be changed with automated regression detection.
+
+**Progress as of August 2026:** A shared scheme, a small XCTest target, and four focused characterization executables are in place and passing. Coverage does not yet protect the critical persistence, WAL, encryption, import/export, encoding, filename, historical synchronization, or future iCloud Drive behaviors, and no CI or warning-baseline enforcement is present.
 
 ### Phase 2: Make the Product Reproducible and Distributable
 
@@ -86,9 +108,12 @@ Add a shared scheme and continuous integration that builds and tests Development
 - Remove machine-specific header and library search paths.
 - Verify Debug, Release, Archive, and clean-machine launch workflows.
 - Add Developer ID signing, hardened runtime, archive validation, and notarization.
+- Document the shared iCloud Drive container identifiers, capabilities, and signing requirements for both applications; do not enable live-container migration until the storage contract and recovery tests exist.
 - Evaluate App Sandbox separately; do not enable it until user-selected folders, security-scoped bookmarks, external editors, and Apple Events have an explicit design.
 
 **Exit criterion:** A release archive runs on a clean supported Mac without Homebrew or developer tools.
+
+**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, but this criterion is not close to complete. Deployment metadata remains inconsistent, build settings still contain Homebrew OpenSSL paths, and `.xcconfig`, hardened-runtime, signing, notarization, archive, and clean-machine verification work remains outstanding.
 
 ### Phase 3: Replace Obsolete Dependencies
 
@@ -108,11 +133,13 @@ Replace the bundled legacy Sparkle framework with the current supported release 
 
 **Exit criterion:** The application contains no unsupported architecture slices, obsolete executable frameworks, or host-specific dynamic-library references.
 
+**Progress as of August 2026:** Editor URL detection now uses `NSDataDetector` with characterization coverage, and AutoHyperlinks is no longer referenced by the Xcode project, although its framework files remain in the repository. Legacy Sparkle is still bundled, and the executable still links to Homebrew's `libcrypto.3.dylib`.
+
 ### Phase 4: Replace Deprecated Platform APIs
 
 Modernize one subsystem at a time:
 
-- replace `FSRef`, Carbon fork access, and path buffers with `NSURL`/`URL` and `NSFileManager`/`FileManager`;
+- replace `FSRef`, Carbon fork access, and path buffers with `NSURL`/`URL` and `NSFileManager`/`FileManager` behind a platform-neutral storage interface that supports both local and iCloud Drive roots;
 - preserve atomic-write and recovery guarantees while replacing file primitives;
 - replace deprecated Launch Services calls with workspace and URL resource APIs;
 - replace synchronous and delegate-selector panels with completion-handler APIs;
@@ -125,6 +152,8 @@ Each replacement should include tests and land independently where practical.
 
 **Exit criterion:** Normal application paths do not call unsupported Carbon or deprecated framework APIs.
 
+**Progress as of August 2026:** A few isolated UI and text-detection paths have been modernized, but the main file, persistence, import, and application-control paths still use Carbon, `FSRef`, legacy archive/WebKit APIs, and extensive dynamic selector dispatch. The phase remains largely outstanding.
+
 ### Phase 5: Adopt ARC and Stronger Objective-C Interfaces
 
 - Add nullability annotations and lightweight generics to headers at subsystem boundaries.
@@ -136,6 +165,8 @@ Each replacement should include tests and land independently where practical.
 ARC migration should be separate from Swift migration so memory-management regressions are easier to identify.
 
 **Exit criterion:** Most application code uses ARC and exposes sufficiently typed interfaces for safe Swift interoperability.
+
+**Progress as of August 2026:** A narrow Objective-C bridge supports the new Swift settings code, demonstrating basic interoperability. The wider application remains predominantly manual-memory-managed Objective-C, and systematic ARC conversion, nullability, generics, static analysis, and interface strengthening have not begun.
 
 ### Phase 6: Introduce Swift Incrementally
 
@@ -162,6 +193,8 @@ Migrate one class or component at a time. Do not rewrite an Objective-C class an
 
 **Exit criterion:** New non-legacy functionality is normally written in Swift, while remaining Objective-C exists intentionally.
 
+**Progress as of August 2026:** The modern settings model and interface provide the first successful Swift component inside the existing application target. This validates the mixed-language toolchain, but no shared core, cross-platform `NoteStore`, iCloud Drive adapter, import/export, updater, or concurrency-isolated Swift service exists yet.
+
 ### Phase 7: Modernize the Interface Selectively
 
 Retain AppKit for the main window, text system, menus, responder chain, and advanced keyboard handling until there is a demonstrated reason to replace them.
@@ -177,6 +210,8 @@ Use SwiftUI first for low-risk, self-contained areas:
 Embed SwiftUI in the existing AppKit hierarchy with `NSHostingView` or `NSHostingController`. Reassess a broader SwiftUI lifecycle migration only after storage, commands, application state, and window ownership have clear boundaries.
 
 **Exit criterion:** Modern UI components coexist cleanly with the editor, without degrading keyboard behaviour, accessibility, or native text handling.
+
+**Progress as of August 2026:** Preferences have been reimplemented as an embedded SwiftUI interface while the AppKit application shell and editor remain intact. Characterization tests cover settings compatibility and selected keyboard/UI behavior, but broader accessibility, launch, and workflow regression coverage is still needed.
 
 ### Phase 8: Reassess the Legacy Core
 
@@ -200,12 +235,12 @@ A wholesale Swift rewrite is not recommended. It would create substantial regres
 ## Suggested Initial Backlog
 
 1. Add shared schemes, XCTest targets, and CI builds.
-2. Create golden note-directory, WAL, encoding, and encrypted-data fixtures.
+2. Create golden note-directory, WAL, encoding, encrypted-data, and simulated iCloud Drive coordination/conflict fixtures.
 3. Decide the supported macOS range and correct deployment metadata.
 4. Remove the Homebrew OpenSSL runtime dependency without breaking old encrypted data.
 5. Replace AutoHyperlinks with Foundation text detection.
 6. Upgrade Sparkle and establish signed, notarized release archives.
-7. Introduce URL-based file APIs behind the existing storage interface.
+7. Introduce a platform-neutral, URL-based `NoteStore`; preserve the local-directory implementation first, then add iCloud Drive behind the same contract.
 8. Add nullability and generics at the first Swift boundary.
 9. Implement one low-coupling service in Swift to validate the mixed-language toolchain.
 10. Begin replacing deprecated panels and leaf UI with modern AppKit or embedded SwiftUI.
@@ -215,6 +250,7 @@ A wholesale Swift rewrite is not recommended. It would create substantial regres
 A modernization change is complete when:
 
 - existing user data and compatibility formats remain readable;
+- local and iCloud Drive-backed collections preserve offline, coordination, conflict, and recovery behavior without silent migration or rewriting;
 - new or changed behaviour is covered by automated tests;
 - all configurations build without new warnings;
 - the application launches against both representative fixtures and a clean data directory;

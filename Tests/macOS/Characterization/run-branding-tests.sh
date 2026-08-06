@@ -3,7 +3,8 @@
 set -eu
 
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-project_directory=$(dirname -- "$script_directory")
+repository_root=$(CDPATH= cd -- "$script_directory/../../.." && pwd)
+source_directory="$repository_root/Apps/macOS/Sources"
 test_binary=/tmp/SpiralApplicationBrandingTests
 
 xcrun clang \
@@ -11,11 +12,11 @@ xcrun clang \
     -Wall \
     -Wextra \
     -Werror \
-    -I "$project_directory" \
+    -I "$source_directory" \
     -framework AppKit \
     -framework Foundation \
-    "$project_directory/ApplicationBranding.m" \
-    "$project_directory/Tests/ApplicationBrandingTests.m" \
+    "$source_directory/ApplicationBranding.m" \
+    "$script_directory/ApplicationBrandingTests.m" \
     -o "$test_binary"
 
 "$test_binary"

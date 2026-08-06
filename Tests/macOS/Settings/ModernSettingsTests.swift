@@ -20,9 +20,13 @@ final class ModernSettingsTests: XCTestCase {
     }
 
     func testLegacyPreferencesNibsDoNotRetainRetiredSyncActions() throws {
-        let sourceRoot = URL(fileURLWithPath: #filePath)
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let resourceRoot = repositoryRoot
+            .appendingPathComponent("Apps/macOS/Resources")
         let localizations = ["en", "de", "fr", "it", "pt", "Spanish", "zh_CN"]
         let retiredSelectors = [
             "visitSimplenoteSite:",
@@ -31,7 +35,7 @@ final class ModernSettingsTests: XCTestCase {
         ]
 
         for localization in localizations {
-            let nibURL = sourceRoot
+            let nibURL = resourceRoot
                 .appendingPathComponent("\(localization).lproj")
                 .appendingPathComponent("NotationPrefsView.nib")
             let designableContents = try String(

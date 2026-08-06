@@ -3,7 +3,8 @@
 set -eu
 
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-project_directory=$(dirname -- "$script_directory")
+repository_root=$(CDPATH= cd -- "$script_directory/../../.." && pwd)
+hotkey_directory="$repository_root/Apps/macOS/Dependencies/PTHotKeys"
 test_binary=/tmp/SpiralHotKeyTests
 
 xcrun clang \
@@ -12,13 +13,13 @@ xcrun clang \
     -Wextra \
     -Werror \
     -Wno-deprecated-declarations \
-    -I "$project_directory/PTHotKeys" \
+    -I "$hotkey_directory" \
     -framework AppKit \
     -framework Carbon \
     -framework Foundation \
-    "$project_directory/PTHotKeys/PTKeyCombo.m" \
-    "$project_directory/PTHotKeys/PTKeyBroadcaster.m" \
-    "$project_directory/Tests/PTKeyComboTests.m" \
+    "$hotkey_directory/PTKeyCombo.m" \
+    "$hotkey_directory/PTKeyBroadcaster.m" \
+    "$script_directory/PTKeyComboTests.m" \
     -o "$test_binary"
 
 "$test_binary"

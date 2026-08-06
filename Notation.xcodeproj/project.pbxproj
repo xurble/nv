@@ -288,7 +288,7 @@
 		A40000000000000000000003 /* URLDetection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = URLDetection.m; sourceTree = "<group>"; };
 		213621EF0B92414F008C0830 /* MultiTextFinder.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = MultiTextFinder.h; sourceTree = "<group>"; };
 		213621F00B92414F008C0830 /* MultiTextFinder.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = MultiTextFinder.m; sourceTree = "<group>"; };
-		213623E50B92AA4E008C0830 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		213623E50B92AA4E008C0830 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Dependencies/Frameworks/Sparkle.framework; sourceTree = "<group>"; };
 		21395BB30B7FDB85007BCFAA /* Notation.freqorder */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = Notation.freqorder; sourceTree = "<group>"; };
 		21395BC60B7FDD35007BCFAA /* Notation.launchorder */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = Notation.launchorder; sourceTree = "<group>"; };
 		213FAD510B3C6B52004C74BD /* FSExchangeObjectsCompat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FSExchangeObjectsCompat.h; sourceTree = "<group>"; };
@@ -308,7 +308,7 @@
 		2144987D0AE192F900E2A2B6 /* PassphraseChanger.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = PassphraseChanger.h; sourceTree = "<group>"; };
 		21469C890BEBA6A10094835F /* TemporaryFileCachePreparer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TemporaryFileCachePreparer.h; sourceTree = "<group>"; };
 		21469C8A0BEBA6A10094835F /* TemporaryFileCachePreparer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TemporaryFileCachePreparer.m; sourceTree = "<group>"; };
-		2147D82B131EC86100C65006 /* COPYING.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = COPYING.txt; sourceTree = "<group>"; };
+		2147D82B131EC86100C65006 /* COPYING.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ../../../COPYING.txt; sourceTree = "<group>"; };
 		215309F212E4E92300AF2739 /* DiskUUIDEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DiskUUIDEntry.h; sourceTree = "<group>"; };
 		215309F312E4E92300AF2739 /* DiskUUIDEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DiskUUIDEntry.m; sourceTree = "<group>"; };
 		21544FBF0B06332600C0D1D5 /* KeyDerivationManager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = KeyDerivationManager.h; sourceTree = "<group>"; };
@@ -344,7 +344,7 @@
 		2181171109F311110020A252 /* DeletedNoteObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeletedNoteObject.h; sourceTree = "<group>"; };
 		2181171209F311110020A252 /* DeletedNoteObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DeletedNoteObject.m; sourceTree = "<group>"; };
 		2181193909FA9CF90020A252 /* SynchronizedNoteProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SynchronizedNoteProtocol.h; sourceTree = "<group>"; };
-		21813561105AF27400A0AE18 /* Acknowledgments.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Acknowledgments.txt; sourceTree = "<group>"; };
+		21813561105AF27400A0AE18 /* Acknowledgments.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ../../../Acknowledgments.txt; sourceTree = "<group>"; };
 		2182B395106B2296008641E4 /* RBSplitSubview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitSubview.h; path = RBSplitView/RBSplitSubview.h; sourceTree = "<group>"; };
 		2182B396106B2296008641E4 /* RBSplitSubview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RBSplitSubview.m; path = RBSplitView/RBSplitSubview.m; sourceTree = "<group>"; };
 		2182B397106B2296008641E4 /* RBSplitView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitView.h; path = RBSplitView/RBSplitView.h; sourceTree = "<group>"; };
@@ -636,7 +636,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		080E96DDFE201D6D7F000001 /* Classes */ = {
+		080E96DDFE201D6D7F000001 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000011 /* ModernSettings.swift */,
@@ -718,8 +718,19 @@
 				57F27FB81197407400C63ACF /* SearchCommand.m */,
 				21A3913812EB4C2F00CEB5F0 /* Spaces.h */,
 				21A3913912EB4C2F00CEB5F0 /* Spaces.c */,
+				211345A10B35D8340081B064 /* Crypto */,
+				29B97316FDCFA39411CA2CEA /* main.m */,
+				21BD2ED010DAF31500BA3DF6 /* LinearDividerShader.h */,
+				21BD2ECF10DAF31500BA3DF6 /* LinearDividerShader.m */,
+				2114C23B095883A600614E74 /* NSData_transformations.h */,
+				2114C23C095883A600614E74 /* NSData_transformations.m */,
+				217EB3CD0B0F62FB0041A8A9 /* NSTextFinder_LastFind.m */,
+				214495040ADC7F4F00E2A2B6 /* SFPasswordAssistantInspectorController.h */,
+				213FAD510B3C6B52004C74BD /* FSExchangeObjectsCompat.h */,
+				213FAD520B3C6B52004C74BD /* FSExchangeObjectsCompat.c */,
 			);
-			name = Classes;
+			name = Sources;
+			path = Sources;
 			sourceTree = "<group>";
 		};
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
@@ -807,10 +818,14 @@
 		21395BA90B7FDB5E007BCFAA /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				8D1107310486CEB800E47090 /* Info.plist */,
+				32CA4F630368D1EE00C91783 /* Notation_Prefix.pch */,
+				57F27F7A11973A7F00C63ACF /* Notation.sdef */,
 				21395BB30B7FDB85007BCFAA /* Notation.freqorder */,
 				21395BC60B7FDD35007BCFAA /* Notation.launchorder */,
 			);
 			name = "Supporting Files";
+			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
 		214498800AE1931700E2A2B6 /* UI Decision Classes */ = {
@@ -1009,37 +1024,27 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000051 /* NotationSettingsTests */,
-				080E96DDFE201D6D7F000001 /* Classes */,
-				29B97315FDCFA39411CA2CEA /* Other Sources */,
+				080E96DDFE201D6D7F000001 /* Sources */,
+				29B97315FDCFA39411CA2CEA /* Dependencies */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				21395BA90B7FDB5E007BCFAA /* Supporting Files */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
-				57F27F7A11973A7F00C63ACF /* Notation.sdef */,
 			);
 			name = Notation;
+			path = Apps/macOS;
 			sourceTree = "<group>";
 		};
-		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
+		29B97315FDCFA39411CA2CEA /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
 				212897BF133002C600380B64 /* ODBEditor */,
 				21F07C7010EDED87004FE56F /* BSJSON */,
 				2182B38E106B2286008641E4 /* RBSplitView */,
 				21F1CD490B3A38CB001FB5F6 /* HotKeys */,
-				211345A10B35D8340081B064 /* Crypto */,
-				32CA4F630368D1EE00C91783 /* Notation_Prefix.pch */,
-				29B97316FDCFA39411CA2CEA /* main.m */,
-				21BD2ED010DAF31500BA3DF6 /* LinearDividerShader.h */,
-				21BD2ECF10DAF31500BA3DF6 /* LinearDividerShader.m */,
-				2114C23B095883A600614E74 /* NSData_transformations.h */,
-				2114C23C095883A600614E74 /* NSData_transformations.m */,
-				217EB3CD0B0F62FB0041A8A9 /* NSTextFinder_LastFind.m */,
-				214495040ADC7F4F00E2A2B6 /* SFPasswordAssistantInspectorController.h */,
-				213FAD510B3C6B52004C74BD /* FSExchangeObjectsCompat.h */,
-				213FAD520B3C6B52004C74BD /* FSExchangeObjectsCompat.c */,
 			);
-			name = "Other Sources";
+			name = Dependencies;
+			path = Dependencies;
 			sourceTree = "<group>";
 		};
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
@@ -1052,7 +1057,6 @@
 				217DB1810B7CE5B9008CD564 /* Help Notes */,
 				219196B109D4F1DB00586B15 /* Images */,
 				2114C259095885C800614E74 /* Localizable.strings */,
-				8D1107310486CEB800E47090 /* Info.plist */,
 				2128651C1278AF220013820A /* ServicesMenu.strings */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				212850860B56E549005F6E34 /* CarbonErrorStrings.plist */,
@@ -1074,6 +1078,7 @@
 				213621E70B92413F008C0830 /* FindPanel.nib */,
 			);
 			name = Resources;
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
@@ -1090,7 +1095,7 @@
 			children = (
 				A20000000000000000000031 /* ModernSettingsTests.swift */,
 			);
-			path = NotationSettingsTests;
+			path = ../../Tests/macOS/Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1884,13 +1889,13 @@
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_2)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_3)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_4)",
-					"\"$(SRCROOT)/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
-					"\"$(SRCROOT)\"",
+					"\"$(SRCROOT)/Apps/macOS/Resources/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
+					"\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_1 = "\"$(SYSTEM_LIBRARY_DIR)/Frameworks/Quartz.framework/Versions/A/Frameworks\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_3 = "\"$(SRCROOT)\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_4 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_3 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_4 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
@@ -1900,7 +1905,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PFE_FILE_C_DIALECTS = "c objective-c";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Notation_Prefix.pch;
+				GCC_PREFIX_HEADER = Apps/macOS/SupportingFiles/Notation_Prefix.pch;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
 				"GCC_VERSION[sdk=macosx*]" = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1917,8 +1922,12 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_PROFILING_CODE = YES;
-				HEADER_SEARCH_PATHS = ICU/icu;
-				INFOPLIST_FILE = Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Apps/macOS/Sources",
+					"$(SRCROOT)/Apps/macOS/Dependencies",
+					"$(SRCROOT)/Apps/macOS/Dependencies/ICU/icu",
+				);
+				INFOPLIST_FILE = Apps/macOS/SupportingFiles/Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LD_GENERATE_MAP_FILE = YES;
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
@@ -1938,7 +1947,7 @@
 				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
 				STRIP_STYLE = "non-global";
-				SWIFT_OBJC_BRIDGING_HEADER = "Settings-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				WARNING_CFLAGS = "-pg";
 				WARNING_LDFLAGS = "";
@@ -1965,18 +1974,18 @@
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_2)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_3)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_4)",
-					"\"$(SRCROOT)/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
-					"\"$(SRCROOT)\"",
+					"\"$(SRCROOT)/Apps/macOS/Resources/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
+					"\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_1 = "\"$(SYSTEM_LIBRARY_DIR)/Frameworks/Quartz.framework/Versions/A/Frameworks\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
 				GCC_DEBUGGING_SYMBOLS = full;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_PFE_FILE_C_DIALECTS = "c objective-c";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Notation_Prefix.pch;
+				GCC_PREFIX_HEADER = Apps/macOS/SupportingFiles/Notation_Prefix.pch;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
 				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1992,8 +2001,12 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = ICU/icu;
-				INFOPLIST_FILE = Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Apps/macOS/Sources",
+					"$(SRCROOT)/Apps/macOS/Dependencies",
+					"$(SRCROOT)/Apps/macOS/Dependencies/ICU/icu",
+				);
+				INFOPLIST_FILE = Apps/macOS/SupportingFiles/Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
@@ -2016,13 +2029,13 @@
 					"-sectorder",
 					__TEXT,
 					__text,
-					Notation.launchorder,
+					"$(SRCROOT)/Apps/macOS/SupportingFiles/Notation.launchorder",
 					"-e",
 					start,
 				);
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = all;
-				SWIFT_OBJC_BRIDGING_HEADER = "Settings-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
@@ -2045,19 +2058,19 @@
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_2)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_3)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_4)",
-					"\"$(SRCROOT)/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
-					"\"$(SRCROOT)\"",
+					"\"$(SRCROOT)/Apps/macOS/Resources/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
+					"\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"",
 				);
 				FRAMEWORK_SEARCH_PATHS_QUOTED_1 = "\"$(SYSTEM_LIBRARY_DIR)/Frameworks/Quartz.framework/Versions/A/Frameworks\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_3 = "\"$(SRCROOT)\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_4 = "\"$(SRCROOT)\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_3 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
+				FRAMEWORK_SEARCH_PATHS_QUOTED_4 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_PFE_FILE_C_DIALECTS = "c objective-c";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Notation_Prefix.pch;
+				GCC_PREFIX_HEADER = Apps/macOS/SupportingFiles/Notation_Prefix.pch;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
 				"GCC_VERSION[sdk=macosx*]" = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -2073,7 +2086,12 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Apps/macOS/Sources",
+					"$(SRCROOT)/Apps/macOS/Dependencies",
+					"$(SRCROOT)/Apps/macOS/Dependencies/ICU/icu",
+				);
+				INFOPLIST_FILE = Apps/macOS/SupportingFiles/Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
@@ -2091,7 +2109,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
 				PRODUCT_NAME = Spiral;
 				SDKROOT = macosx;
-				SWIFT_OBJC_BRIDGING_HEADER = "Settings-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 			};

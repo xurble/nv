@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -eu
+
+# Run from a profiling build directory containing gmon.out and callo.order.
+script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repository_root=$(CDPATH= cd -- "$script_directory/../../.." && pwd)
+
+gprof -S Notation.app/Contents/MacOS/Notation gmon.out > gmon.summary
+awk -F: '{print $2$3$4$5$6$7$8$9$10$11$12$13$14}' callo.order > "$repository_root/Apps/macOS/SupportingFiles/Notation.launchorder"
