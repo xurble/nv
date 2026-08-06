@@ -22,6 +22,7 @@
 #import "NotationDirectoryManager.h"
 #import "NotationPrefs.h"
 #import "NSCollection_utils.h"
+#import "ApplicationBranding.h"
 
 //class for managing notifications of external deletion of note files
 
@@ -48,6 +49,7 @@
 	
 	[window setFloatingPanel:YES];
 	[window setDelegate:self];
+	NVApplyApplicationIconToViewHierarchy([window contentView], NVApplicationIcon());
 }
 
 - (void)dealloc {

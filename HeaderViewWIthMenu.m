@@ -21,10 +21,47 @@
 @implementation HeaderViewWithMenu
 
 - (id)init {
-	if ([super init]) {
+	if ((self = [super init])) {
 		isReloading = NO;
 	}
 	return self;
+}
+
+- (void)removeBackgroundEffectView {
+	[backgroundEffectView removeFromSuperview];
+	[backgroundEffectView release];
+	backgroundEffectView = nil;
+}
+
+- (void)viewDidMoveToSuperview {
+	[super viewDidMoveToSuperview];
+
+	NSView *containerView = [self superview];
+	if ([backgroundEffectView superview] == containerView)
+		return;
+
+	[self removeBackgroundEffectView];
+	if (!containerView)
+		return;
+
+	// Header cells are transparent on current macOS releases. Put the
+	// system's semantic table-header material behind them so rows scrolling
+	// underneath remain visible without making the labels unreadable.
+	backgroundEffectView = [[NSVisualEffectView alloc] initWithFrame:[containerView bounds]];
+	[backgroundEffectView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	[backgroundEffectView setMaterial:NSVisualEffectMaterialHeaderView];
+	[backgroundEffectView setBlendingMode:NSVisualEffectBlendingModeWithinWindow];
+	[backgroundEffectView setState:NSVisualEffectStateFollowsWindowActiveState];
+	[containerView addSubview:backgroundEffectView positioned:NSWindowBelow relativeTo:self];
+}
+
+- (BOOL)isOpaque {
+	return NO;
+}
+
+- (void)dealloc {
+	[self removeBackgroundEffectView];
+	[super dealloc];
 }
 
 - (void)_resizeColumn:(NSInteger)resizedColIdx withEvent:(id)event {	
@@ -34,7 +71,7 @@
 	int i;
 	//change all user-resizable-only columns
 	for (i=0; i<[[self tableView] numberOfColumns]; i++) {
-		NoteAttributeColumn *col = [[[self tableView] tableColumns] objectAtIndex:i];
+		NoteAttributeColumn *col = (NoteAttributeColumn *)[[[self tableView] tableColumns] objectAtIndex:i];
 		if ((originalResizingMask = [col resizingMask]) == NSTableColumnUserResizingMask) {
 			[col setResizingMask: NSTableColumnAutoresizingMask | NSTableColumnUserResizingMask];
 			[col performSelector:@selector(setResizingMaskNumber:) withObject:[NSNumber numberWithUnsignedInt:originalResizingMask] afterDelay:0];

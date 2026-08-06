@@ -120,6 +120,7 @@ void outletObjectAwoke(id sender);
 - (NSString*)typedString;
 
 - (IBAction)showHelpDocument:(id)sender;
+- (IBAction)showAboutPanel:(id)sender;
 - (IBAction)showPreferencesWindow:(id)sender;
 - (IBAction)toggleNVActivation:(id)sender;
 - (IBAction)bringFocusToControlField:(id)sender;

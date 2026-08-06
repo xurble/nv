@@ -27,6 +27,7 @@
 #import "NSData_transformations.h"
 #import "AttributedPlainText.h"
 #import "NotationPrefs.h"
+#import "ApplicationBranding.h"
 #include "idea_ossl.h"
 
 @implementation BlorPasswordRetriever
@@ -149,7 +150,8 @@
 }
 
 - (void)awakeFromNib {
-	
+	NVApplyApplicationIconToViewHierarchy([window contentView], NVApplicationIcon());
+
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange:)
 												 name:NSControlTextDidChangeNotification object:passphraseField];
 }	

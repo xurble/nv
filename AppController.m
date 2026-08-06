@@ -74,15 +74,18 @@
 - (void)awakeFromNib {
 	prefsController = [GlobalPrefs defaultPrefs];
 	NVApplyApplicationNameToMenu([NSApp mainMenu], @"Notational Velocity", [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleExecutable"]);
+	NVRetargetStandardAboutMenuItem([NSApp mainMenu], self, @selector(showAboutPanel:));
+	[NSApp setApplicationIconImage:NVApplicationIcon()];
 	
 	[NSColor setIgnoresAlpha:NO];
 	
 	NSView *dualSV = [field superview];
 	dualFieldItem = [[NSToolbarItem alloc] initWithItemIdentifier:@"DualField"];
 	//[[dualSV superview] setFrameSize:NSMakeSize([[dualSV superview] frame].size.width, [[dualSV superview] frame].size.height -1)];
+	[dualSV setTranslatesAutoresizingMaskIntoConstraints:NO];
+	[[[dualSV widthAnchor] constraintGreaterThanOrEqualToConstant:50.0f] setActive:YES];
+	[[[dualSV heightAnchor] constraintEqualToConstant:NSHeight([dualSV frame])] setActive:YES];
 	[dualFieldItem setView:dualSV];
-	[dualFieldItem setMaxSize:NSMakeSize(FLT_MAX, [dualSV frame].size.height)];
-	[dualFieldItem setMinSize:NSMakeSize(50.0f, [dualSV frame].size.height)];
     [dualFieldItem setLabel:NSLocalizedString(@"Search or Create", @"placeholder text in search/create field")];
 	
 	toolbar = [[NSToolbar alloc] initWithIdentifier:@"NVToolbar"];
@@ -118,6 +121,13 @@
 	//[self setEmptyViewState:YES];
 	
 	outletObjectAwoke(self);
+}
+
+- (IBAction)showAboutPanel:(id)sender {
+	NSImage *applicationIcon = NVApplicationIcon();
+	NSDictionary *options = applicationIcon ? [NSDictionary dictionaryWithObject:applicationIcon
+																			forKey:NSAboutPanelOptionApplicationIcon] : [NSDictionary dictionary];
+	[NSApp orderFrontStandardAboutPanelWithOptions:options];
 }
 
 //really need make AppController a subclass of NSWindowController and stick this junk in windowDidLoad
@@ -1214,6 +1224,7 @@ terminateApp:
 		
 		//restore string
 		[[textView textStorage] setAttributedString:[note contentString]];
+		[textView refreshLinkAttributes];
 		
 		//[textView setAutomaticallySelectedRange:NSMakeRange(0,0)];
 		
@@ -1635,6 +1646,7 @@ terminateApp:
 	if (aNoteObject == currentNote) {
 		
 		[[textView textStorage] setAttributedString:[aNoteObject contentString]];
+		[textView refreshLinkAttributes];
 	}
 }
 

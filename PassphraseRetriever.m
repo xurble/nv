@@ -21,6 +21,7 @@
 #import "NSData_transformations.h"
 #import "NSString_NV.h"
 #import "NSFileManager_NV.h"
+#import "ApplicationBranding.h"
 
 @implementation PassphraseRetriever
 
@@ -88,7 +89,8 @@
 }
 
 - (void)awakeFromNib {
-	
+	NVApplyApplicationIconToViewHierarchy([window contentView], NVApplicationIcon());
+
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange:)
 												 name:NSControlTextDidChangeNotification object:passphraseField];
 }	

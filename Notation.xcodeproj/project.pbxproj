@@ -47,7 +47,7 @@
 		212EEA2812EFBD1800F89538 /* Atalhos Incrivelmente Úteis.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 212EEA2212EFBD1800F89538 /* Atalhos Incrivelmente Úteis.nvhelp */; };
 		212EEA2912EFBD1800F89538 /* Como funciona isso?.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 212EEA2412EFBD1800F89538 /* Como funciona isso?.nvhelp */; };
 		212EEA2A12EFBD1800F89538 /* Este é o título de uma nota.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 212EEA2612EFBD1800F89538 /* Este é o título de uma nota.nvhelp */; };
-		212EEAC112F085DB00F89538 /* AutoHyperlinks.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 212EEAB812F085D100F89538 /* AutoHyperlinks.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		A40000000000000000000001 /* URLDetection.m in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000003 /* URLDetection.m */; };
 		21317FAF1113840E00472211 /* Excruciatingly Useful Shortcuts.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 21317FAD1113840E00472211 /* Excruciatingly Useful Shortcuts.nvhelp */; };
 		213621ED0B92413F008C0830 /* FindPanel.nib in Resources */ = {isa = PBXBuildFile; fileRef = 213621E70B92413F008C0830 /* FindPanel.nib */; };
 		213621F20B92414F008C0830 /* MultiTextFinder.m in Sources */ = {isa = PBXBuildFile; fileRef = 213621F00B92414F008C0830 /* MultiTextFinder.m */; };
@@ -208,7 +208,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				212EEAC112F085DB00F89538 /* AutoHyperlinks.framework in CopyFiles */,
 				213623FC0B92AA6E008C0830 /* Sparkle.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -285,7 +284,8 @@
 		212DCA460A6AD28700F74E46 /* EncodingsManager.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = EncodingsManager.m; sourceTree = "<group>"; };
 		212DCF5F0A6DEECB00F74E46 /* DeletionManager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DeletionManager.h; sourceTree = "<group>"; };
 		212DCF600A6DEECB00F74E46 /* DeletionManager.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = DeletionManager.m; sourceTree = "<group>"; };
-		212EEAB812F085D100F89538 /* AutoHyperlinks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AutoHyperlinks.framework; sourceTree = "<group>"; };
+		A40000000000000000000002 /* URLDetection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = URLDetection.h; sourceTree = "<group>"; };
+		A40000000000000000000003 /* URLDetection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = URLDetection.m; sourceTree = "<group>"; };
 		213621EF0B92414F008C0830 /* MultiTextFinder.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = MultiTextFinder.h; sourceTree = "<group>"; };
 		213621F00B92414F008C0830 /* MultiTextFinder.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = MultiTextFinder.m; sourceTree = "<group>"; };
 		213623E50B92AA4E008C0830 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
@@ -674,6 +674,8 @@
 				2114C1450957733200614E74 /* NoteObject.m */,
 				2155DF42097C992800163A10 /* AttributedPlainText.h */,
 				2155DF43097C992800163A10 /* AttributedPlainText.m */,
+				A40000000000000000000002 /* URLDetection.h */,
+				A40000000000000000000003 /* URLDetection.m */,
 				217D4280096545A000E84749 /* LabelObject.h */,
 				217D4281096545A000E84749 /* LabelObject.m */,
 				21DC788D097894B600E59B09 /* NSCollection_utils.h */,
@@ -732,7 +734,6 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000033 /* XCTest.framework */,
-				212EEAB812F085D100F89538 /* AutoHyperlinks.framework */,
 				21B54C011134F2E800E163A1 /* IOKit.framework */,
 				213623E50B92AA4E008C0830 /* Sparkle.framework */,
 				210C07230B6BF0A1005D23A8 /* WebKit.framework */,
@@ -1302,6 +1303,7 @@
 				21DC788F097894B600E59B09 /* NSCollection_utils.m in Sources */,
 				2155DEA6097B5F0300163A10 /* BufferUtils.c in Sources */,
 				2155DF44097C992800163A10 /* AttributedPlainText.m in Sources */,
+				A40000000000000000000001 /* URLDetection.m in Sources */,
 				21D60128098FDB46007440DF /* GlobalPrefs.m in Sources */,
 				21A73DC8099712A8009F8A6C /* WALController.m in Sources */,
 				21918FD009C49B2500586B15 /* EmptyView.m in Sources */,

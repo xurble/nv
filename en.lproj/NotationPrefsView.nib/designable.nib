@@ -1808,14 +1808,6 @@ ZSB0aGlzIEhUTUwgdGVtcGxhdGU6A</string>
 					<int key="connectionID">186</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">visitSimplenoteSite:</string>
-						<reference key="source" ref="316725756"/>
-						<reference key="destination" ref="717376056"/>
-					</object>
-					<int key="connectionID">187</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">syncPasswordField</string>
 						<reference key="source" ref="316725756"/>
@@ -1840,28 +1832,12 @@ ZSB0aGlzIEhUTUwgdGVtcGxhdGU6A</string>
 					<int key="connectionID">205</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">syncFrequencyChange:</string>
-						<reference key="source" ref="316725756"/>
-						<reference key="destination" ref="640809030"/>
-					</object>
-					<int key="connectionID">206</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">enabledSyncButton</string>
 						<reference key="source" ref="316725756"/>
 						<reference key="destination" ref="994823881"/>
 					</object>
 					<int key="connectionID">207</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">toggledSyncing:</string>
-						<reference key="source" ref="316725756"/>
-						<reference key="destination" ref="994823881"/>
-					</object>
-					<int key="connectionID">208</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
@@ -3409,16 +3385,10 @@ ZSB0aGlzIEhUTUwgdGVtcGxhdGU6A</string>
 							<string>removeFromKeychain:</string>
 							<string>removedExtension:</string>
 							<string>removedType:</string>
-							<string>syncFrequencyChange:</string>
 							<string>toggledEncryption:</string>
-							<string>toggledSyncing:</string>
-							<string>visitSimplenoteSite:</string>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<string>id</string>
-							<string>id</string>
-							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>

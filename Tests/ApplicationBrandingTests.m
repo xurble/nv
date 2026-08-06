@@ -12,13 +12,21 @@ static void AssertEqualObjects(id actual, id expected, NSString *message)
     }
 }
 
+static void AssertTrue(BOOL condition, NSString *message)
+{
+    if (!condition) {
+        NSLog(@"FAIL: %@", message);
+        failureCount++;
+    }
+}
+
 int main(void)
 {
     @autoreleasepool {
         NSMenu *mainMenu = [[[NSMenu alloc] initWithTitle:@"Main"] autorelease];
         NSMenuItem *applicationItem = [[[NSMenuItem alloc] initWithTitle:@"Notational Velocity" action:NULL keyEquivalent:@""] autorelease];
         NSMenu *applicationMenu = [[[NSMenu alloc] initWithTitle:@"Notational Velocity"] autorelease];
-        NSMenuItem *aboutItem = [[[NSMenuItem alloc] initWithTitle:@"About Notational Velocity" action:NULL keyEquivalent:@""] autorelease];
+        NSMenuItem *aboutItem = [[[NSMenuItem alloc] initWithTitle:@"About Notational Velocity" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""] autorelease];
         NSMenuItem *quitItem = [[[NSMenuItem alloc] initWithTitle:@"Quit Notational Velocity" action:NULL keyEquivalent:@""] autorelease];
         NSMenuItem *preferencesItem = [[[NSMenuItem alloc] initWithTitle:@"Preferences…" action:NULL keyEquivalent:@""] autorelease];
 
@@ -35,6 +43,35 @@ int main(void)
         AssertEqualObjects([aboutItem title], @"About Spiral", @"About should retain its localized prefix and update the product name");
         AssertEqualObjects([quitItem title], @"Quit Spiral", @"Quit should retain its localized prefix and update the product name");
         AssertEqualObjects([preferencesItem title], @"Preferences…", @"Unrelated menu titles should remain unchanged");
+
+        NSObject *aboutTarget = [[[NSObject alloc] init] autorelease];
+        AssertTrue(NVRetargetStandardAboutMenuItem(mainMenu, aboutTarget, @selector(showAboutPanel:)),
+                   @"The standard About item should be found in a nested application menu");
+        AssertTrue([aboutItem target] == aboutTarget, @"The About item should target the application controller");
+        AssertTrue([aboutItem action] == @selector(showAboutPanel:), @"The About item should use the custom icon-aware action");
+        AssertTrue([quitItem target] != aboutTarget, @"Unrelated menu items should keep their target");
+
+        NSView *dialogContentView = [[[NSView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 200.0, 120.0)] autorelease];
+        NSView *nestedView = [[[NSView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 100.0, 100.0)] autorelease];
+        NSImageView *applicationIconView = [[[NSImageView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 64.0, 64.0)] autorelease];
+        NSImageView *unrelatedImageView = [[[NSImageView alloc] initWithFrame:NSMakeRect(70.0, 0.0, 16.0, 16.0)] autorelease];
+        NSImage *archivedApplicationIcon = [NSImage imageNamed:@"NSApplicationIcon"];
+        NSImage *unrelatedImage = [[[NSImage alloc] initWithSize:NSMakeSize(16.0, 16.0)] autorelease];
+        NSImage *replacementIcon = [[[NSImage alloc] initWithSize:NSMakeSize(64.0, 64.0)] autorelease];
+
+        AssertTrue(archivedApplicationIcon != nil, @"AppKit should expose the legacy application-icon resource");
+        [applicationIconView setImage:archivedApplicationIcon];
+        [unrelatedImageView setImage:unrelatedImage];
+        [nestedView addSubview:applicationIconView];
+        [dialogContentView addSubview:nestedView];
+        [dialogContentView addSubview:unrelatedImageView];
+
+        NVApplyApplicationIconToViewHierarchy(dialogContentView, replacementIcon);
+
+        AssertTrue([applicationIconView image] == replacementIcon,
+                   @"Legacy dialog application-icon views should use the current bundle icon");
+        AssertTrue([unrelatedImageView image] == unrelatedImage,
+                   @"Unrelated dialog images should remain unchanged");
     }
 
     if (failureCount > 0) {

@@ -8,7 +8,7 @@ Portions of Notational Velocity also contain the following copyrighted materials
 
 --
 
-Notational Velocity Icon
+Original Notational Velocity Icon
 
 Copyright (c) 2011 Taylor Carrigan. All rights reserved.
 

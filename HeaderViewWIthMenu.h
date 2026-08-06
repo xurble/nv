@@ -26,6 +26,7 @@
 @interface HeaderViewWithMenu : NSTableHeaderView
 {
 	BOOL isReloading;
+	NSVisualEffectView *backgroundEffectView;
 }
 
 - (void)_resizeColumn:(NSInteger)resizedColIdx withEvent:(id)event;

@@ -124,6 +124,7 @@ CGFloat _perceptualDarkness(NSColor*a);
 		//[textView setFont:[prefsController noteBodyFont]];
 	} else if ([selectorString isEqualToString:SEL_STR(setMakeURLsClickable:sender:)]) {
 		
+		[self refreshLinkAttributes];
 		[self setLinkTextAttributes:[self preferredLinkAttributes]];
 		
 	} else if ([selectorString isEqualToString:SEL_STR(setBackgroundTextColor:sender:)]) {
@@ -305,6 +306,18 @@ CGFloat _perceptualColorDifference(NSColor*a, NSColor*b) {
 			[NSNumber numberWithInt:NSUnderlineStyleSingle], NSUnderlineStyleAttributeName,
 			[self _linkColorForForegroundColor:[prefsController foregroundTextColor] backgroundColor:[prefsController backgroundTextColor]],
 			NSForegroundColorAttributeName, nil];
+}
+
+- (void)refreshLinkAttributes {
+	NSTextStorage *textStorage = [self textStorage];
+	NSRange fullRange = NSMakeRange(0, [textStorage length]);
+	if (!fullRange.length)
+		return;
+
+	[textStorage beginEditing];
+	[textStorage removeAttribute:NSLinkAttributeName range:fullRange];
+	[textStorage addLinkAttributesForRange:fullRange];
+	[textStorage endEditing];
 }
 
 /*
