@@ -59,6 +59,7 @@
 	NSMutableArray *pathsToOpenOnLaunch;
 	
     NSUndoManager *windowUndoManager;
+    id modernAboutController;
     PrefsWindowController *prefsWindowController;
     GlobalPrefs *prefsController;
     NotationController *notationController;
@@ -66,16 +67,19 @@
 	SpaceSwitchingContext spaceSwitchCtx;
 	ViewLocationContext listUpdateViewCtx;
 	BOOL isFilteringFromTyping, typedStringIsCached;
+	BOOL isChangingNotesDirectory;
 	BOOL isCreatingANote;
 	NSString *typedString;
 	
 	NoteObject *currentNote;
 	NSArray *savedSelectedNotes;
+	NSUInteger savedSelectionFallbackIndex;
 }
 
 void outletObjectAwoke(id sender);
 
 - (void)setNotationController:(NotationController*)newNotation;
+- (BOOL)switchToNotesDirectoryURL:(NSURL*)directoryURL mergeCurrentNotes:(BOOL)mergeCurrentNotes;
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent;
 
 - (void)setupViewsAfterAppAwakened;

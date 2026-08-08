@@ -1,0 +1,5 @@
+// Copy this file to Local.xcconfig and replace the blank value with the
+// 10-character Team ID shown in the Apple Developer account or Xcode.
+// Local.xcconfig is ignored by Git.
+DEVELOPMENT_TEAM =
+

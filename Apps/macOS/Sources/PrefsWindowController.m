@@ -28,7 +28,9 @@
     [modernSettingsController showWindow:sender];
 }
 
-- (BOOL)getNewNotesRefFromOpenPanel:(FSRef *)notesDirectoryRef returnedPath:(NSString **)path {
+- (BOOL)getNewNotesRefFromOpenPanel:(FSRef *)notesDirectoryRef
+                       returnedPath:(NSString **)path
+            mergeExistingCollection:(BOOL *)mergeExistingCollection {
     if (!notesDirectoryRef)
         return NO;
 
@@ -48,8 +50,28 @@
     if (currentPath.length > 0)
         panel.directoryURL = [NSURL fileURLWithPath:currentPath isDirectory:YES];
 
-    if ([panel runModal] != NSModalResponseOK || panel.URL == nil)
-        return NO;
+    while (YES) {
+        if ([panel runModal] != NSModalResponseOK || panel.URL == nil)
+            return NO;
+
+        NSURL *currentURL = currentPath.length > 0 ? [NSURL fileURLWithPath:currentPath isDirectory:YES] : nil;
+        NSURL *resolvedCurrentURL = [[currentURL URLByResolvingSymlinksInPath] standardizedURL];
+        NSURL *resolvedSelectedURL = [[panel.URL URLByResolvingSymlinksInPath] standardizedURL];
+        if (resolvedCurrentURL && [resolvedCurrentURL isEqual:resolvedSelectedURL]) {
+            if (mergeExistingCollection)
+                *mergeExistingCollection = NO;
+            break;
+        }
+
+        SpiralFolderChangeDecision decision = [SpiralStorageLocationController decisionForTargetFolderAtURL:panel.URL];
+        if (decision == SpiralFolderChangeDecisionRefusedRegularFolder)
+            continue;
+        if (decision == SpiralFolderChangeDecisionCancel)
+            return NO;
+        if (mergeExistingCollection)
+            *mergeExistingCollection = YES;
+        break;
+    }
 
     if (path)
         *path = [[panel.URL.path copy] autorelease];

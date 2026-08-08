@@ -22,7 +22,8 @@ private final class SettingsModel: ObservableObject {
     @Published var backgroundColor = NSColor.textBackgroundColor
     @Published var highlightColor = NSColor.systemYellow
     @Published var shortcutDescription = ""
-    @Published var notesFolderPath = ""
+    @Published var notesFolderURL: URL?
+    @Published var notesFolderUsesICloudContainer = false
 
     @Published var storageFormat = 0
     @Published var confirmFileDeletion = false
@@ -36,6 +37,7 @@ private final class SettingsModel: ObservableObject {
     @Published var defaultExtensionIndex = 0
 
     private var observers: [NSObjectProtocol] = []
+    private var iCloudContainerStatusTask: Task<Void, Never>?
 
     init() {
         selectedPane = SettingsPane(legacyValue: UserDefaults.standard.string(forKey: "LastSelectedPrefsPane"))
@@ -54,6 +56,7 @@ private final class SettingsModel: ObservableObject {
     }
 
     deinit {
+        iCloudContainerStatusTask?.cancel()
         observers.forEach(NotificationCenter.default.removeObserver)
     }
 
@@ -79,7 +82,10 @@ private final class SettingsModel: ObservableObject {
         backgroundColor = bridge.backgroundTextColor
         highlightColor = bridge.searchHighlightColor
         shortcutDescription = bridge.appShortcutDescription
-        notesFolderPath = bridge.notesFolderPath
+        let currentNotesFolderURL = bridge.notesFolderURL
+        notesFolderURL = currentNotesFolderURL
+        notesFolderUsesICloudContainer = bridge.notesFolderIsInICloud
+        refreshICloudContainerStatus(for: currentNotesFolderURL)
 
         storageFormat = bridge.storageFormat
         confirmFileDeletion = bridge.confirmFileDeletion
@@ -92,6 +98,28 @@ private final class SettingsModel: ObservableObject {
         allowedTypes = bridge.allowedTypes
         defaultExtensionIndex = Int(bridge.defaultExtensionIndex)
 
+    }
+
+    private func refreshICloudContainerStatus(for currentURL: URL?) {
+        iCloudContainerStatusTask?.cancel()
+        guard let currentURL,
+              let identifier = SpiralFirstRunMigrationController.configuredContainerIdentifier else {
+            notesFolderUsesICloudContainer = false
+            return
+        }
+
+        iCloudContainerStatusTask = Task { [weak self] in
+            let containerURL = await Task.detached(priority: .utility) {
+                FileManager.default.url(forUbiquityContainerIdentifier: identifier)
+            }.value
+            guard !Task.isCancelled else { return }
+            self?.notesFolderUsesICloudContainer = containerURL.map {
+                NotesICloudContainerStatus.usesConfiguredDocumentsDirectory(
+                    currentURL: currentURL,
+                    containerURL: $0
+                )
+            } ?? false
+        }
     }
 }
 
@@ -205,14 +233,28 @@ private struct NotesSettingsView: View {
         SettingsForm {
             Section("Storage") {
                 LabeledContent("Notes folder") {
-                    Button("Choose…") {
-                        if let window = NSApp.keyWindow { model.bridge.chooseNotesFolder(for: window) }
+                    HStack(spacing: 8) {
+                        NotesFolderPathControl(url: model.notesFolderURL)
+                            .frame(minWidth: 180, idealWidth: 280, maxWidth: .infinity, minHeight: 22)
+                        Button("Choose…") {
+                            if let window = NSApp.keyWindow { model.bridge.chooseNotesFolder(for: window) }
+                        }
                     }
                 }
-                Text(model.notesFolderPath)
-                    .lineLimit(2)
-                    .textSelection(.enabled)
-                    .settingsHelpText()
+
+                if !model.notesFolderUsesICloudContainer {
+                    LabeledContent("iCloud Drive") {
+                        Button("Use iCloud…") {
+                            if let window = NSApp.keyWindow {
+                                model.bridge.switchToICloud(for: window)
+                                model.refresh()
+                            }
+                        }
+                        .accessibilityIdentifier("settings.notes.useICloud")
+                    }
+                    Text("Move or copy the current collection into Spiral Notes in iCloud Drive.")
+                        .settingsHelpText()
+                }
 
                 Picker("Format", selection: Binding(
                     get: { model.storageFormat },

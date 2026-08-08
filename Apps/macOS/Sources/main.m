@@ -21,8 +21,10 @@
     along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
 
 #import <Cocoa/Cocoa.h>
+#import "Spiral-Swift.h"
 
 int main(int argc, char *argv[])
 {
+    [SpiralPreferencesMigrationController migrateBeforeApplicationLaunch];
     return NSApplicationMain(argc,  (const char **) argv);
 }

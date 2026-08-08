@@ -17,6 +17,7 @@
 
 #import "AppController.h"
 #import "ApplicationBranding.h"
+#import "Spiral-Swift.h"
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
 #import "AlienNoteImporter.h"
@@ -24,6 +25,7 @@
 #import "NotationPrefs.h"
 #import "PrefsWindowController.h"
 #import "NoteAttributeColumn.h"
+#import "NoteListSelection.h"
 #import "NotationSyncServiceManager.h"
 #import "NotationDirectoryManager.h"
 #import "NotationFileManager.h"
@@ -47,6 +49,11 @@
 #import "SecureTextEntryManager.h"
 #import "NSString_CustomTruncation.h"
 
+static NSString *SpiralMainWindowTitle(void) {
+	NSString *title = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"SpiralWindowTitle"];
+	return [title length] ? title : @"Spiral";
+}
+
 
 @implementation AppController
 
@@ -56,6 +63,7 @@
     if ([super init]) {
 		
 		windowUndoManager = [[NSUndoManager alloc] init];
+		modernAboutController = [[ModernAboutWindowController alloc] init];
 
 		// Setup URL Handling
 		NSAppleEventManager *appleEventManager = [NSAppleEventManager sharedAppleEventManager];
@@ -65,6 +73,7 @@
 															   endColor:[NSColor colorWithCalibratedWhite:0.875 alpha:1.0]];
 		
 		isCreatingANote = isFilteringFromTyping = typedStringIsCached = NO;
+		savedSelectionFallbackIndex = NSNotFound;
 		typedString = @"";
 		
     }
@@ -73,6 +82,7 @@
 
 - (void)awakeFromNib {
 	prefsController = [GlobalPrefs defaultPrefs];
+	[window setTitle:SpiralMainWindowTitle()];
 	NVApplyApplicationNameToMenu([NSApp mainMenu], @"Notational Velocity", [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleExecutable"]);
 	NVRetargetStandardAboutMenuItem([NSApp mainMenu], self, @selector(showAboutPanel:));
 	[NSApp setApplicationIconImage:NVApplicationIcon()];
@@ -124,10 +134,7 @@
 }
 
 - (IBAction)showAboutPanel:(id)sender {
-	NSImage *applicationIcon = NVApplicationIcon();
-	NSDictionary *options = applicationIcon ? [NSDictionary dictionaryWithObject:applicationIcon
-																			forKey:NSAboutPanelOptionApplicationIcon] : [NSDictionary dictionary];
-	[NSApp orderFrontStandardAboutPanelWithOptions:options];
+	[modernAboutController showWindow:sender];
 }
 
 //really need make AppController a subclass of NSWindowController and stick this junk in windowDidLoad
@@ -221,12 +228,54 @@ void outletObjectAwoke(id sender) {
 	OSStatus err = noErr;
 	NotationController *newNotation = nil;
 	NSData *aliasData = [prefsController aliasDataForDefaultDirectory];
+	SpiralPreparedNotesDirectory *pendingCollectionMerge = nil;
 	
 	NSString *subMessage = @"";
 	
 	//if the option key is depressed, go straight to picking a new notes folder location
 	if (kCGEventFlagMaskAlternate == (CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSDeviceIndependentModifierFlagsMask)) {
 		goto showOpenPanel;
+	}
+
+	//Resolve the new-install default or offer migration before NotationController
+	//opens the database, journal, or file watchers. This keeps an existing source
+	//collection quiescent while any copy is made and verified.
+	FSRef currentNotesDirectoryRef;
+	BOOL foundCurrentNotesDirectory = aliasData
+		? [aliasData fsRefAsAlias:&currentNotesDirectoryRef]
+		: ([NotationController getDefaultNotesDirectoryRef:&currentNotesDirectoryRef] == noErr);
+	if (foundCurrentNotesDirectory) {
+		NSURL *currentNotesDirectoryURL = [(NSURL *)CFURLCreateFromFSRef(kCFAllocatorDefault, &currentNotesDirectoryRef) autorelease];
+		SpiralPreparedNotesDirectory *preparedNotesDirectory =
+			[SpiralFirstRunMigrationController prepareNotesDirectoryAtURL:currentNotesDirectoryURL
+									 preferencesStartupState:[SpiralPreferencesMigrationController startupState]];
+		NSURL *preparedNotesDirectoryURL = [preparedNotesDirectory directoryURL];
+		if ([preparedNotesDirectory requiresMerge]) {
+			pendingCollectionMerge = [preparedNotesDirectory retain];
+			preparedNotesDirectoryURL = currentNotesDirectoryURL;
+		}
+		BOOL preparedDirectoryWasAdopted = YES;
+		if (preparedNotesDirectoryURL && ![[preparedNotesDirectoryURL standardizedURL] isEqual:[currentNotesDirectoryURL standardizedURL]]) {
+			FSRef preparedNotesDirectoryRef;
+			if (CFURLGetFSRef((CFURLRef)preparedNotesDirectoryURL, &preparedNotesDirectoryRef)) {
+				NSData *preparedAliasData = [NSData aliasDataForFSRef:&preparedNotesDirectoryRef];
+				if (preparedAliasData) {
+					[prefsController setAliasDataForDefaultDirectory:preparedAliasData sender:self];
+					aliasData = preparedAliasData;
+				} else {
+					preparedDirectoryWasAdopted = NO;
+				}
+			} else {
+				preparedDirectoryWasAdopted = NO;
+			}
+		}
+		if (pendingCollectionMerge) {
+			//The source collection must be opened before its note models can be
+			//merged into the existing destination collection.
+		} else if (preparedDirectoryWasAdopted)
+			[SpiralFirstRunMigrationController finalizePreparedNotesDirectory:preparedNotesDirectory];
+		else
+			[SpiralFirstRunMigrationController cancelPreparedNotesDirectory:preparedNotesDirectory];
 	}
 	
 	if (aliasData) {
@@ -258,11 +307,31 @@ void outletObjectAwoke(id sender) {
 							subMessage, NSLocalizedString(@"Choose another folder",nil),NSLocalizedString(@"Quit",nil),NULL) == NSAlertDefaultReturn) {
 			//show nsopenpanel, defaulting to current default notes dir
 			FSRef notesDirectoryRef;
+			BOOL mergeExistingCollection = NO;
 		showOpenPanel:
-			if (![prefsWindowController getNewNotesRefFromOpenPanel:&notesDirectoryRef returnedPath:&location]) {
+			if (![prefsWindowController getNewNotesRefFromOpenPanel:&notesDirectoryRef
+										 returnedPath:&location
+								  mergeExistingCollection:&mergeExistingCollection]) {
 				//they cancelled the open panel, or it was unable to get the path/FSRef of the file
 				goto terminateApp;
 			} else if ((newNotation = [[NotationController alloc] initWithDirectoryRef:&notesDirectoryRef error:&err])) {
+				if (mergeExistingCollection && aliasData) {
+					OSStatus sourceError = noErr;
+					NotationController *sourceNotation = [[NotationController alloc] initWithAliasData:aliasData error:&sourceError];
+					if (sourceNotation) {
+						BOOL merged = [newNotation mergeNotesFromNotationController:sourceNotation];
+						[sourceNotation closeAllResources];
+						[sourceNotation release];
+						[prefsController setNotationPrefs:[newNotation notationPrefs] sender:self];
+						if (!merged) {
+							[newNotation closeAllResources];
+							[newNotation release];
+							newNotation = nil;
+							err = ioErr;
+							continue;
+						}
+					}
+				}
 				//have to make sure alias data is saved from setNotationController
 				[newNotation setAliasNeedsUpdating:YES];
 				break;
@@ -274,12 +343,22 @@ void outletObjectAwoke(id sender) {
 	
 	[self setNotationController:newNotation];
 	[newNotation release];
+
+	if (pendingCollectionMerge) {
+		BOOL merged = [self switchToNotesDirectoryURL:[pendingCollectionMerge directoryURL] mergeCurrentNotes:YES];
+		if (merged)
+			[SpiralFirstRunMigrationController finalizePreparedNotesDirectory:pendingCollectionMerge];
+		else
+			[SpiralFirstRunMigrationController cancelPreparedNotesDirectory:pendingCollectionMerge];
+		[pendingCollectionMerge release];
+		pendingCollectionMerge = nil;
+	}
 	
 	NSLog(@"load time: %g, ",[[NSDate date] timeIntervalSinceDate:before]);
 	//	NSLog(@"version: %s", PRODUCT_NAME);
 	
 	//import old database(s) here if necessary
-	[AlienNoteImporter importBlorOrHelpFilesIfNecessaryIntoNotation:newNotation];
+	[AlienNoteImporter importBlorOrHelpFilesIfNecessaryIntoNotation:notationController];
 	
 	if (pathsToOpenOnLaunch) {
 		[notationController openFiles:[pathsToOpenOnLaunch autorelease]];
@@ -372,6 +451,82 @@ terminateApp:
 		
 		[oldNotation autorelease];
     }
+}
+
+- (BOOL)switchToNotesDirectoryURL:(NSURL*)directoryURL mergeCurrentNotes:(BOOL)mergeCurrentNotes {
+	if (!directoryURL)
+		return NO;
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+	FSRef directoryRef;
+	if (!CFURLGetFSRef((CFURLRef)directoryURL, &directoryRef))
+		return NO;
+#pragma clang diagnostic pop
+
+	NSData *aliasData = [NSData aliasDataForFSRef:&directoryRef];
+	if (!aliasData)
+		return NO;
+
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	NSURL *mergeBackupURL = nil;
+	if (mergeCurrentNotes && notationController) {
+		mergeBackupURL = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES]
+			URLByAppendingPathComponent:[NSString stringWithFormat:@"SpiralCollectionMergeBackup-%@", [[NSUUID UUID] UUIDString]]
+			isDirectory:YES];
+		NSError *backupError = nil;
+		if (![fileManager copyItemAtURL:directoryURL toURL:mergeBackupURL error:&backupError]) {
+			NSRunAlertPanel(NSLocalizedString(@"The note collections couldn’t be merged.", nil),
+							[NSString stringWithFormat:NSLocalizedString(@"Spiral could not make a safety copy of the target folder. No notes were changed.\n\n%@", nil), [backupError localizedDescription]],
+							NSLocalizedString(@"OK", nil), NULL, NULL);
+			return NO;
+		}
+	}
+
+	OSStatus err = noErr;
+	NotationController *newNotation = [[NotationController alloc] initWithAliasData:aliasData error:&err];
+	if (!newNotation) {
+		if (mergeBackupURL)
+			[fileManager removeItemAtURL:mergeBackupURL error:nil];
+		NSString *reason = [NSString reasonStringFromCarbonFSError:err];
+		NSRunAlertPanel(NSLocalizedString(@"Unable to use the selected notes folder.", nil),
+						[NSString stringWithFormat:NSLocalizedString(@"The folder was not changed because %@.", nil), reason],
+						NSLocalizedString(@"OK", nil), NULL, NULL);
+		return NO;
+	}
+
+	if (mergeCurrentNotes && notationController &&
+		![newNotation mergeNotesFromNotationController:notationController]) {
+		[newNotation closeAllResources];
+		[newNotation release];
+		NSError *restoreError = nil;
+		if (mergeBackupURL) {
+			if (![fileManager removeItemAtURL:directoryURL error:&restoreError] ||
+				![fileManager copyItemAtURL:mergeBackupURL toURL:directoryURL error:&restoreError]) {
+				NSLog(@"Unable to restore collection merge backup at %@: %@", mergeBackupURL.path, restoreError);
+			} else {
+				[fileManager removeItemAtURL:mergeBackupURL error:nil];
+				mergeBackupURL = nil;
+			}
+		}
+		NSString *failureMessage = restoreError
+			? [NSString stringWithFormat:NSLocalizedString(@"Spiral is still using the original notes folder. The target could not be restored automatically; its safety copy remains at:\n\n%@", nil), mergeBackupURL.path]
+			: NSLocalizedString(@"Spiral is still using the original notes folder. The target folder was restored and was not selected.", nil);
+		NSRunAlertPanel(NSLocalizedString(@"The note collections couldn’t be merged.", nil),
+						failureMessage,
+						NSLocalizedString(@"OK", nil), NULL, NULL);
+		return NO;
+	}
+
+	[self setNotationController:newNotation];
+	[newNotation release];
+
+	isChangingNotesDirectory = YES;
+	[prefsController setAliasDataForDefaultDirectory:aliasData sender:self];
+	isChangingNotesDirectory = NO;
+	if (mergeBackupURL)
+		[fileManager removeItemAtURL:mergeBackupURL error:nil];
+	return YES;
 }
 
 - (BOOL)applicationOpenUntitledFile:(NSApplication *)sender {
@@ -644,6 +799,8 @@ terminateApp:
 
 - (void)settingChangedForSelectorString:(NSString*)selectorString {
     if ([selectorString isEqualToString:SEL_STR(setAliasDataForDefaultDirectory:sender:)]) {
+		if (isChangingNotesDirectory)
+			return;
 		//defaults changed for the database location -- load the new one!
 		
 		OSStatus err = noErr;
@@ -1496,7 +1653,7 @@ terminateApp:
 
 - (void)_expandToolbar {
 	if (![toolbar isVisible]) {
-		[window setTitle:@"Notation"];
+		[window setTitle:SpiralMainWindowTitle()];
 		if (currentNote)
 			[field setStringValue:titleOfNote(currentNote)];
 		[window toggleToolbarShown:nil];
@@ -1596,10 +1753,12 @@ terminateApp:
 	if (!isFilteringFromTyping) {
 		if (someNotation == notationController) {
 			//deal with one notation at a time
-			
+
+			savedSelectionFallbackIndex = NSNotFound;
 			if ([notesTableView numberOfSelectedRows] > 0) {
 				NSIndexSet *indexSet = [notesTableView selectedRowIndexes];
-					
+				savedSelectionFallbackIndex = [indexSet firstIndex];
+
 				[savedSelectedNotes release];
 				savedSelectedNotes = [[someNotation notesAtIndexes:indexSet] retain];
 			}
@@ -1613,21 +1772,30 @@ terminateApp:
 	
 	if (someNotation == notationController) {
 		//deal with one notation at a time
+		//reloadData can synchronously report a temporary deselection, which clears
+		//savedSelectedNotes through the table's selection-change callback.
+		NSArray *notesToRestore = [savedSelectedNotes retain];
+		NSUInteger fallbackIndex = savedSelectionFallbackIndex;
 
 		[notesTableView reloadData];
 		//[notesTableView noteNumberOfRowsChanged];
 		
 		if (!isFilteringFromTyping) {
-			if (savedSelectedNotes) {
-				NSIndexSet *indexes = [someNotation indexesOfNotes:savedSelectedNotes];
+			if (notesToRestore) {
+				NSIndexSet *indexes = NVRestoredNoteSelectionIndexes(
+					[someNotation indexesOfNotes:notesToRestore],
+					fallbackIndex,
+					[notesTableView numberOfRows]);
 				[savedSelectedNotes release];
 				savedSelectedNotes = nil;
-				
+
 				[notesTableView selectRowIndexes:indexes byExtendingSelection:NO];
 			}
-			
+			savedSelectionFallbackIndex = NSNotFound;
+
 			[notesTableView setViewingLocation:listUpdateViewCtx];
 		}
+		[notesToRestore release];
 	}
 }
 
@@ -1739,6 +1907,7 @@ terminateApp:
 
 - (void)dealloc {
 	[windowUndoManager release];
+	[modernAboutController release];
 	[dividerShader release];
 	
 	[super dealloc];

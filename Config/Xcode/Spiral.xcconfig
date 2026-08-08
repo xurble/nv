@@ -1,0 +1,4 @@
+// Shared Xcode settings entry point. Developer-specific signing values belong
+// in Local.xcconfig, which is intentionally optional and gitignored.
+#include? "Local.xcconfig"
+

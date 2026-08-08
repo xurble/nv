@@ -23,6 +23,8 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 @property(nonatomic, readonly, retain) NSColor *searchHighlightColor;
 @property(nonatomic, readonly, copy) NSString *appShortcutDescription;
 @property(nonatomic, readonly, copy) NSString *notesFolderPath;
+@property(nonatomic, readonly, retain, nullable) NSURL *notesFolderURL;
+@property(nonatomic, readonly) BOOL notesFolderIsInICloud;
 
 @property(nonatomic, readonly) NSInteger storageFormat;
 @property(nonatomic, readonly) BOOL confirmFileDeletion;
@@ -56,6 +58,7 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 - (void)chooseApplicationShortcutForWindow:(NSWindow *)window;
 - (void)chooseNoteBodyFont;
 - (void)chooseNotesFolderForWindow:(NSWindow *)window;
+- (void)switchToICloudForWindow:(NSWindow *)window;
 
 - (void)requestStorageFormat:(NSInteger)format;
 - (void)setConfirmFileDeletion:(BOOL)value;

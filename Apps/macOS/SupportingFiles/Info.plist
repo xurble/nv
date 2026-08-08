@@ -4,6 +4,10 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>SpiralWindowTitle</key>
+	<string>$(SPIRAL_WINDOW_TITLE)</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -131,16 +135,14 @@
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleDisplayName</key>
-	<string>$(PRODUCT_NAME)</string>
-	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Based on 2.0 β5, Copyright © 2011 Zachary Schneirov, All Rights Reserved.</string>
 	<key>CFBundleIdentifier</key>
-	<string>net.notational.velocity</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -214,6 +216,18 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.farm.poplar.spiral</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Spiral Notes</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
 	<key>OSAScriptingDefinition</key>
 	<string>Notation.sdef</string>
 	<key>SUCheckAtStartup</key>
@@ -228,5 +242,9 @@
 	<string>Notational.net</string>
 	<key>SmartCrashReports_EmailTicket</key>
 	<string>SCR-51ED0F7B2A</string>
+	<key>SpiralDefaultNotesDirectoryName</key>
+	<string>$(SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME)</string>
+	<key>SpiralICloudContainerIdentifier</key>
+	<string>$(SPIRAL_ICLOUD_CONTAINER_IDENTIFIER)</string>
 </dict>
 </plist>

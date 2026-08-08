@@ -392,6 +392,9 @@ terminate:
 
 + (OSStatus)getDefaultNotesDirectoryRef:(FSRef*)notesDir {
     FSRef appSupportFoundRef;
+    NSString *directoryName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"SpiralDefaultNotesDirectoryName"];
+    if (![directoryName length])
+        directoryName = @"Notational Data";
     
     OSErr err = FSFindFolder(kUserDomain, kApplicationSupportFolderType, kCreateFolder, &appSupportFoundRef);
     if (err != noErr) {
@@ -399,7 +402,7 @@ terminate:
 	return err;
     } else {
 	//now try to get Notational Database directory
-	if ((err = CreateDirectoryIfNotPresent(&appSupportFoundRef, (CFStringRef)@"Notational Data", notesDir)) != noErr) {
+	if ((err = CreateDirectoryIfNotPresent(&appSupportFoundRef, (CFStringRef)directoryName, notesDir)) != noErr) {
 	    
 	    return err;
 	}

@@ -75,6 +75,8 @@ The future iOS application should normally use one universal target for both iPh
 
 Moving an existing local collection into iCloud Drive must be an explicit, reversible migration with a preflight check, backup, progress reporting, failure recovery, and a documented rollback path. Tests and development builds must use temporary local directories and controlled coordination doubles rather than a developer's or user's live iCloud Drive data.
 
+On a fresh installation with no persisted notes location and no local notes, Spiral should use the entitled iCloud Drive container's `Documents` directory by default, adopting an existing Spiral collection there when present and falling back to the local Application Support directory when iCloud Drive is unavailable. On the first launch of an iCloud-capable version with an existing local collection, offer three explicit choices: **Move to iCloud** (the default), **Copy to iCloud**, or **Keep Current Location**. Both iCloud choices switch Spiral to the verified iCloud copy. Move retires the original only after the copy verifies and the new location is persisted; Copy preserves the original as a local backup. Any destination change must accept an empty folder, refuse a non-empty unrelated folder without modifying it, and offer **Merge** or **Cancel** when the destination contains an identifiable Notational Velocity or Spiral collection. A merge must preserve divergent versions rather than silently overwriting either collection.
+
 ## Phased Plan
 
 ### Phase 1: Establish a Safety Net
@@ -98,7 +100,7 @@ Add a shared scheme and continuous integration that builds and tests Development
 
 **Exit criterion:** Critical file formats and behaviours can be changed with automated regression detection.
 
-**Progress as of August 2026:** A shared scheme, a small XCTest target, and four focused characterization executables are in place and passing. Coverage does not yet protect the critical persistence, WAL, encryption, import/export, encoding, filename, historical synchronization, or future iCloud Drive behaviors, and no CI or warning-baseline enforcement is present.
+**Progress as of August 2026:** A shared scheme, a small XCTest target, and five focused characterization executables are in place and passing. Temporary-directory tests now cover the initial iCloud migration default, verified copying, source preservation, destination classification, operation-specific progress text, and timeout/result arbitration for iCloud container discovery. Coverage does not yet protect the critical persistence, WAL, encryption, import/export, encoding, filename, historical synchronization, live legacy-model merge transaction, ongoing iCloud coordination/conflict behavior, or interrupted post-copy commit recovery, and no CI or warning-baseline enforcement is present.
 
 ### Phase 2: Make the Product Reproducible and Distributable
 
@@ -108,12 +110,12 @@ Add a shared scheme and continuous integration that builds and tests Development
 - Remove machine-specific header and library search paths.
 - Verify Debug, Release, Archive, and clean-machine launch workflows.
 - Add Developer ID signing, hardened runtime, archive validation, and notarization.
-- Document the shared iCloud Drive container identifiers, capabilities, and signing requirements for both applications; do not enable live-container migration until the storage contract and recovery tests exist.
+- Document the shared iCloud Drive container identifiers, capabilities, and signing requirements for both applications. Keep the guarded first-run copy-and-verify migration separate from the ongoing storage path, which must not be considered production-ready until the storage contract and recovery tests exist.
 - Evaluate App Sandbox separately; do not enable it until user-selected folders, security-scoped bookmarks, external editors, and Apple Events have an explicit design.
 
 **Exit criterion:** A release archive runs on a clean supported Mac without Homebrew or developer tools.
 
-**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, but this criterion is not close to complete. Deployment metadata remains inconsistent, build settings still contain Homebrew OpenSSL paths, and `.xcconfig`, hardened-runtime, signing, notarization, archive, and clean-machine verification work remains outstanding.
+**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, and the macOS target now declares the shared `iCloud.farm.poplar.spiral` Documents container with the Finder name “Spiral Notes.” Fresh installations default to this container when it is available, while existing local collections retain the guarded migration choice. The container identifier still needs registration and verification with the intended Apple Developer team. Deployment metadata remains inconsistent, build settings still contain Homebrew OpenSSL paths, and broader `.xcconfig` extraction, hardened-runtime, signing, notarization, archive, clean-machine, and live-container verification work remains outstanding.
 
 ### Phase 3: Replace Obsolete Dependencies
 
@@ -193,7 +195,7 @@ Migrate one class or component at a time. Do not rewrite an Objective-C class an
 
 **Exit criterion:** New non-legacy functionality is normally written in Swift, while remaining Objective-C exists intentionally.
 
-**Progress as of August 2026:** The modern settings model and interface provide the first successful Swift component inside the existing application target. This validates the mixed-language toolchain, but no shared core, cross-platform `NoteStore`, iCloud Drive adapter, import/export, updater, or concurrency-isolated Swift service exists yet.
+**Progress as of August 2026:** The modern settings model and interface provide the first successful Swift component inside the existing application target. A small Foundation-only migration service is now shared at the repository boundary and performs staged, coordinated, verified collection copies. This validates another mixed-language boundary, but no complete cross-platform `NoteStore`, ongoing iCloud Drive adapter, import/export, updater, or concurrency-isolated storage service exists yet.
 
 ### Phase 7: Modernize the Interface Selectively
 
@@ -211,7 +213,7 @@ Embed SwiftUI in the existing AppKit hierarchy with `NSHostingView` or `NSHostin
 
 **Exit criterion:** Modern UI components coexist cleanly with the editor, without degrading keyboard behaviour, accessibility, or native text handling.
 
-**Progress as of August 2026:** Preferences have been reimplemented as an embedded SwiftUI interface while the AppKit application shell and editor remain intact. Characterization tests cover settings compatibility and selected keyboard/UI behavior, but broader accessibility, launch, and workflow regression coverage is still needed.
+**Progress as of August 2026:** Preferences, the About window, and the first-run iCloud migration choice are implemented as SwiftUI interfaces while the AppKit application shell and editor remain intact. Characterization tests cover settings compatibility and selected keyboard/UI behavior, but broader accessibility, launch, migration-window UI automation, and workflow regression coverage is still needed.
 
 ### Phase 8: Reassess the Legacy Core
 

@@ -886,6 +886,62 @@ bail:
 		[delegate notation:self revealNote:[noteArray lastObject] options:NVOrderFrontWindow];
 }
 
+// Merge a second live collection without reusing its NoteObject instances.
+// UUID matches with identical user-visible contents are omitted. If the same
+// UUID has diverged, preserve the incoming version as a separate merged copy
+// instead of silently choosing one version and discarding the other.
+- (BOOL)mergeNotesFromNotationController:(NotationController*)sourceNotation {
+	if (!sourceNotation || sourceNotation == self)
+		return YES;
+
+	NSArray *incomingNotes = nil;
+	@try {
+		NSData *archive = [NSKeyedArchiver archivedDataWithRootObject:sourceNotation->allNotes];
+		incomingNotes = [NSKeyedUnarchiver unarchiveObjectWithData:archive];
+	} @catch (NSException *exception) {
+		NSLog(@"Unable to copy notes for collection merge: %@", exception);
+		return NO;
+	}
+
+	for (NoteObject *incomingNote in incomingNotes) {
+		CFUUIDBytes *incomingUUID = [incomingNote uniqueNoteIDBytes];
+		NSUInteger existingIndex = [allNotes indexOfNoteWithUUIDBytes:incomingUUID];
+		NoteObject *noteToAdd = incomingNote;
+
+		if (existingIndex != NSNotFound) {
+			NoteObject *existingNote = [allNotes objectAtIndex:existingIndex];
+			BOOL sameTitle = [titleOfNote(existingNote) isEqualToString:titleOfNote(incomingNote)];
+			BOOL sameLabels = ((labelsOfNote(existingNote) == nil && labelsOfNote(incomingNote) == nil) ||
+				[labelsOfNote(existingNote) isEqualToString:labelsOfNote(incomingNote)]);
+			BOOL sameContents = [[existingNote contentString] isEqual:[incomingNote contentString]];
+			if (sameTitle && sameLabels && sameContents)
+				continue;
+
+			NSString *mergedTitle = [NSString stringWithFormat:NSLocalizedString(@"%@ (Merged Copy)", @"title used when two merged collections contain divergent versions of the same note"), titleOfNote(incomingNote)];
+			noteToAdd = [[[NoteObject alloc] initWithNoteBody:[incomingNote contentString]
+											  title:mergedTitle
+										   delegate:self
+											 format:storageFormatOfNote(incomingNote)
+											 labels:labelsOfNote(incomingNote)] autorelease];
+			[noteToAdd setDateAdded:createdDateOfNote(incomingNote)];
+			[noteToAdd setDateModified:modifiedDateOfNote(incomingNote)];
+		}
+
+		[noteToAdd setDelegate:self];
+		[noteToAdd invalidateFSRef];
+		[noteToAdd setFilenameFromTitle];
+		[noteToAdd updateLabelConnectionsAfterDecoding];
+		[self _addNote:noteToAdd];
+		[noteToAdd makeNoteDirtyUpdateTime:NO updateFile:YES];
+	}
+
+	[self updateTitlePrefixConnections];
+	[self synchronizeNoteChanges:nil];
+	[self resortAllNotes];
+	[self refilterNotes];
+	return [self flushAllNoteChanges];
+}
+
 - (void)note:(NoteObject*)note attributeChanged:(NSString*)attribute {
 	
 	if ([attribute isEqualToString:NotePreviewString]) {
@@ -1572,4 +1628,3 @@ bail:
 }
 
 @end
-

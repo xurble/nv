@@ -7,12 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A20000000000000000000021 /* ModernSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* ModernSettings.swift */; };
-		A20000000000000000000023 /* SettingsBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* SettingsBridge.m */; };
-		A20000000000000000000024 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
-		A20000000000000000000041 /* ModernSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000031 /* ModernSettingsTests.swift */; };
-		A20000000000000000000042 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
-		A20000000000000000000043 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
 		210A10690B66720F005BE981 /* BookmarksTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 210A10670B66720F005BE981 /* BookmarksTable.m */; };
 		210C07530B6BF0A2005D23A8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 210C07230B6BF0A1005D23A8 /* WebKit.framework */; };
 		210D88CB12FE658B00ED7730 /* 使用概览.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 210D88C312FE658B00ED7730 /* 使用概览.nvhelp */; };
@@ -24,7 +18,6 @@
 		211344C00B3551BD0081B064 /* BlorPasswordRetriever.nib in Resources */ = {isa = PBXBuildFile; fileRef = 211344BA0B3551BD0081B064 /* BlorPasswordRetriever.nib */; };
 		211345AB0B35D8540081B064 /* broken_md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 211345A90B35D8540081B064 /* broken_md5.c */; };
 		2114C11609575BD400614E74 /* AppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C11509575BD400614E74 /* AppController.m */; };
-		A10000000000000000000001 /* ApplicationBranding.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* ApplicationBranding.m */; };
 		2114C13F0957732800614E74 /* NotationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C13E0957732800614E74 /* NotationController.m */; };
 		2114C1460957733200614E74 /* NoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C1450957733200614E74 /* NoteObject.m */; };
 		2114C23E095883A600614E74 /* NSData_transformations.m in Sources */ = {isa = PBXBuildFile; fileRef = 2114C23C095883A600614E74 /* NSData_transformations.m */; };
@@ -47,11 +40,10 @@
 		212EEA2812EFBD1800F89538 /* Atalhos Incrivelmente Úteis.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 212EEA2212EFBD1800F89538 /* Atalhos Incrivelmente Úteis.nvhelp */; };
 		212EEA2912EFBD1800F89538 /* Como funciona isso?.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 212EEA2412EFBD1800F89538 /* Como funciona isso?.nvhelp */; };
 		212EEA2A12EFBD1800F89538 /* Este é o título de uma nota.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 212EEA2612EFBD1800F89538 /* Este é o título de uma nota.nvhelp */; };
-		A40000000000000000000001 /* URLDetection.m in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000003 /* URLDetection.m */; };
 		21317FAF1113840E00472211 /* Excruciatingly Useful Shortcuts.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 21317FAD1113840E00472211 /* Excruciatingly Useful Shortcuts.nvhelp */; };
 		213621ED0B92413F008C0830 /* FindPanel.nib in Resources */ = {isa = PBXBuildFile; fileRef = 213621E70B92413F008C0830 /* FindPanel.nib */; };
 		213621F20B92414F008C0830 /* MultiTextFinder.m in Sources */ = {isa = PBXBuildFile; fileRef = 213621F00B92414F008C0830 /* MultiTextFinder.m */; };
-		213623FC0B92AA6E008C0830 /* Sparkle.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 213623E50B92AA4E008C0830 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		213623FC0B92AA6E008C0830 /* Dependencies/Frameworks/Sparkle.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 213623E50B92AA4E008C0830 /* Dependencies/Frameworks/Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		213FAD530B3C6B52004C74BD /* FSExchangeObjectsCompat.c in Sources */ = {isa = PBXBuildFile; fileRef = 213FAD520B3C6B52004C74BD /* FSExchangeObjectsCompat.c */; };
 		213FB0240B3CB1C4004C74BD /* PTKeyboardIcon.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 213FB0230B3CB1C4004C74BD /* PTKeyboardIcon.tiff */; };
 		214141B612FC64BE0019D275 /* dsa_pub.pem in Resources */ = {isa = PBXBuildFile; fileRef = 214141B512FC64BE0019D275 /* dsa_pub.pem */; };
@@ -69,7 +61,7 @@
 		2144957A0ADCC06300E2A2B6 /* PassphrasePicker.nib in Resources */ = {isa = PBXBuildFile; fileRef = 214495740ADCC06300E2A2B6 /* PassphrasePicker.nib */; };
 		214495870ADCC07E00E2A2B6 /* PassphraseChanger.nib in Resources */ = {isa = PBXBuildFile; fileRef = 214495810ADCC07E00E2A2B6 /* PassphraseChanger.nib */; };
 		21469C8C0BEBA6A10094835F /* TemporaryFileCachePreparer.m in Sources */ = {isa = PBXBuildFile; fileRef = 21469C8A0BEBA6A10094835F /* TemporaryFileCachePreparer.m */; };
-		2147D82C131EC86100C65006 /* COPYING.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2147D82B131EC86100C65006 /* COPYING.txt */; };
+		2147D82C131EC86100C65006 /* ../../../COPYING.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2147D82B131EC86100C65006 /* ../../../COPYING.txt */; };
 		215309F412E4E92300AF2739 /* DiskUUIDEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = 215309F312E4E92300AF2739 /* DiskUUIDEntry.m */; };
 		21544FBE0B06331800C0D1D5 /* KeyDerivationManager.nib in Resources */ = {isa = PBXBuildFile; fileRef = 21544FB80B06331800C0D1D5 /* KeyDerivationManager.nib */; };
 		21544FC10B06332600C0D1D5 /* KeyDerivationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 21544FC00B06332600C0D1D5 /* KeyDerivationManager.m */; };
@@ -94,7 +86,7 @@
 		217D4282096545A000E84749 /* LabelObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 217D4281096545A000E84749 /* LabelObject.m */; };
 		217EB3CE0B0F62FB0041A8A9 /* NSTextFinder_LastFind.m in Sources */ = {isa = PBXBuildFile; fileRef = 217EB3CD0B0F62FB0041A8A9 /* NSTextFinder_LastFind.m */; };
 		2181171309F311110020A252 /* DeletedNoteObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 2181171209F311110020A252 /* DeletedNoteObject.m */; };
-		21813562105AF27400A0AE18 /* Acknowledgments.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21813561105AF27400A0AE18 /* Acknowledgments.txt */; };
+		21813562105AF27400A0AE18 /* ../../../Acknowledgments.txt in Resources */ = {isa = PBXBuildFile; fileRef = 21813561105AF27400A0AE18 /* ../../../Acknowledgments.txt */; };
 		2182B39A106B2296008641E4 /* RBSplitSubview.m in Sources */ = {isa = PBXBuildFile; fileRef = 2182B396106B2296008641E4 /* RBSplitSubview.m */; };
 		2182B39B106B2296008641E4 /* RBSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2182B398106B2296008641E4 /* RBSplitView.m */; };
 		2182B3C3106B2509008641E4 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2182B3C1106B2509008641E4 /* MainMenu.nib */; };
@@ -142,7 +134,6 @@
 		21BD2ED110DAF31500BA3DF6 /* LinearDividerShader.m in Sources */ = {isa = PBXBuildFile; fileRef = 21BD2ECF10DAF31500BA3DF6 /* LinearDividerShader.m */; };
 		21BD2F3610DAF61700BA3DF6 /* SplitViewDimple.tif in Resources */ = {isa = PBXBuildFile; fileRef = 21BD2F3510DAF61700BA3DF6 /* SplitViewDimple.tif */; };
 		21C0F8A212C7E7160068693F /* Fonts & Colors.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 21C0F8A112C7E7160068693F /* Fonts & Colors.tiff */; };
-		A30000000000000000000001 /* spiral.icon in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000002 /* spiral.icon */; };
 		21C737950B50C73E0048C08A /* MultiplePageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21C737940B50C73E0048C08A /* MultiplePageView.m */; };
 		21CA2A911310E05300490979 /* Come funziona questa cosa?.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 21CA2A891310E05300490979 /* Come funziona questa cosa?.nvhelp */; };
 		21CA2A921310E05300490979 /* Contatti.nvhelp in Resources */ = {isa = PBXBuildFile; fileRef = 21CA2A8B1310E05300490979 /* Contatti.nvhelp */; };
@@ -198,6 +189,28 @@
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		A10000000000000000000001 /* ApplicationBranding.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* ApplicationBranding.m */; };
+		A20000000000000000000021 /* ModernSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* ModernSettings.swift */; };
+		A20000000000000000000023 /* SettingsBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* SettingsBridge.m */; };
+		A20000000000000000000024 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
+		A20000000000000000000041 /* ModernSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000031 /* ModernSettingsTests.swift */; };
+		A20000000000000000000042 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
+		A20000000000000000000043 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
+		A30000000000000000000001 /* spiral.icon in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000002 /* spiral.icon */; };
+		A40000000000000000000001 /* URLDetection.m in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000003 /* URLDetection.m */; };
+		A50000000000000000000001 /* ModernAbout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50000000000000000000011 /* ModernAbout.swift */; };
+		A50000000000000000000002 /* AboutInformation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50000000000000000000012 /* AboutInformation.swift */; };
+		A50000000000000000000003 /* AboutInformationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50000000000000000000013 /* AboutInformationTests.swift */; };
+		A50000000000000000000004 /* AboutInformation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50000000000000000000012 /* AboutInformation.swift */; };
+		A60000000000000000000001 /* FirstRunICloudMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000011 /* FirstRunICloudMigration.swift */; };
+		A60000000000000000000002 /* NotesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000012 /* NotesMigration.swift */; };
+		A60000000000000000000003 /* NotesMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000013 /* NotesMigrationTests.swift */; };
+		A60000000000000000000004 /* NotesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000012 /* NotesMigration.swift */; };
+		A70000000000000000000001 /* NotesFolderPathControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70000000000000000000003 /* NotesFolderPathControl.swift */; };
+		A70000000000000000000002 /* NotesFolderPathControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70000000000000000000003 /* NotesFolderPathControl.swift */; };
+		A80000000000000000000001 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
+		A80000000000000000000002 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
+		A80000000000000000000003 /* LegacyPreferencesMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */; };
 		D3EECA00106F66C70023D7F8 /* NVPasswordGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */; };
 /* End PBXBuildFile section */
 
@@ -208,21 +221,13 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				213623FC0B92AA6E008C0830 /* Sparkle.framework in CopyFiles */,
+				213623FC0B92AA6E008C0830 /* Dependencies/Frameworks/Sparkle.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000011 /* ModernSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettings.swift; sourceTree = "<group>"; };
-		A20000000000000000000012 /* SettingsBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SettingsBridge.h; sourceTree = "<group>"; };
-		A20000000000000000000013 /* SettingsBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SettingsBridge.m; sourceTree = "<group>"; };
-		A20000000000000000000014 /* Settings-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Settings-Bridging-Header.h"; sourceTree = "<group>"; };
-		A20000000000000000000015 /* SettingsCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCompatibility.swift; sourceTree = "<group>"; };
-		A20000000000000000000031 /* ModernSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettingsTests.swift; sourceTree = "<group>"; };
-		A20000000000000000000032 /* NotationSettingsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationSettingsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A20000000000000000000033 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		210A10660B66720F005BE981 /* BookmarksTable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = BookmarksTable.h; sourceTree = "<group>"; };
 		210A10670B66720F005BE981 /* BookmarksTable.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = BookmarksTable.m; sourceTree = "<group>"; };
@@ -257,8 +262,6 @@
 		211345AA0B35D8540081B064 /* broken_md5.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = broken_md5.h; sourceTree = "<group>"; };
 		2114C11409575BD400614E74 /* AppController.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = AppController.h; sourceTree = "<group>"; };
 		2114C11509575BD400614E74 /* AppController.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = AppController.m; sourceTree = "<group>"; };
-		A10000000000000000000002 /* ApplicationBranding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplicationBranding.h; sourceTree = "<group>"; };
-		A10000000000000000000003 /* ApplicationBranding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApplicationBranding.m; sourceTree = "<group>"; };
 		2114C13D0957732800614E74 /* NotationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NotationController.h; sourceTree = "<group>"; };
 		2114C13E0957732800614E74 /* NotationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NotationController.m; sourceTree = "<group>"; };
 		2114C1440957733200614E74 /* NoteObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoteObject.h; sourceTree = "<group>"; };
@@ -284,11 +287,9 @@
 		212DCA460A6AD28700F74E46 /* EncodingsManager.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = EncodingsManager.m; sourceTree = "<group>"; };
 		212DCF5F0A6DEECB00F74E46 /* DeletionManager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DeletionManager.h; sourceTree = "<group>"; };
 		212DCF600A6DEECB00F74E46 /* DeletionManager.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = DeletionManager.m; sourceTree = "<group>"; };
-		A40000000000000000000002 /* URLDetection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = URLDetection.h; sourceTree = "<group>"; };
-		A40000000000000000000003 /* URLDetection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = URLDetection.m; sourceTree = "<group>"; };
 		213621EF0B92414F008C0830 /* MultiTextFinder.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = MultiTextFinder.h; sourceTree = "<group>"; };
 		213621F00B92414F008C0830 /* MultiTextFinder.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = MultiTextFinder.m; sourceTree = "<group>"; };
-		213623E50B92AA4E008C0830 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Dependencies/Frameworks/Sparkle.framework; sourceTree = "<group>"; };
+		213623E50B92AA4E008C0830 /* Dependencies/Frameworks/Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Dependencies/Frameworks/Sparkle.framework; sourceTree = "<group>"; };
 		21395BB30B7FDB85007BCFAA /* Notation.freqorder */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = Notation.freqorder; sourceTree = "<group>"; };
 		21395BC60B7FDD35007BCFAA /* Notation.launchorder */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = Notation.launchorder; sourceTree = "<group>"; };
 		213FAD510B3C6B52004C74BD /* FSExchangeObjectsCompat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FSExchangeObjectsCompat.h; sourceTree = "<group>"; };
@@ -308,7 +309,7 @@
 		2144987D0AE192F900E2A2B6 /* PassphraseChanger.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = PassphraseChanger.h; sourceTree = "<group>"; };
 		21469C890BEBA6A10094835F /* TemporaryFileCachePreparer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TemporaryFileCachePreparer.h; sourceTree = "<group>"; };
 		21469C8A0BEBA6A10094835F /* TemporaryFileCachePreparer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TemporaryFileCachePreparer.m; sourceTree = "<group>"; };
-		2147D82B131EC86100C65006 /* COPYING.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ../../../COPYING.txt; sourceTree = "<group>"; };
+		2147D82B131EC86100C65006 /* ../../../COPYING.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ../../../COPYING.txt; sourceTree = "<group>"; };
 		215309F212E4E92300AF2739 /* DiskUUIDEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DiskUUIDEntry.h; sourceTree = "<group>"; };
 		215309F312E4E92300AF2739 /* DiskUUIDEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DiskUUIDEntry.m; sourceTree = "<group>"; };
 		21544FBF0B06332600C0D1D5 /* KeyDerivationManager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = KeyDerivationManager.h; sourceTree = "<group>"; };
@@ -344,7 +345,7 @@
 		2181171109F311110020A252 /* DeletedNoteObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DeletedNoteObject.h; sourceTree = "<group>"; };
 		2181171209F311110020A252 /* DeletedNoteObject.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DeletedNoteObject.m; sourceTree = "<group>"; };
 		2181193909FA9CF90020A252 /* SynchronizedNoteProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SynchronizedNoteProtocol.h; sourceTree = "<group>"; };
-		21813561105AF27400A0AE18 /* Acknowledgments.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ../../../Acknowledgments.txt; sourceTree = "<group>"; };
+		21813561105AF27400A0AE18 /* ../../../Acknowledgments.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ../../../Acknowledgments.txt; sourceTree = "<group>"; };
 		2182B395106B2296008641E4 /* RBSplitSubview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitSubview.h; path = RBSplitView/RBSplitSubview.h; sourceTree = "<group>"; };
 		2182B396106B2296008641E4 /* RBSplitSubview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RBSplitSubview.m; path = RBSplitView/RBSplitSubview.m; sourceTree = "<group>"; };
 		2182B397106B2296008641E4 /* RBSplitView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RBSplitView.h; path = RBSplitView/RBSplitView.h; sourceTree = "<group>"; };
@@ -409,7 +410,6 @@
 		21BD2F3510DAF61700BA3DF6 /* SplitViewDimple.tif */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = SplitViewDimple.tif; sourceTree = "<group>"; };
 		21C0F8A112C7E7160068693F /* Fonts & Colors.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = "Fonts & Colors.tiff"; path = "Images/Fonts & Colors.tiff"; sourceTree = "<group>"; };
 		21C3DBF312D23C83002F707A /* Notality.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Notality.icns; path = Images/Notality.icns; sourceTree = "<group>"; };
-		A30000000000000000000002 /* spiral.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = spiral.icon; sourceTree = "<group>"; };
 		21C737930B50C73E0048C08A /* MultiplePageView.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = MultiplePageView.h; sourceTree = "<group>"; };
 		21C737940B50C73E0048C08A /* MultiplePageView.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = MultiplePageView.m; sourceTree = "<group>"; };
 		21CB29AD10EEE39400360118 /* SyncServiceSessionProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SyncServiceSessionProtocol.h; sourceTree = "<group>"; };
@@ -602,19 +602,38 @@
 		6E6AFB7724DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Informações de Contato.nvhelp"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* Spiral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spiral.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000002 /* ApplicationBranding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplicationBranding.h; sourceTree = "<group>"; };
+		A10000000000000000000003 /* ApplicationBranding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApplicationBranding.m; sourceTree = "<group>"; };
+		A20000000000000000000011 /* ModernSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettings.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* SettingsBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SettingsBridge.h; sourceTree = "<group>"; };
+		A20000000000000000000013 /* SettingsBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SettingsBridge.m; sourceTree = "<group>"; };
+		A20000000000000000000014 /* Settings-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Settings-Bridging-Header.h"; sourceTree = "<group>"; };
+		A20000000000000000000015 /* SettingsCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCompatibility.swift; sourceTree = "<group>"; };
+		A20000000000000000000031 /* ModernSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettingsTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000032 /* NotationSettingsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationSettingsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000033 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A30000000000000000000002 /* spiral.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = spiral.icon; sourceTree = "<group>"; };
+		A40000000000000000000002 /* URLDetection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = URLDetection.h; sourceTree = "<group>"; };
+		A40000000000000000000003 /* URLDetection.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = URLDetection.m; sourceTree = "<group>"; };
+		A50000000000000000000011 /* ModernAbout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernAbout.swift; sourceTree = "<group>"; };
+		A50000000000000000000012 /* AboutInformation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutInformation.swift; sourceTree = "<group>"; };
+		A50000000000000000000013 /* AboutInformationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutInformationTests.swift; sourceTree = "<group>"; };
+		A60000000000000000000011 /* FirstRunICloudMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunICloudMigration.swift; sourceTree = "<group>"; };
+		A60000000000000000000012 /* NotesMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotesMigration.swift; path = ../../../Shared/Storage/NotesMigration.swift; sourceTree = "<group>"; };
+		A60000000000000000000013 /* NotesMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesMigrationTests.swift; sourceTree = "<group>"; };
+		A60000000000000000000014 /* Spiral.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Spiral.entitlements; sourceTree = "<group>"; };
+		A60000000000000000000015 /* Spiral-Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Spiral-Debug.entitlements"; sourceTree = "<group>"; };
+		A70000000000000000000003 /* NotesFolderPathControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesFolderPathControl.swift; sourceTree = "<group>"; };
+		A80000000000000000000011 /* LegacyPreferencesMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LegacyPreferencesMigration.swift; path = ../../../Shared/Preferences/LegacyPreferencesMigration.swift; sourceTree = "<group>"; };
+		A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyPreferencesMigrationTests.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* Spiral.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Spiral.xcconfig; sourceTree = "<group>"; };
+		B10000000000000000000012 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.example; sourceTree = "<group>"; };
+		B10000000000000000000013 /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
 		D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVPasswordGenerator.m; sourceTree = "<group>"; };
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A20000000000000000000063 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A20000000000000000000042 /* XCTest.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8D11072E0486CEB800E47090 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -633,13 +652,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A20000000000000000000063 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000000000000000000042 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		080E96DDFE201D6D7F000001 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				A60000000000000000000011 /* FirstRunICloudMigration.swift */,
+				A60000000000000000000012 /* NotesMigration.swift */,
+				A80000000000000000000011 /* LegacyPreferencesMigration.swift */,
+				A50000000000000000000011 /* ModernAbout.swift */,
+				A50000000000000000000012 /* AboutInformation.swift */,
 				A20000000000000000000011 /* ModernSettings.swift */,
+				A70000000000000000000003 /* NotesFolderPathControl.swift */,
 				A20000000000000000000015 /* SettingsCompatibility.swift */,
 				A20000000000000000000012 /* SettingsBridge.h */,
 				A20000000000000000000013 /* SettingsBridge.m */,
@@ -729,7 +762,6 @@
 				213FAD510B3C6B52004C74BD /* FSExchangeObjectsCompat.h */,
 				213FAD520B3C6B52004C74BD /* FSExchangeObjectsCompat.c */,
 			);
-			name = Sources;
 			path = Sources;
 			sourceTree = "<group>";
 		};
@@ -746,7 +778,7 @@
 			children = (
 				A20000000000000000000033 /* XCTest.framework */,
 				21B54C011134F2E800E163A1 /* IOKit.framework */,
-				213623E50B92AA4E008C0830 /* Sparkle.framework */,
+				213623E50B92AA4E008C0830 /* Dependencies/Frameworks/Sparkle.framework */,
 				210C07230B6BF0A1005D23A8 /* WebKit.framework */,
 				21973FBC0B0060C80046683E /* Security.framework */,
 				214494F80ADC7C8D00E2A2B6 /* SecurityInterface.framework */,
@@ -819,6 +851,8 @@
 			isa = PBXGroup;
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
+				A60000000000000000000015 /* Spiral-Debug.entitlements */,
+				A60000000000000000000014 /* Spiral.entitlements */,
 				32CA4F630368D1EE00C91783 /* Notation_Prefix.pch */,
 				57F27F7A11973A7F00C63ACF /* Notation.sdef */,
 				21395BB30B7FDB85007BCFAA /* Notation.freqorder */,
@@ -1023,7 +1057,8 @@
 		29B97314FDCFA39411CA2CEA /* Notation */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000051 /* NotationSettingsTests */,
+				B10000000000000000000021 /* Build Configuration */,
+				A20000000000000000000051 /* ../../Tests/macOS/Settings */,
 				080E96DDFE201D6D7F000001 /* Sources */,
 				29B97315FDCFA39411CA2CEA /* Dependencies */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -1043,7 +1078,6 @@
 				2182B38E106B2286008641E4 /* RBSplitView */,
 				21F1CD490B3A38CB001FB5F6 /* HotKeys */,
 			);
-			name = Dependencies;
 			path = Dependencies;
 			sourceTree = "<group>";
 		};
@@ -1051,9 +1085,9 @@
 			isa = PBXGroup;
 			children = (
 				A30000000000000000000002 /* spiral.icon */,
-				2147D82B131EC86100C65006 /* COPYING.txt */,
+				2147D82B131EC86100C65006 /* ../../../COPYING.txt */,
 				214141B512FC64BE0019D275 /* dsa_pub.pem */,
-				21813561105AF27400A0AE18 /* Acknowledgments.txt */,
+				21813561105AF27400A0AE18 /* ../../../Acknowledgments.txt */,
 				217DB1810B7CE5B9008CD564 /* Help Notes */,
 				219196B109D4F1DB00586B15 /* Images */,
 				2114C259095885C800614E74 /* Localizable.strings */,
@@ -1077,7 +1111,6 @@
 				21E6B0950B6E6D0B001ABEDC /* URLGetter.nib */,
 				213621E70B92413F008C0830 /* FindPanel.nib */,
 			);
-			name = Resources;
 			path = Resources;
 			sourceTree = "<group>";
 		};
@@ -1090,34 +1123,31 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		A20000000000000000000051 /* NotationSettingsTests */ = {
+		A20000000000000000000051 /* ../../Tests/macOS/Settings */ = {
 			isa = PBXGroup;
 			children = (
+				A50000000000000000000013 /* AboutInformationTests.swift */,
+				A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */,
 				A20000000000000000000031 /* ModernSettingsTests.swift */,
+				A60000000000000000000013 /* NotesMigrationTests.swift */,
 			);
 			path = ../../Tests/macOS/Settings;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000021 /* Build Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000011 /* Spiral.xcconfig */,
+				B10000000000000000000013 /* Local.xcconfig */,
+				B10000000000000000000012 /* Local.xcconfig.example */,
+			);
+			name = "Build Configuration";
+			path = ../../Config/Xcode;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A20000000000000000000071 /* NotationSettingsTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A20000000000000000000084 /* Build configuration list for PBXNativeTarget "NotationSettingsTests" */;
-			buildPhases = (
-				A20000000000000000000061 /* Sources */,
-				A20000000000000000000063 /* Frameworks */,
-				A20000000000000000000062 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = NotationSettingsTests;
-			productName = NotationSettingsTests;
-			productReference = A20000000000000000000032 /* NotationSettingsTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		8D1107260486CEB800E47090 /* Notation */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 212B842309780B5000F3597F /* Build configuration list for PBXNativeTarget "Notation" */;
@@ -1136,6 +1166,23 @@
 			productName = Notation;
 			productReference = 8D1107320486CEB800E47090 /* Spiral.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A20000000000000000000071 /* NotationSettingsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A20000000000000000000084 /* Build configuration list for PBXNativeTarget "NotationSettingsTests" */;
+			buildPhases = (
+				A20000000000000000000061 /* Sources */,
+				A20000000000000000000063 /* Frameworks */,
+				A20000000000000000000062 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotationSettingsTests;
+			productName = NotationSettingsTests;
+			productReference = A20000000000000000000032 /* NotationSettingsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -1169,13 +1216,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A20000000000000000000062 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8D1107290486CEB800E47090 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1214,7 +1254,7 @@
 				2110C0D90B65F09F00F5C52E /* SavedSearches.nib in Resources */,
 				21E6B09B0B6E6D0C001ABEDC /* URLGetter.nib in Resources */,
 				213621ED0B92413F008C0830 /* FindPanel.nib in Resources */,
-				21813562105AF27400A0AE18 /* Acknowledgments.txt in Resources */,
+				21813562105AF27400A0AE18 /* ../../../Acknowledgments.txt in Resources */,
 				2182B3C3106B2509008641E4 /* MainMenu.nib in Resources */,
 				216BA24310746E3900F62D93 /* ImporterAccessory.nib in Resources */,
 				21DF19B210D172F600543C35 /* DFCapRightInactive.png in Resources */,
@@ -1269,27 +1309,31 @@
 				21CA2A921310E05300490979 /* Contatti.nvhelp in Resources */,
 				21CA2A931310E05300490979 /* Questo è il titolo di una nota.nvhelp in Resources */,
 				21CA2A941310E05300490979 /* Scorciatoie terribilmente utili.nvhelp in Resources */,
-				2147D82C131EC86100C65006 /* COPYING.txt in Resources */,
+				2147D82C131EC86100C65006 /* ../../../COPYING.txt in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000000000000000062 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A20000000000000000000061 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A20000000000000000000041 /* ModernSettingsTests.swift in Sources */,
-				A20000000000000000000043 /* SettingsCompatibility.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8D11072C0486CEB800E47090 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A60000000000000000000001 /* FirstRunICloudMigration.swift in Sources */,
+				A60000000000000000000002 /* NotesMigration.swift in Sources */,
+				A80000000000000000000001 /* LegacyPreferencesMigration.swift in Sources */,
+				A50000000000000000000001 /* ModernAbout.swift in Sources */,
+				A50000000000000000000002 /* AboutInformation.swift in Sources */,
 				A20000000000000000000021 /* ModernSettings.swift in Sources */,
+				A70000000000000000000001 /* NotesFolderPathControl.swift in Sources */,
 				A20000000000000000000023 /* SettingsBridge.m in Sources */,
 				A20000000000000000000024 /* SettingsCompatibility.swift in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
@@ -1376,6 +1420,22 @@
 				212897E61330030100380B64 /* ODBEditor.m in Sources */,
 				212897E71330030100380B64 /* NSAppleEventDescriptor-Extensions.m in Sources */,
 				21447B6F133BFE1E00ACC1A7 /* ExternalEditorListController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000000000000000061 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A50000000000000000000003 /* AboutInformationTests.swift in Sources */,
+				A50000000000000000000004 /* AboutInformation.swift in Sources */,
+				A80000000000000000000003 /* LegacyPreferencesMigrationTests.swift in Sources */,
+				A80000000000000000000002 /* LegacyPreferencesMigration.swift in Sources */,
+				A60000000000000000000003 /* NotesMigrationTests.swift in Sources */,
+				A60000000000000000000004 /* NotesMigration.swift in Sources */,
+				A20000000000000000000041 /* ModernSettingsTests.swift in Sources */,
+				A70000000000000000000002 /* NotesFolderPathControl.swift in Sources */,
+				A20000000000000000000043 /* SettingsCompatibility.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1836,49 +1896,16 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		A20000000000000000000081 /* Development */ = {
+		212B842409780B5000F3597F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGNING_ALLOWED = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity.settings-tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-			};
-			name = Development;
-		};
-		A20000000000000000000082 /* Deployment */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGNING_ALLOWED = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity.settings-tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-			};
-			name = Deployment;
-		};
-		A20000000000000000000083 /* Default */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGNING_ALLOWED = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity.settings-tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-			};
-			name = Default;
-		};
-		212B842409780B5000F3597F /* Development */ = {
-			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = "Apps/macOS/SupportingFiles/Spiral-Debug.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 10;
 				DEAD_CODE_STRIPPING = NO;
@@ -1943,10 +1970,15 @@
 					"-L/usr/local/opt/openssl/lib",
 					"-L/opt/homebrew/opt/openssl/lib",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
-				PRODUCT_NAME = Spiral;
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.debug;
+				PRODUCT_NAME = SpiralDebug;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
+				SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = "Notational Data Debug";
+				SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = "";
+				SPIRAL_WINDOW_TITLE = "Spiral (Debug)";
 				STRIP_STYLE = "non-global";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
 				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				WARNING_CFLAGS = "-pg";
@@ -1954,15 +1986,18 @@
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
-			name = Development;
+			name = Debug;
 		};
-		212B842509780B5000F3597F /* Deployment */ = {
+		212B842509780B5000F3597F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_ENTITLEMENTS = Apps/macOS/SupportingFiles/Spiral.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 10;
 				DEAD_CODE_STRIPPING = YES;
@@ -2021,8 +2056,9 @@
 					"-L/usr/local/opt/openssl/lib",
 					"-L/opt/homebrew/opt/openssl/lib",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;
 				PRODUCT_NAME = Spiral;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				"SDKROOT[arch=x86_64]" = macosx;
 				SECTORDER_FLAGS = (
@@ -2033,89 +2069,20 @@
 					"-e",
 					start,
 				);
+				SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = "Notational Data";
+				SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = iCloud.farm.poplar.spiral;
+				SPIRAL_WINDOW_TITLE = Spiral;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = all;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
 				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
-			name = Deployment;
+			name = Release;
 		};
-		212B842609780B5000F3597F /* Default */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
-				CLANG_CXX_LIBRARY = "compiler-default";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_IDENTITY = "-";
-				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10;
-				ENABLE_STRICT_OBJC_MSGSEND = NO;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_1)",
-					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_2)",
-					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_3)",
-					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_4)",
-					"\"$(SRCROOT)/Apps/macOS/Resources/French.lproj/RBSplitView(Sno).ibplugin/Contents/Frameworks\"",
-					"\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"",
-				);
-				FRAMEWORK_SEARCH_PATHS_QUOTED_1 = "\"$(SYSTEM_LIBRARY_DIR)/Frameworks/Quartz.framework/Versions/A/Frameworks\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_2 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_3 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
-				FRAMEWORK_SEARCH_PATHS_QUOTED_4 = "\"$(SRCROOT)/Apps/macOS/Dependencies/Frameworks\"";
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_PFE_FILE_C_DIALECTS = "c objective-c";
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Apps/macOS/SupportingFiles/Notation_Prefix.pch;
-				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
-				"GCC_VERSION[sdk=macosx*]" = "";
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
-				GCC_WARN_FOUR_CHARACTER_CONSTANTS = YES;
-				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
-				GCC_WARN_MISSING_PARENTHESES = YES;
-				GCC_WARN_SHADOW = YES;
-				GCC_WARN_SIGN_COMPARE = YES;
-				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = NO;
-				GCC_WARN_UNUSED_LABEL = YES;
-				GCC_WARN_UNUSED_PARAMETER = NO;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/Apps/macOS/Sources",
-					"$(SRCROOT)/Apps/macOS/Dependencies",
-					"$(SRCROOT)/Apps/macOS/Dependencies/ICU/icu",
-				);
-				INFOPLIST_FILE = Apps/macOS/SupportingFiles/Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = "2.0 β7";
-				OTHER_CFLAGS = (
-					"-I/usr/local/opt/openssl/include",
-					"-I/opt/homebrew/opt/openssl/include",
-				);
-				OTHER_LDFLAGS = (
-					"-weak_framework",
-					PDFKit,
-					"-L/usr/local/opt/openssl/lib",
-					"-L/opt/homebrew/opt/openssl/lib",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = net.notational.velocity;
-				PRODUCT_NAME = Spiral;
-				SDKROOT = macosx;
-				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				WRAPPER_EXTENSION = app;
-			};
-			name = Default;
-		};
-		212B842809780B5000F3597F /* Development */ = {
+		212B842809780B5000F3597F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
@@ -2160,9 +2127,9 @@
 				SDKROOT = macosx;
 				"SDKROOT[arch=x86_64]" = macosx10.5;
 			};
-			name = Development;
+			name = Debug;
 		};
-		212B842909780B5000F3597F /* Deployment */ = {
+		212B842909780B5000F3597F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
@@ -2205,85 +2172,61 @@
 				SDKROOT = macosx;
 				"SDKROOT[arch=x86_64]" = macosx10.5;
 			};
-			name = Deployment;
+			name = Release;
 		};
-		212B842A09780B5000F3597F /* Default */ = {
+		A20000000000000000000081 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_DEBUGGING_SYMBOLS = full;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_THREADSAFE_STATICS = NO;
-				"GCC_VERSION[sdk=macosx*]" = "";
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_SHADOW = YES;
-				GCC_WARN_SIGN_COMPARE = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VALUE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
-				"MACOSX_DEPLOYMENT_TARGET[arch=x86_64]" = 10.5;
-				SDKROOT = macosx;
-				"SDKROOT[arch=x86_64]" = macosx10.5;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.notational.velocity.settings-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
 			};
-			name = Default;
+			name = Debug;
+		};
+		A20000000000000000000082 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.notational.velocity.settings-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A20000000000000000000084 /* Build configuration list for PBXNativeTarget "NotationSettingsTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A20000000000000000000082 /* Deployment */,
-				A20000000000000000000081 /* Development */,
-				A20000000000000000000083 /* Default */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Deployment;
-		};
 		212B842309780B5000F3597F /* Build configuration list for PBXNativeTarget "Notation" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				212B842509780B5000F3597F /* Deployment */,
-				212B842409780B5000F3597F /* Development */,
-				212B842609780B5000F3597F /* Default */,
+				212B842409780B5000F3597F /* Debug */,
+				212B842509780B5000F3597F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Deployment;
+			defaultConfigurationName = Release;
 		};
 		212B842709780B5000F3597F /* Build configuration list for PBXProject "Notation" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				212B842909780B5000F3597F /* Deployment */,
-				212B842809780B5000F3597F /* Development */,
-				212B842A09780B5000F3597F /* Default */,
+				212B842809780B5000F3597F /* Debug */,
+				212B842909780B5000F3597F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Deployment;
+			defaultConfigurationName = Release;
+		};
+		A20000000000000000000084 /* Build configuration list for PBXNativeTarget "NotationSettingsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A20000000000000000000081 /* Debug */,
+				A20000000000000000000082 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

@@ -1,4 +1,5 @@
 #import "SettingsBridge.h"
+#import "Spiral-Swift.h"
 
 #import "AppController.h"
 #import "ExternalEditorListController.h"
@@ -59,6 +60,21 @@ NSNotificationName const NVSettingsBridgeDidChangeNotification = @"NVSettingsBri
 - (NSColor *)searchHighlightColor { return [self.globalPrefs searchTermHighlightColorRaw:YES]; }
 - (NSString *)appShortcutDescription { return [[self.globalPrefs appActivationKeyCombo] description] ?: @""; }
 - (NSString *)notesFolderPath { return [self.globalPrefs humanViewablePathForDefaultDirectory] ?: NSLocalizedString(@"Default notes folder", nil); }
+- (NSURL *)notesFolderURL {
+    NSData *aliasData = [self.globalPrefs aliasDataForDefaultDirectory];
+    NSString *path = [[NSFileManager defaultManager] pathCopiedFromAliasData:aliasData];
+    if (path.length > 0)
+        return [NSURL fileURLWithPath:path isDirectory:YES];
+
+    FSRef defaultRef;
+    if ([NotationController getDefaultNotesDirectoryRef:&defaultRef] != noErr)
+        return nil;
+    return [(NSURL *)CFURLCreateFromFSRef(kCFAllocatorDefault, &defaultRef) autorelease];
+}
+- (BOOL)notesFolderIsInICloud {
+    NSURL *url = [self notesFolderURL];
+    return url ? [SpiralStorageLocationController isURLInICloud:url] : NO;
+}
 
 - (void)setAutoCompleteSearches:(BOOL)value { [self.globalPrefs setAutoCompleteSearches:value sender:self]; [self changed]; }
 - (void)setConfirmNoteDeletion:(BOOL)value { [self.globalPrefs setConfirmNoteDeletion:value sender:self]; [self changed]; }
@@ -124,29 +140,49 @@ NSNotificationName const NVSettingsBridgeDidChangeNotification = @"NVSettingsBri
     panel.prompt = NSLocalizedString(@"Select", nil);
     panel.message = NSLocalizedString(@"Select the folder Spiral should use for reading and storing notes.", nil);
 
-    NSString *currentPath = [self.globalPrefs humanViewablePathForDefaultDirectory];
-    if (currentPath.length > 0)
-        panel.directoryURL = [NSURL fileURLWithPath:currentPath isDirectory:YES];
+    panel.directoryURL = [self notesFolderURL];
 
     [panel beginSheetModalForWindow:window completionHandler:^(NSModalResponse result) {
         if (result != NSModalResponseOK || panel.URL == nil)
             return;
 
-        /* Alias data is an existing public persistence format. Keep conversion
-           at this single compatibility boundary while using the URL-based panel. */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        FSRef selectedRef = {{0}};
-        if (!CFURLGetFSRef((CFURLRef)panel.URL, &selectedRef))
-            return;
-#pragma clang diagnostic pop
-
-        NSData *aliasData = [NSData aliasDataForFSRef:&selectedRef];
-        if (!aliasData)
+        NSURL *currentURL = [self notesFolderURL];
+        NSURL *resolvedCurrentURL = [[currentURL URLByResolvingSymlinksInPath] standardizedURL];
+        NSURL *resolvedSelectedURL = [[panel.URL URLByResolvingSymlinksInPath] standardizedURL];
+        if (resolvedCurrentURL && [resolvedCurrentURL isEqual:resolvedSelectedURL])
             return;
 
-        [self.globalPrefs setAliasDataForDefaultDirectory:aliasData sender:self];
-        [self changed];
+        SpiralFolderChangeDecision decision = [SpiralStorageLocationController decisionForTargetFolderAtURL:panel.URL];
+        if (decision != SpiralFolderChangeDecisionUseEmptyFolder &&
+            decision != SpiralFolderChangeDecisionMergeCollection)
+            return;
+
+        AppController *appController = (AppController *)[NSApp delegate];
+        if ([appController switchToNotesDirectoryURL:panel.URL mergeCurrentNotes:YES])
+            [self changed];
+    }];
+}
+
+- (void)switchToICloudForWindow:(NSWindow *)window {
+    NSURL *currentURL = [self notesFolderURL];
+    if (!currentURL)
+        return;
+
+    [SpiralFirstRunMigrationController prepareICloudSwitchFromURL:currentURL
+                                                        forWindow:window
+                                                        completion:^(SpiralPreparedNotesDirectory *prepared) {
+        if ([[[prepared directoryURL] standardizedURL] isEqual:[currentURL standardizedURL]])
+            return;
+
+        AppController *appController = (AppController *)[NSApp delegate];
+        BOOL switched = [appController switchToNotesDirectoryURL:[prepared directoryURL]
+                                                mergeCurrentNotes:[prepared requiresMerge]];
+        if (switched) {
+            [SpiralFirstRunMigrationController finalizePreparedNotesDirectory:prepared];
+            [self changed];
+        } else {
+            [SpiralFirstRunMigrationController cancelPreparedNotesDirectory:prepared];
+        }
     }];
 }
 
