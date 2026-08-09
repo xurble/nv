@@ -38,20 +38,66 @@ static void AssertTrue(BOOL condition, NSString *message)
     }
 }
 
-int main(void)
+int main(int argc, const char *argv[])
 {
     @autoreleasepool {
-        NSData *key = DataFromHexString(@"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-        NSData *iv = DataFromHexString(@"101112131415161718191a1b1c1d1e1f");
-        NSData *expectedCiphertext = DataFromHexString(@"c3108feb0a61f6bc6e7403b5480b42dab20775b7d66411527c7c9b1af6e3ee6b");
-        NSMutableData *payload = [NSMutableData dataWithData:[@"Legacy note payload" dataUsingEncoding:NSUTF8StringEncoding]];
+        AssertTrue(argc == 2, @"the golden encryption fixture path is required");
+        NSData *fixtureData = argc == 2 ? [NSData dataWithContentsOfFile:[NSString stringWithUTF8String:argv[1]]] : nil;
+        NSDictionary *fixture = fixtureData ? [NSJSONSerialization JSONObjectWithData:fixtureData options:0 error:NULL] : nil;
+        AssertTrue(fixture != nil, @"the golden encryption fixture should load");
+
+        NSData *key = DataFromHexString([fixture objectForKey:@"keyHex"]);
+        NSData *iv = DataFromHexString([fixture objectForKey:@"ivHex"]);
+        NSData *expectedCiphertext = DataFromHexString([fixture objectForKey:@"ciphertextHex"]);
+        NSData *plaintext = [[fixture objectForKey:@"plaintextUTF8"] dataUsingEncoding:NSUTF8StringEncoding];
+        NSMutableData *payload = [NSMutableData dataWithData:plaintext];
 
         AssertTrue([payload encryptAESDataWithKey:key iv:iv], @"AES-256-CBC encryption should succeed");
         AssertEqualObjects(payload, expectedCiphertext, @"AES-256-CBC output must remain byte-compatible with legacy databases");
         AssertTrue([payload decryptAESDataWithKey:key iv:iv], @"AES-256-CBC decryption should succeed");
-        AssertEqualObjects(payload,
-                           [@"Legacy note payload" dataUsingEncoding:NSUTF8StringEncoding],
+        AssertEqualObjects(payload, plaintext,
                            @"AES-256-CBC should recover the original payload");
+
+        NSData *passphrase = [[fixture objectForKey:@"passphraseUTF8"] dataUsingEncoding:NSUTF8StringEncoding];
+        NSData *masterSalt = DataFromHexString([fixture objectForKey:@"masterSaltHex"]);
+        NSData *expectedMasterKey = DataFromHexString([fixture objectForKey:@"expectedMasterKeyHex"]);
+        NSData *masterKey = [passphrase derivedKeyOfLength:32
+                                                     salt:masterSalt
+                                               iterations:[[fixture objectForKey:@"hashIterations"] intValue]];
+        AssertEqualObjects(masterKey, expectedMasterKey,
+                           @"legacy database passphrase derivation must remain byte-compatible");
+
+        NSData *dataSessionSalt = DataFromHexString([fixture objectForKey:@"dataSessionSaltHex"]);
+        NSData *expectedDataSessionKey = DataFromHexString([fixture objectForKey:@"expectedDataSessionKeyHex"]);
+        NSData *dataSessionKey = [masterKey derivedKeyOfLength:32 salt:dataSessionSalt iterations:1];
+        AssertEqualObjects(dataSessionKey, expectedDataSessionKey,
+                           @"legacy per-database session-key derivation must remain byte-compatible");
+
+        NSMutableData *databasePayload = [NSMutableData dataWithData:
+            DataFromHexString([fixture objectForKey:@"encryptedDatabasePayloadHex"])];
+        AssertTrue([databasePayload decryptAESDataWithKey:dataSessionKey
+                                                       iv:[dataSessionSalt subdataWithRange:NSMakeRange(0, 16)]],
+                   @"an old encrypted database payload should decrypt");
+        NSData *uncompressedDatabasePayload = [databasePayload uncompressedData];
+        NSData *expectedDatabasePayload = [[fixture objectForKey:@"databasePayloadUTF8"]
+            dataUsingEncoding:NSUTF8StringEncoding];
+        AssertEqualObjects(uncompressedDatabasePayload, expectedDatabasePayload,
+                           @"the decrypted database payload should retain the legacy compression envelope");
+
+        NSData *wrongPassphrase = [@"wrong-passphrase" dataUsingEncoding:NSUTF8StringEncoding];
+        NSData *wrongMasterKey = [wrongPassphrase derivedKeyOfLength:32
+                                                               salt:masterSalt
+                                                         iterations:[[fixture objectForKey:@"hashIterations"] intValue]];
+        NSData *wrongSessionKey = [wrongMasterKey derivedKeyOfLength:32 salt:dataSessionSalt iterations:1];
+        NSMutableData *wrongPayload = [NSMutableData dataWithData:
+            DataFromHexString([fixture objectForKey:@"encryptedDatabasePayloadHex"])];
+        BOOL wrongPayloadDecrypted = [wrongPayload decryptAESDataWithKey:wrongSessionKey
+                                                                       iv:[dataSessionSalt subdataWithRange:NSMakeRange(0, 16)]];
+        NSData *wrongUncompressedPayload = wrongPayloadDecrypted && [wrongPayload isCompressedFormat]
+            ? [wrongPayload uncompressedData]
+            : nil;
+        AssertTrue(![wrongUncompressedPayload isEqualToData:expectedDatabasePayload],
+                   @"an old encrypted database payload should reject the wrong passphrase");
 
         NSData *identifier = DataFromHexString(@"00112233445566778899aabbccddeeff");
         NSString *encodedIdentifier = [identifier encodeBase64WithNewlines:NO];

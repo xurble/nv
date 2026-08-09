@@ -1,0 +1,3 @@
+# Configuration maximum-repository-warning-count
+Debug 875
+Release 875

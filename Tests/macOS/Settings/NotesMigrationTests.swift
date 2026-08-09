@@ -303,6 +303,107 @@ final class NotesMigrationTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
     }
 
+    func testUnavailableICloudFileRequestsDownloadInsteadOfDeletion() {
+        XCTAssertEqual(NotesICloudItemPolicy.action(for: .unavailable), .requestDownload)
+        XCTAssertEqual(NotesICloudItemPolicy.action(for: .downloadPending), .waitForDownload)
+        XCTAssertNotEqual(NotesICloudItemPolicy.action(for: .unavailable), .recordDeletion)
+    }
+
+    func testConcurrentICloudEditsAndConflictsNeverSelectAnOverwrite() {
+        XCTAssertEqual(NotesICloudItemPolicy.action(for: .concurrentEdit), .preserveBothVersions)
+        XCTAssertEqual(NotesICloudItemPolicy.action(for: .conflict), .surfaceConflict)
+    }
+
+    func testOnlyConfirmedICloudDeletionIsRecordedAsDeletion() {
+        XCTAssertEqual(NotesICloudItemPolicy.action(for: .confirmedDeletion), .recordDeletion)
+        XCTAssertEqual(NotesICloudItemPolicy.action(for: .available), .read)
+    }
+
+    func testInterruptedMigrationAfterStagingResumesWithoutChangingSource() throws {
+        enum SimulatedInterruption: Error { case stopped }
+
+        let source = try makeFixtureCollection()
+        let sourceSnapshot = try collectionSnapshot(at: source)
+        let destination = temporaryRoot.appendingPathComponent("Container/Documents", isDirectory: true)
+        let interruptedService = NotesMigrationService { checkpoint in
+            if checkpoint == .stagedAndVerified { throw SimulatedInterruption.stopped }
+        }
+
+        XCTAssertThrowsError(
+            try interruptedService.copyAndVerifyCollection(from: source, to: destination)
+        ) { error in
+            XCTAssertTrue(error is SimulatedInterruption)
+        }
+        XCTAssertEqual(try collectionSnapshot(at: source), sourceSnapshot)
+
+        try NotesMigrationService().copyAndVerifyCollection(from: source, to: destination)
+
+        XCTAssertEqual(try collectionSnapshot(at: destination), sourceSnapshot)
+        XCTAssertEqual(try collectionSnapshot(at: source), sourceSnapshot)
+        XCTAssertFalse(
+            FileManager.default.fileExists(
+                atPath: destination.deletingLastPathComponent()
+                    .appendingPathComponent(".SpiralNotesMigration.transaction.json").path
+            )
+        )
+    }
+
+    func testInterruptedMigrationAfterPublicationCommitsOnRetry() throws {
+        enum SimulatedInterruption: Error { case stopped }
+
+        let source = try makeFixtureCollection()
+        let sourceSnapshot = try collectionSnapshot(at: source)
+        let destination = temporaryRoot.appendingPathComponent("Container/Documents", isDirectory: true)
+        let interruptedService = NotesMigrationService { checkpoint in
+            if checkpoint == .published { throw SimulatedInterruption.stopped }
+        }
+
+        XCTAssertThrowsError(
+            try interruptedService.copyAndVerifyCollection(from: source, to: destination)
+        ) { error in
+            XCTAssertTrue(error is SimulatedInterruption)
+        }
+        XCTAssertEqual(try collectionSnapshot(at: destination), sourceSnapshot)
+
+        try NotesMigrationService().copyAndVerifyCollection(from: source, to: destination)
+
+        XCTAssertEqual(try collectionSnapshot(at: destination), sourceSnapshot)
+        XCTAssertEqual(try collectionSnapshot(at: source), sourceSnapshot)
+    }
+
+    func testInterruptedMigrationJournalCannotRemoveAnExternalDirectory() throws {
+        let source = try makeFixtureCollection()
+        let destination = temporaryRoot.appendingPathComponent("Container/Documents", isDirectory: true)
+        let outside = temporaryRoot.appendingPathComponent("DoNotRemove", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: destination.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        let sentinel = outside.appendingPathComponent("sentinel")
+        try Data("preserve me".utf8).write(to: sentinel)
+
+        let transaction: [String: Any] = [
+            "sourcePath": source.standardizedFileURL.path,
+            "destinationPath": destination.standardizedFileURL.path,
+            "stagingPath": outside.standardizedFileURL.path,
+            "phase": "copying"
+        ]
+        let transactionURL = destination.deletingLastPathComponent()
+            .appendingPathComponent(".SpiralNotesMigration.transaction.json")
+        try JSONSerialization.data(withJSONObject: transaction)
+            .write(to: transactionURL, options: .atomic)
+
+        XCTAssertThrowsError(
+            try NotesMigrationService().copyAndVerifyCollection(from: source, to: destination)
+        ) { error in
+            guard case NotesMigrationError.pendingDifferentMigration = error else {
+                return XCTFail("unexpected error: \(error)")
+            }
+        }
+        XCTAssertEqual(try Data(contentsOf: sentinel), Data("preserve me".utf8))
+    }
+
     private func makeFixtureCollection() throws -> URL {
         let source = temporaryRoot.appendingPathComponent("Local Notes", isDirectory: true)
         let notes = source.appendingPathComponent("Notes", isDirectory: true)
@@ -311,5 +412,23 @@ final class NotesMigrationTests: XCTestCase {
         try Data("Welcome to Spiral".utf8).write(to: notes.appendingPathComponent("Welcome.txt"))
         try Data("ignored Finder metadata".utf8).write(to: source.appendingPathComponent(".DS_Store"))
         return source
+    }
+
+    private func collectionSnapshot(at root: URL) throws -> [String: Data] {
+        let resolvedRoot = root.resolvingSymlinksInPath().standardizedFileURL
+        guard let enumerator = FileManager.default.enumerator(at: resolvedRoot, includingPropertiesForKeys: nil) else {
+            return [:]
+        }
+        var snapshot: [String: Data] = [:]
+        for case let url as URL in enumerator {
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                  !isDirectory.boolValue,
+                  url.lastPathComponent != ".DS_Store" else { continue }
+            let resolvedURL = url.resolvingSymlinksInPath().standardizedFileURL
+            let relativePath = String(resolvedURL.path.dropFirst(resolvedRoot.path.count + 1))
+            snapshot[relativePath] = try Data(contentsOf: url)
+        }
+        return snapshot
     }
 }

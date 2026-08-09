@@ -42,6 +42,7 @@
 #import "UnifiedCell.h"
 #import "LabelColumnCell.h"
 #import "ODBEditor.h"
+#import "LegacyNotePolicies.h"
 
 #if __LP64__
 // Needed for compatability with data created by 32bit app
@@ -193,20 +194,14 @@ NSInteger compareLabelString(id *a, id *b) {
 								(CFStringRef)(labelsOfNote(*(NoteObject **)b)), kCFCompareCaseInsensitive);
 }
 NSInteger compareTitleString(id *a, id *b) {
-	//add kCFCompareNumerically to options for natural order sort
-    CFComparisonResult stringResult = CFStringCompare((CFStringRef)(titleOfNote(*(NoteObject**)a)), 
-													  (CFStringRef)(titleOfNote(*(NoteObject**)b)), 
-													  kCFCompareCaseInsensitive);
-	if (stringResult == kCFCompareEqualTo) {
-		
-		NSInteger dateResult = compareDateCreated(a, b);
-		if (!dateResult)
-			return compareUniqueNoteIDBytes(a, b);
-		
-		return dateResult;
-	}
-	
-	return (NSInteger)stringResult;
+	return NVLegacyCompareNoteOrder(
+		titleOfNote(*(NoteObject **)a),
+		(*(NoteObject **)a)->createdDate,
+		(*(NoteObject **)a)->uniqueNoteIDBytes,
+		titleOfNote(*(NoteObject **)b),
+		(*(NoteObject **)b)->createdDate,
+		(*(NoteObject **)b)->uniqueNoteIDBytes
+	);
 }
 NSInteger compareUniqueNoteIDBytes(id *a, id *b) {
 	return memcmp((&(*(NoteObject**)a)->uniqueNoteIDBytes), (&(*(NoteObject**)b)->uniqueNoteIDBytes), sizeof(CFUUIDBytes));
@@ -224,18 +219,14 @@ NSInteger compareLabelStringReverse(id *a, id *b) {
 								(CFStringRef)(labelsOfNote(*(NoteObject **)a)), kCFCompareCaseInsensitive);
 }
 NSInteger compareTitleStringReverse(id *a, id *b) {
-    CFComparisonResult stringResult = CFStringCompare((CFStringRef)(titleOfNote(*(NoteObject **)b)), 
-													  (CFStringRef)(titleOfNote(*(NoteObject **)a)), 
-													  kCFCompareCaseInsensitive);
-	
-	if (stringResult == kCFCompareEqualTo) {
-		NSInteger dateResult = compareDateCreatedReverse(a, b);
-		if (!dateResult)
-			return compareUniqueNoteIDBytes(b, a);
-		
-		return dateResult;
-	}
-	return (NSInteger)stringResult;	
+	return NVLegacyCompareNoteOrder(
+		titleOfNote(*(NoteObject **)b),
+		(*(NoteObject **)b)->createdDate,
+		(*(NoteObject **)b)->uniqueNoteIDBytes,
+		titleOfNote(*(NoteObject **)a),
+		(*(NoteObject **)a)->createdDate,
+		(*(NoteObject **)a)->uniqueNoteIDBytes
+	);
 }
 
 NSInteger compareNodeID(id *a, id *b) {
@@ -1740,23 +1731,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 }
 
 - (NSRange)nextRangeForWords:(NSArray*)words options:(unsigned)opts range:(NSRange)inRange {
-	//opts indicate forwards or backwards, inRange allows us to continue from where we left off
-	//return location of NSNotFound and length 0 if none of the words could be found inRange
-	
-	//an optimization would be to fall back on cached cString if contentsWere7Bit is true, but then we have to handle opts ourselves
-	unsigned int i;
-	NSString *haystack = [contentString string];
-	NSRange nextRange = NSMakeRange(NSNotFound, 0);
-	for (i=0; i<[words count]; i++) {
-		NSString *word = [words objectAtIndex:i];
-		if ([word length] > 0) {
-			nextRange = [haystack rangeOfString:word options:opts range:inRange];
-			if (nextRange.location != NSNotFound && nextRange.length)
-				break;
-		}
-	}
-
-	return nextRange;
+	return NVLegacyNextRangeForWords([contentString string], words, opts, inRange);
 }
 
 force_inline void resetFoundPtrsForNote(NoteObject *note) {
@@ -1771,21 +1746,14 @@ BOOL noteContainsUTF8String(NoteObject *note, NoteFilterContext *context) {
 		resetFoundPtrsForNote(note);
     }
 	
-	char *needle = context->needle;
-    
 	/* NOTE: strstr in Darwin is heinously, supernaturally optimized; it blows boyer-moore out of the water. 
 	implementations on other OSes will need considerably more code in this function. */
-	
-    if (note->cTitleFoundPtr)
-		note->cTitleFoundPtr = strstr(note->cTitleFoundPtr, needle);
-    
-    if (note->cContentsFoundPtr)
-		note->cContentsFoundPtr = strstr(note->cContentsFoundPtr, needle);
-    
-    if (note->cLabelsFoundPtr)
-		note->cLabelsFoundPtr = strstr(note->cLabelsFoundPtr, needle);
-        
-    return note->cContentsFoundPtr || note->cTitleFoundPtr || note->cLabelsFoundPtr;
+	return NVLegacyAdvanceUTF8Search(
+		&note->cTitleFoundPtr,
+		&note->cContentsFoundPtr,
+		&note->cLabelsFoundPtr,
+		context->needle
+	);
 }
 
 BOOL noteTitleHasPrefixOfUTF8String(NoteObject *note, const char* fullString, size_t stringLen) {

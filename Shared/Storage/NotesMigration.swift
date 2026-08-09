@@ -118,6 +118,7 @@ enum NotesMigrationError: LocalizedError {
     case destinationContainsData
     case unsupportedItem(String)
     case verificationFailed(String)
+    case pendingDifferentMigration
 
     var errorDescription: String? {
         switch self {
@@ -131,6 +132,53 @@ enum NotesMigrationError: LocalizedError {
             return "The notes folder contains an unsupported item at \(path)."
         case let .verificationFailed(path):
             return "The copy could not be verified at \(path). The original notes were not removed."
+        case .pendingDifferentMigration:
+            return "Another interrupted notes migration must be resolved before this collection can be copied."
+        }
+    }
+}
+
+enum NotesMigrationCheckpoint: Equatable {
+    case stagedAndVerified
+    case published
+}
+
+enum NotesICloudItemState: Equatable {
+    case available
+    case unavailable
+    case downloadPending
+    case concurrentEdit
+    case conflict
+    case confirmedDeletion
+}
+
+enum NotesICloudItemAction: Equatable {
+    case read
+    case requestDownload
+    case waitForDownload
+    case preserveBothVersions
+    case surfaceConflict
+    case recordDeletion
+}
+
+/// A characterization boundary for the file states that the future iCloud
+/// adapter must report. In particular, absence on disk is never enough to
+/// infer deletion.
+struct NotesICloudItemPolicy {
+    static func action(for state: NotesICloudItemState) -> NotesICloudItemAction {
+        switch state {
+        case .available:
+            return .read
+        case .unavailable:
+            return .requestDownload
+        case .downloadPending:
+            return .waitForDownload
+        case .concurrentEdit:
+            return .preserveBothVersions
+        case .conflict:
+            return .surfaceConflict
+        case .confirmedDeletion:
+            return .recordDeletion
         }
     }
 }
@@ -143,11 +191,17 @@ struct NotesMigrationService {
         ".spiral-notes"
     ]
     private static let stagingPrefix = ".SpiralNotesMigration-"
+    private static let transactionFileName = ".SpiralNotesMigration.transaction.json"
 
     private let fileManager: FileManager
+    private let checkpointHandler: ((NotesMigrationCheckpoint) throws -> Void)?
 
-    init(fileManager: FileManager = .default) {
+    init(
+        fileManager: FileManager = .default,
+        checkpointHandler: ((NotesMigrationCheckpoint) throws -> Void)? = nil
+    ) {
         self.fileManager = fileManager
+        self.checkpointHandler = checkpointHandler
     }
 
     func containsNotes(at directoryURL: URL) -> Bool {
@@ -238,6 +292,14 @@ struct NotesMigrationService {
         to destinationURL: URL,
         stagingParent: URL
     ) throws {
+        if try recoverInterruptedMigration(
+            from: sourceURL,
+            to: destinationURL,
+            stagingParent: stagingParent
+        ) {
+            return
+        }
+
         if fileManager.fileExists(atPath: destinationURL.path) {
             guard try significantContents(of: destinationURL).isEmpty else {
                 throw NotesMigrationError.destinationContainsData
@@ -251,7 +313,15 @@ struct NotesMigrationService {
             isDirectory: true
         )
         try fileManager.createDirectory(at: stagingURL, withIntermediateDirectories: false)
-        defer { try? fileManager.removeItem(at: stagingURL) }
+
+        var transaction = NotesMigrationTransaction(
+            sourcePath: sourceURL.standardizedFileURL.path,
+            destinationPath: destinationURL.standardizedFileURL.path,
+            stagingPath: stagingURL.standardizedFileURL.path,
+            phase: .copying
+        )
+        let transactionURL = stagingParent.appendingPathComponent(Self.transactionFileName)
+        try writeTransaction(transaction, to: transactionURL)
 
         for itemURL in try significantContents(of: sourceURL) {
             try fileManager.copyItem(
@@ -262,15 +332,96 @@ struct NotesMigrationService {
 
         try verifyCollection(at: stagingURL, matches: sourceURL)
 
+        transaction.phase = .stagedAndVerified
+        try writeTransaction(transaction, to: transactionURL)
+        try checkpointHandler?(.stagedAndVerified)
+
         try fileManager.removeItem(at: destinationURL)
-        do {
-            try fileManager.moveItem(at: stagingURL, to: destinationURL)
-        } catch {
-            try? fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true)
-            throw error
+        try fileManager.moveItem(at: stagingURL, to: destinationURL)
+
+        transaction.phase = .published
+        try writeTransaction(transaction, to: transactionURL)
+        try checkpointHandler?(.published)
+
+        try verifyCollection(at: destinationURL, matches: sourceURL)
+        try fileManager.removeItem(at: transactionURL)
+    }
+
+    /// Returns true when an interrupted transaction was already complete and
+    /// was committed during recovery. Incomplete staging data is discarded and
+    /// copied again from the untouched source.
+    private func recoverInterruptedMigration(
+        from sourceURL: URL,
+        to destinationURL: URL,
+        stagingParent: URL
+    ) throws -> Bool {
+        let transactionURL = stagingParent.appendingPathComponent(Self.transactionFileName)
+        guard fileManager.fileExists(atPath: transactionURL.path) else { return false }
+
+        let transaction = try JSONDecoder().decode(
+            NotesMigrationTransaction.self,
+            from: Data(contentsOf: transactionURL)
+        )
+        guard transaction.sourcePath == sourceURL.standardizedFileURL.path,
+              transaction.destinationPath == destinationURL.standardizedFileURL.path else {
+            throw NotesMigrationError.pendingDifferentMigration
+        }
+
+        let standardizedStagingParent = stagingParent.standardizedFileURL
+        let stagingURL = URL(fileURLWithPath: transaction.stagingPath, isDirectory: true).standardizedFileURL
+        guard stagingURL.deletingLastPathComponent() == standardizedStagingParent,
+              stagingURL.lastPathComponent.hasPrefix(Self.stagingPrefix),
+              stagingURL.lastPathComponent.count > Self.stagingPrefix.count else {
+            throw NotesMigrationError.pendingDifferentMigration
+        }
+        let destinationExists = fileManager.fileExists(atPath: destinationURL.path)
+        let stagingExists = fileManager.fileExists(atPath: stagingURL.path)
+        if stagingExists {
+            let stagingValues = try stagingURL.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard stagingValues.isDirectory == true, stagingValues.isSymbolicLink != true else {
+                throw NotesMigrationError.pendingDifferentMigration
+            }
+        }
+
+        switch transaction.phase {
+        case .copying:
+            if stagingExists { try fileManager.removeItem(at: stagingURL) }
+            try fileManager.removeItem(at: transactionURL)
+            return false
+
+        case .stagedAndVerified:
+            if stagingExists {
+                try verifyCollection(at: stagingURL, matches: sourceURL)
+                if destinationExists {
+                    guard try significantContents(of: destinationURL).isEmpty else {
+                        throw NotesMigrationError.destinationContainsData
+                    }
+                    try fileManager.removeItem(at: destinationURL)
+                }
+                try fileManager.moveItem(at: stagingURL, to: destinationURL)
+            } else if !destinationExists {
+                try fileManager.removeItem(at: transactionURL)
+                return false
+            }
+
+        case .published:
+            guard destinationExists else {
+                try fileManager.removeItem(at: transactionURL)
+                return false
+            }
         }
 
         try verifyCollection(at: destinationURL, matches: sourceURL)
+        if stagingExists && fileManager.fileExists(atPath: stagingURL.path) {
+            try fileManager.removeItem(at: stagingURL)
+        }
+        try fileManager.removeItem(at: transactionURL)
+        return true
+    }
+
+    private func writeTransaction(_ transaction: NotesMigrationTransaction, to url: URL) throws {
+        let data = try JSONEncoder().encode(transaction)
+        try data.write(to: url, options: .atomic)
     }
 
     private func significantContents(of directoryURL: URL) throws -> [URL] {
@@ -363,4 +514,17 @@ struct NotesMigrationService {
             if firstChunk.isEmpty { return true }
         }
     }
+}
+
+private struct NotesMigrationTransaction: Codable {
+    enum Phase: String, Codable {
+        case copying
+        case stagedAndVerified
+        case published
+    }
+
+    let sourcePath: String
+    let destinationPath: String
+    let stagingPath: String
+    var phase: Phase
 }

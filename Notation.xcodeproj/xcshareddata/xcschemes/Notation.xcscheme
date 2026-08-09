@@ -8,7 +8,7 @@
       buildArchitectures = "Automatic">
       <BuildActionEntries>
          <BuildActionEntry
-            buildForTesting = "YES"
+            buildForTesting = "NO"
             buildForRunning = "YES"
             buildForProfiling = "YES"
             buildForArchiving = "YES"
@@ -35,6 +35,20 @@
                ReferencedContainer = "container:Notation.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D10000000000000000000040"
+               BuildableName = "NotationIntegrationTests.xctest"
+               BlueprintName = "NotationIntegrationTests"
+               ReferencedContainer = "container:Notation.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -51,6 +65,16 @@
                BlueprintIdentifier = "A20000000000000000000071"
                BuildableName = "NotationSettingsTests.xctest"
                BlueprintName = "NotationSettingsTests"
+               ReferencedContainer = "container:Notation.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D10000000000000000000040"
+               BuildableName = "NotationIntegrationTests.xctest"
+               BlueprintName = "NotationIntegrationTests"
                ReferencedContainer = "container:Notation.xcodeproj">
             </BuildableReference>
          </TestableReference>

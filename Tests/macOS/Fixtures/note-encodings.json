@@ -1,0 +1,32 @@
+[
+  {
+    "name": "UTF-8",
+    "encoding": 4,
+    "text": "café 日本",
+    "hex": "636166c3a920e697a5e69cac"
+  },
+  {
+    "name": "UTF-16 little endian with BOM",
+    "encoding": 10,
+    "text": "Spiral ✓",
+    "hex": "fffe530070006900720061006c0020001327"
+  },
+  {
+    "name": "ISO Latin 1",
+    "encoding": 5,
+    "text": "café",
+    "hex": "636166e9"
+  },
+  {
+    "name": "Mac OS Roman",
+    "encoding": 30,
+    "text": "café",
+    "hex": "6361668e"
+  },
+  {
+    "name": "Windows CP1252",
+    "encoding": 12,
+    "text": "“Spiral”",
+    "hex": "9353706972616c94"
+  }
+]

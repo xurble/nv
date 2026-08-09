@@ -28,6 +28,7 @@
 #import "NoteObject.h"
 #import "GlobalPrefs.h"
 #import "NSData_transformations.h"
+#import "LegacyNotePolicies.h"
 #include <sys/param.h>
 #include <sys/mount.h>
 
@@ -414,15 +415,6 @@ terminate:
 
 //whenever a note uses this method to change its filename, we will have to re-establish all the links to it
 - (NSString*)uniqueFilenameForTitle:(NSString*)title fromNote:(NoteObject*)note {
-    //generate a unique filename based on title, varying numbers
-    BOOL isUnique = YES;
-    NSString *uniqueFilename = title;
-	
-	//remove illegal characters
-	NSMutableString *sanitizedName = [[[uniqueFilename stringByReplacingOccurrencesOfString:@":" withString:@"-"] mutableCopy] autorelease];
-	if ([sanitizedName characterAtIndex:0] == (unichar)'.')	[sanitizedName replaceCharactersInRange:NSMakeRange(0, 1) withString:@"_"];
-	uniqueFilename = [[sanitizedName copy] autorelease];
-	
 	//use the note's current format if the current default format is for a database; get the "ideal" extension for that format
 	int noteFormat = [notationPrefs notesStorageFormat] || !note ? [notationPrefs notesStorageFormat] : storageFormatOfNote(note);
 	NSString *extension = [notationPrefs chosenPathExtensionForFormat:noteFormat];
@@ -430,33 +422,14 @@ terminate:
 	//if the note's current extension is compatible with the storage format above, then use the existing extension instead
 	if (note && filenameOfNote(note) && [notationPrefs pathExtensionAllowed:[filenameOfNote(note) pathExtension] forFormat:noteFormat])
 		extension = [filenameOfNote(note) pathExtension];
-	
-	//assume that we won't have more than 999 notes with the exact same name and of more than 247 chars
-	uniqueFilename = [uniqueFilename filenameExpectingAdditionalCharCount:3 + [extension length] + 2];
-	
-    unsigned int iteration = 0;
-    do {
-		isUnique = YES;
-		unsigned int i;
-		
-		//this ought to just use an nsset, but then we'd have to maintain a parallel data structure for marginal benefit
-		//also, it won't quite work right for filenames with no (real) extensions and periods in their names
-		for (i=0; i<[allNotes count]; i++) {
-			NoteObject *aNote = [allNotes objectAtIndex:i];
-			NSString *basefilename = [filenameOfNote(aNote) stringByDeletingPathExtension];
-			
-			if (note != aNote && [basefilename caseInsensitiveCompare:uniqueFilename] == NSOrderedSame) {
-				isUnique = NO;
-				
-				uniqueFilename = [uniqueFilename stringByDeletingPathExtension];
-				NSString *numberPath = [[NSNumber numberWithInt:++iteration] stringValue];
-				uniqueFilename = [uniqueFilename stringByAppendingPathExtension:numberPath];
-				break;
-			}
-		}
-    } while (!isUnique);
-	
-    return [uniqueFilename stringByAppendingPathExtension:extension];
+
+    NSMutableArray *existingFilenames = [NSMutableArray arrayWithCapacity:[allNotes count]];
+    for (NoteObject *existingNote in allNotes) {
+        if (existingNote != note && filenameOfNote(existingNote)) {
+            [existingFilenames addObject:filenameOfNote(existingNote)];
+        }
+    }
+    return NVLegacyUniqueFilename(title, extension, existingFilenames);
 }
 
 - (OSStatus)noteFileRenamed:(FSRef*)childRef fromName:(NSString*)oldName toName:(NSString*)newName {

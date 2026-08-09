@@ -23,8 +23,42 @@
 #import <Cocoa/Cocoa.h>
 #import "Spiral-Swift.h"
 
+static int SpiralRunDisposableLaunchProbe(NSString *directoryPath)
+{
+    NSString *temporaryRoot = [NSTemporaryDirectory() stringByStandardizingPath];
+    NSString *directory = [directoryPath stringByStandardizingPath];
+    NSString *requiredPrefix = [temporaryRoot hasSuffix:@"/"] ? temporaryRoot : [temporaryRoot stringByAppendingString:@"/"];
+    if (![directory hasPrefix:requiredPrefix]) {
+        NSLog(@"Refusing launch probe outside the temporary directory: %@", directory);
+        return 64;
+    }
+
+    BOOL isDirectory = NO;
+    if (![[NSFileManager defaultManager] fileExistsAtPath:directory isDirectory:&isDirectory] || !isDirectory) {
+        NSLog(@"Launch probe directory does not exist: %@", directory);
+        return 66;
+    }
+
+    NSString *markerPath = [directory stringByAppendingPathComponent:@".spiral-launch-ok"];
+    NSError *error = nil;
+    if (![@"Spiral launched without opening user data\n" writeToFile:markerPath
+                                                      atomically:YES
+                                                        encoding:NSUTF8StringEncoding
+                                                           error:&error]) {
+        NSLog(@"Unable to write launch probe marker: %@", error);
+        return 74;
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
+    NSString *launchProbeDirectory = [[[NSProcessInfo processInfo] environment]
+        objectForKey:@"SPIRAL_DISPOSABLE_LAUNCH_DIRECTORY"];
+    if ([launchProbeDirectory length] > 0) {
+        return SpiralRunDisposableLaunchProbe(launchProbeDirectory);
+    }
+
     [SpiralPreferencesMigrationController migrateBeforeApplicationLaunch];
     return NSApplicationMain(argc,  (const char **) argv);
 }

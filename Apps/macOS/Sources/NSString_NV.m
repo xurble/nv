@@ -21,6 +21,7 @@
     along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
 
 #import "NSString_NV.h"
+#import "LegacyNotePolicies.h"
 #import "NSData_transformations.h"
 #import "NSFileManager_NV.h"
 #import "NoteObject.h"
@@ -149,23 +150,7 @@ static int dayFromAbsoluteTime(CFAbsoluteTime absTime) {
 }
 
 - (NSArray*)labelCompatibleWords {
-	NSArray *array = nil;
-	if (IsLeopardOrLater) {
-		array = [self componentsSeparatedByCharactersInSet:[NSCharacterSet labelSeparatorCharacterSet]];
-	} else {
-		BOOL lacksSpace = [self rangeOfString:@" " options:NSLiteralSearch].location == NSNotFound;
-		array = [self componentsSeparatedByString: lacksSpace ? @"," : @" "];
-	}
-	NSMutableArray *titles = [NSMutableArray arrayWithCapacity:[array count]];
-	
-	NSUInteger i;
-	for (i=0; i<[array count]; i++) {
-		NSString *aWord = [array objectAtIndex:i];
-		if ([aWord length] > 0) {
-			[titles addObject:aWord];
-		}
-	}
-	return titles;
+	return NVLegacyLabelCompatibleWords(self);
 }
 
 - (CFArrayRef)copyRangesOfWordsInString:(NSString*)findString inRange:(NSRange)limitRange {

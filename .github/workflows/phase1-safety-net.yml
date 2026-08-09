@@ -1,0 +1,21 @@
+name: Phase 1 Safety Net
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.configuration }}
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_26.5.app
+      - name: Build, test, and enforce warning baseline
+        run: Scripts/ci/run-phase1.sh "${{ matrix.configuration }}"

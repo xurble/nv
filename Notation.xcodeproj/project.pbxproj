@@ -208,6 +208,12 @@
 		A80000000000000000000001 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
 		A80000000000000000000002 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
 		A80000000000000000000003 /* LegacyPreferencesMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */; };
+		C10000000000000000000001 /* LegacyNotePolicies.m in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* LegacyNotePolicies.m */; };
+		C20000000000000000000001 /* Phase1FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000002 /* Phase1FormatTests.swift */; };
+		D10000000000000000000001 /* TemporaryCollectionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000011 /* TemporaryCollectionIntegrationTests.swift */; };
+		D10000000000000000000002 /* NotesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000012 /* NotesMigration.swift */; };
+		D10000000000000000000003 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
+		D10000000000000000000004 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
 		D3EECA00106F66C70023D7F8 /* NVPasswordGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */; };
 /* End PBXBuildFile section */
 
@@ -610,6 +616,11 @@
 		B10000000000000000000011 /* Spiral.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Spiral.xcconfig; sourceTree = "<group>"; };
 		B10000000000000000000012 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		B10000000000000000000013 /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
+		C10000000000000000000002 /* LegacyNotePolicies.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LegacyNotePolicies.h; sourceTree = "<group>"; };
+		C10000000000000000000003 /* LegacyNotePolicies.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LegacyNotePolicies.m; sourceTree = "<group>"; };
+		C20000000000000000000002 /* Phase1FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1FormatTests.swift; sourceTree = "<group>"; };
+		D10000000000000000000011 /* TemporaryCollectionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryCollectionIntegrationTests.swift; sourceTree = "<group>"; };
+		D10000000000000000000012 /* NotationIntegrationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationIntegrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVPasswordGenerator.m; sourceTree = "<group>"; };
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -640,12 +651,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D10000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D10000000000000000000004 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		080E96DDFE201D6D7F000001 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				C10000000000000000000002 /* LegacyNotePolicies.h */,
+				C10000000000000000000003 /* LegacyNotePolicies.m */,
 				A60000000000000000000011 /* FirstRunICloudMigration.swift */,
 				A60000000000000000000012 /* NotesMigration.swift */,
 				A80000000000000000000011 /* LegacyPreferencesMigration.swift */,
@@ -777,6 +798,7 @@
 			children = (
 				8D1107320486CEB800E47090 /* Spiral.app */,
 				A20000000000000000000032 /* NotationSettingsTests.xctest */,
+				D10000000000000000000012 /* NotationIntegrationTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1037,6 +1059,7 @@
 			children = (
 				B10000000000000000000021 /* Build Configuration */,
 				A20000000000000000000051 /* ../../Tests/macOS/Settings */,
+				D10000000000000000000030 /* ../../Tests/macOS/Integration */,
 				080E96DDFE201D6D7F000001 /* Sources */,
 				29B97315FDCFA39411CA2CEA /* Dependencies */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -1103,12 +1126,21 @@
 		A20000000000000000000051 /* ../../Tests/macOS/Settings */ = {
 			isa = PBXGroup;
 			children = (
+				C20000000000000000000002 /* Phase1FormatTests.swift */,
 				A50000000000000000000013 /* AboutInformationTests.swift */,
 				A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */,
 				A20000000000000000000031 /* ModernSettingsTests.swift */,
 				A60000000000000000000013 /* NotesMigrationTests.swift */,
 			);
 			path = ../../Tests/macOS/Settings;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000030 /* ../../Tests/macOS/Integration */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000011 /* TemporaryCollectionIntegrationTests.swift */,
+			);
+			path = ../../Tests/macOS/Integration;
 			sourceTree = "<group>";
 		};
 		B10000000000000000000021 /* Build Configuration */ = {
@@ -1160,6 +1192,23 @@
 			productReference = A20000000000000000000032 /* NotationSettingsTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		D10000000000000000000040 /* NotationIntegrationTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000000000000000000053 /* Build configuration list for PBXNativeTarget "NotationIntegrationTests" */;
+			buildPhases = (
+				D10000000000000000000022 /* Sources */,
+				D10000000000000000000020 /* Frameworks */,
+				D10000000000000000000021 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotationIntegrationTests;
+			productName = NotationIntegrationTests;
+			productReference = D10000000000000000000012 /* NotationIntegrationTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1187,6 +1236,7 @@
 			targets = (
 				8D1107260486CEB800E47090 /* Notation */,
 				A20000000000000000000071 /* NotationSettingsTests */,
+				D10000000000000000000040 /* NotationIntegrationTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1295,6 +1345,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D10000000000000000000021 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -1302,6 +1359,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000000000000000000001 /* LegacyNotePolicies.m in Sources */,
 				A60000000000000000000001 /* FirstRunICloudMigration.swift in Sources */,
 				A60000000000000000000002 /* NotesMigration.swift in Sources */,
 				A80000000000000000000001 /* LegacyPreferencesMigration.swift in Sources */,
@@ -1402,6 +1460,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C20000000000000000000001 /* Phase1FormatTests.swift in Sources */,
 				A50000000000000000000003 /* AboutInformationTests.swift in Sources */,
 				A50000000000000000000004 /* AboutInformation.swift in Sources */,
 				A80000000000000000000003 /* LegacyPreferencesMigrationTests.swift in Sources */,
@@ -1411,6 +1470,16 @@
 				A20000000000000000000041 /* ModernSettingsTests.swift in Sources */,
 				A70000000000000000000002 /* NotesFolderPathControl.swift in Sources */,
 				A20000000000000000000043 /* SettingsCompatibility.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000022 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D10000000000000000000001 /* TemporaryCollectionIntegrationTests.swift in Sources */,
+				D10000000000000000000002 /* NotesMigration.swift in Sources */,
+				D10000000000000000000003 /* LegacyPreferencesMigration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2159,6 +2228,30 @@
 			};
 			name = Release;
 		};
+		D10000000000000000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.notational.velocity.integration-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D10000000000000000000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.notational.velocity.integration-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2185,6 +2278,15 @@
 			buildConfigurations = (
 				A20000000000000000000081 /* Debug */,
 				A20000000000000000000082 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D10000000000000000000053 /* Build configuration list for PBXNativeTarget "NotationIntegrationTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D10000000000000000000051 /* Debug */,
+				D10000000000000000000052 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

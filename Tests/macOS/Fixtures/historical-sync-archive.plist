@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>archiveVersion</key>
+    <integer>1</integer>
+    <key>notes</key>
+    <array>
+        <dict>
+            <key>titleString</key>
+            <string>Historical synchronized note</string>
+            <key>labelString</key>
+            <string>archive,legacy</string>
+            <key>syncServicesMD</key>
+            <dict>
+                <key>Simplenote</key>
+                <dict>
+                    <key>key</key>
+                    <string>historic-remote-identifier</string>
+                    <key>version</key>
+                    <integer>7</integer>
+                </dict>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>
