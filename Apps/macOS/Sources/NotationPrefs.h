@@ -115,6 +115,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (void)noteFilesCleanupSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 - (void)setConfirmsFileDeletion:(BOOL)value;
 - (void)setDoesEncryption:(BOOL)value;
+- (void)disableEncryptionForMigrationWithoutRemovingLegacyKeychainItem;
 - (void)setSecureTextEntry:(BOOL)value;
 - (const char*)keychainSyncAccountNameForService:(NSString*)serviceName;
 - (void)setSyncUsername:(NSString*)username forService:(NSString*)serviceName;
@@ -140,6 +141,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (void)addAllowedPathExtension:(NSString*)extension;
 - (BOOL)removeAllowedPathExtensionAtIndex:(unsigned int)extensionIndex;
 - (BOOL)setChosenPathExtensionAtIndex:(unsigned int)extensionIndex;
+- (void)useDefaultPathExtensionForFormatForMigration:(int)format;
 - (BOOL)addAllowedType:(NSString*)type;
 - (void)removeAllowedTypeAtIndex:(unsigned int)index;
 - (BOOL)setExtension:(NSString*)newExtension atIndex:(unsigned int)oldIndex;

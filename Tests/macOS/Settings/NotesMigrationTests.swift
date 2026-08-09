@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import XCTest
 
@@ -16,15 +17,14 @@ final class NotesMigrationTests: XCTestCase {
         }
     }
 
-    func testMoveToICloudIsTheDefaultChoice() {
-        XCTAssertEqual(NotesMigrationChoice.defaultChoice, .moveToICloud)
+    func testCopyToICloudIsTheOnlyImportChoice() {
+        XCTAssertEqual(NotesMigrationChoice.defaultChoice, .copyToICloud)
     }
 
     func testMigrationChoiceModalResponsesRoundTrip() {
         let choices: [NotesMigrationChoice] = [
             .keepCurrentLocation,
-            .copyToICloud,
-            .moveToICloud
+            .copyToICloud
         ]
 
         for choice in choices {
@@ -91,12 +91,74 @@ final class NotesMigrationTests: XCTestCase {
         )
     }
 
-    func testImportedLegacyPreferencesReceiveMigrationOffer() {
+    func testLegacyPreferencesReceiveNotesImportOffer() {
         XCTAssertEqual(
             NotesStartupLocationPolicy.decision(
-                preferencesStartupState: .importedLegacyPreferences
+                preferencesStartupState: .legacyPreferencesFound
             ),
-            .offerICloudMigration
+            .offerLegacyNotesImport
+        )
+    }
+
+    func testPlainBaseAttributesDoNotCountAsFormatting() {
+        let baseFont = NSFont.systemFont(ofSize: 13)
+        let note = NSAttributedString(
+            string: "plain note",
+            attributes: [.font: baseFont, .foregroundColor: NSColor.textColor]
+        )
+
+        XCTAssertFalse(
+            SpiralLegacyNoteFormattingDetector.containsSignificantFormatting(
+                in: [note],
+                baseAttributes: [.font: baseFont]
+            )
+        )
+    }
+
+    func testBoldTextSelectsRichText() {
+        let baseFont = NSFont.systemFont(ofSize: 13)
+        let note = NSMutableAttributedString(
+            string: "plain bold",
+            attributes: [.font: baseFont]
+        )
+        note.addAttribute(
+            .font,
+            value: NSFontManager.shared.convert(baseFont, toHaveTrait: .boldFontMask),
+            range: NSRange(location: 6, length: 4)
+        )
+
+        XCTAssertTrue(
+            SpiralLegacyNoteFormattingDetector.containsSignificantFormatting(
+                in: [note],
+                baseAttributes: [.font: baseFont]
+            )
+        )
+    }
+
+    func testAutomaticLinksAndLegacySyntheticMarkdownStylesRemainPlainText() {
+        let baseFont = NSFont.systemFont(ofSize: 13)
+        let note = NSMutableAttributedString(
+            string: "# https://example.com",
+            attributes: [.font: baseFont]
+        )
+        note.addAttribute(
+            .link,
+            value: URL(string: "https://example.com")!,
+            range: NSRange(location: 2, length: 19)
+        )
+        note.addAttributes(
+            [
+                NSAttributedString.Key("NVHeadingTag"): NSNull(),
+                .underlineStyle: NSUnderlineStyle.single.rawValue
+            ],
+            range: NSRange(location: 0, length: note.length)
+        )
+
+        XCTAssertFalse(
+            SpiralLegacyNoteFormattingDetector.containsSignificantFormatting(
+                in: [note],
+                baseAttributes: [.font: baseFont]
+            )
         )
     }
 

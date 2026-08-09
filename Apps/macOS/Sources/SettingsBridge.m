@@ -10,10 +10,215 @@
 #import "NSData_transformations.h"
 #import "NotationPrefs.h"
 #import "NotationPrefsViewController.h"
+#import "NotationFileManager.h"
+#import "NoteObject.h"
 #import "PTHotKeys/PTKeyCombo.h"
 #import "PTHotKeys/PTKeyComboPanel.h"
 
 NSNotificationName const NVSettingsBridgeDidChangeNotification = @"NVSettingsBridgeDidChangeNotification";
+
+static NSString * const NVLegacyCollectionImportErrorDomain = @"farm.poplar.spiral.legacy-import";
+
+typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
+    NVLegacyCollectionImportErrorUnreadableFolder = 1,
+    NVLegacyCollectionImportErrorUnrecognizedFormat,
+    NVLegacyCollectionImportErrorOpenFailed,
+    NVLegacyCollectionImportErrorNoNotes,
+    NVLegacyCollectionImportErrorConversionFailed
+};
+
+@interface NVLegacyCollectionPreparation ()
+@property(nonatomic, readwrite) NSInteger storageFormat;
+@property(nonatomic, readwrite) NSUInteger noteCount;
+@property(nonatomic, readwrite) BOOL detectedSignificantFormatting;
+@end
+
+@implementation NVLegacyCollectionPreparation
+@end
+
+@implementation NVLegacyCollectionImporter
+
++ (NSError *)errorWithCode:(NVLegacyCollectionImportError)code description:(NSString *)description {
+    return [NSError errorWithDomain:NVLegacyCollectionImportErrorDomain
+                               code:code
+                           userInfo:@{NSLocalizedDescriptionKey: description}];
+}
+
++ (int)inferredSeparateFileFormatAtURL:(NSURL *)folderURL error:(NSError **)error {
+    NSSet *plainExtensions = [NSSet setWithObjects:@"txt", @"text", @"utf8", @"taskpaper", nil];
+    NSSet *rtfExtensions = [NSSet setWithObject:@"rtf"];
+    NSSet *htmlExtensions = [NSSet setWithObjects:@"html", @"htm", nil];
+    NSMutableSet *formats = [NSMutableSet set];
+
+    NSDirectoryEnumerator *enumerator = [[NSFileManager defaultManager]
+        enumeratorAtURL:folderURL
+        includingPropertiesForKeys:@[NSURLIsRegularFileKey]
+        options:NSDirectoryEnumerationSkipsHiddenFiles
+        errorHandler:^BOOL(NSURL *url, NSError *enumerationError) {
+            if (error && !*error)
+                *error = enumerationError;
+            return NO;
+        }];
+
+    for (NSURL *itemURL in enumerator) {
+        NSNumber *isRegularFile = nil;
+        if (![itemURL getResourceValue:&isRegularFile forKey:NSURLIsRegularFileKey error:error])
+            return -1;
+        if (![isRegularFile boolValue])
+            continue;
+
+        NSString *name = [itemURL lastPathComponent];
+        if ([name isEqualToString:NotesDatabaseFileName] || [name isEqualToString:@"Interim Note-Changes"])
+            continue;
+
+        NSString *extension = [[itemURL pathExtension] lowercaseString];
+        if ([plainExtensions containsObject:extension])
+            [formats addObject:@(PlainTextFormat)];
+        else if ([rtfExtensions containsObject:extension])
+            [formats addObject:@(RTFTextFormat)];
+        else if ([htmlExtensions containsObject:extension])
+            [formats addObject:@(HTMLFormat)];
+    }
+
+    if (error && *error)
+        return -1;
+    if ([formats count] != 1) {
+        if (error) {
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorUnrecognizedFormat
+                             description:[formats count] == 0
+                                ? @"The selected folder does not contain recognizable Notational Velocity or nvAlt note files."
+                                : @"The selected folder contains a mixture of note file formats and cannot be imported safely as one legacy collection."];
+        }
+        return -1;
+    }
+    return [[formats anyObject] intValue];
+}
+
++ (NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
+                                                      error:(NSError **)error {
+    NSNumber *isDirectory = nil;
+    if (![workingCopyURL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:error] ||
+        ![isDirectory boolValue]) {
+        if (error && !*error)
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorUnreadableFolder
+                             description:@"The selected notes location is not a readable folder."];
+        return nil;
+    }
+
+    BOOL hadDatabase = [[NSFileManager defaultManager]
+        fileExistsAtPath:[[workingCopyURL URLByAppendingPathComponent:NotesDatabaseFileName] path]];
+    int inferredFileFormat = SingleDatabaseFormat;
+    if (!hadDatabase) {
+        inferredFileFormat = [self inferredSeparateFileFormatAtURL:workingCopyURL error:error];
+        if (inferredFileFormat < 0)
+            return nil;
+    }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    FSRef workingCopyRef;
+    BOOL resolvedWorkingCopy = CFURLGetFSRef((CFURLRef)workingCopyURL, &workingCopyRef);
+#pragma clang diagnostic pop
+    if (!resolvedWorkingCopy) {
+        if (error)
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorUnreadableFolder
+                             description:@"The selected notes folder could not be opened."];
+        return nil;
+    }
+
+    OSStatus openError = noErr;
+    NotationController *controller = [[NotationController alloc]
+        initLegacyMigrationWithDirectoryRef:&workingCopyRef
+        error:&openError];
+    if (!controller) {
+        if (error) {
+            NSString *description = openError == kPassCanceledErr
+                ? @"The encrypted notes import was cancelled."
+                : [NSString stringWithFormat:@"The legacy notes collection could not be opened (%d).", (int)openError];
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorOpenFailed description:description];
+        }
+        return nil;
+    }
+
+    NotationPrefs *prefs = [controller notationPrefs];
+    if (!hadDatabase && [prefs notesStorageFormat] != inferredFileFormat)
+        [prefs setNotesStorageFormat:inferredFileFormat];
+
+    NSArray *contents = [controller noteContentsForMigration];
+    if ([contents count] == 0) {
+        [controller closeAllResources];
+        [controller release];
+        if (error)
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorNoNotes
+                             description:@"No notes were found in the selected folder."];
+        return nil;
+    }
+
+    int sourceFormat = hadDatabase ? [controller currentNoteStorageFormat] : inferredFileFormat;
+    int targetFormat = sourceFormat;
+    BOOL significantFormatting = NO;
+    if (sourceFormat == SingleDatabaseFormat) {
+        NSMutableDictionary *baseAttributes = [NSMutableDictionary dictionary];
+        if ([prefs baseBodyFont])
+            [baseAttributes setObject:[prefs baseBodyFont] forKey:NSFontAttributeName];
+        if ([prefs foregroundColor])
+            [baseAttributes setObject:[prefs foregroundColor] forKey:NSForegroundColorAttributeName];
+        significantFormatting = [SpiralLegacyNoteFormattingDetector
+            containsSignificantFormattingInContents:contents
+            baseAttributes:baseAttributes];
+        targetFormat = significantFormatting ? RTFTextFormat : PlainTextFormat;
+    }
+
+    if (targetFormat != PlainTextFormat && targetFormat != RTFTextFormat && targetFormat != HTMLFormat) {
+        [controller closeAllResources];
+        [controller release];
+        if (error)
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorUnrecognizedFormat
+                             description:@"This legacy notes storage format is not supported by the clean-file importer."];
+        return nil;
+    }
+
+    if ([prefs doesEncryption])
+        [prefs disableEncryptionForMigrationWithoutRemovingLegacyKeychainItem];
+    if (sourceFormat == SingleDatabaseFormat)
+        [prefs useDefaultPathExtensionForFormatForMigration:targetFormat];
+    if ([prefs notesStorageFormat] != targetFormat)
+        [prefs setNotesStorageFormat:targetFormat];
+    [controller flushEverything];
+    NSString *extension = [[prefs chosenPathExtensionForFormat:targetFormat] copy];
+    NSArray *exportedFilenames = [[controller noteFileNamesForMigration] copy];
+    NSUInteger noteCount = [contents count];
+    [controller closeAllResources];
+    [controller release];
+
+    BOOL verifiedEveryNote = [exportedFilenames count] == noteCount;
+    for (NSString *filename in exportedFilenames) {
+        NSURL *exportedURL = [workingCopyURL URLByAppendingPathComponent:filename];
+        NSNumber *isRegularFile = nil;
+        if (![[[filename pathExtension] lowercaseString] isEqualToString:[extension lowercaseString]] ||
+            ![exportedURL getResourceValue:&isRegularFile forKey:NSURLIsRegularFileKey error:nil] ||
+            ![isRegularFile boolValue]) {
+            verifiedEveryNote = NO;
+            break;
+        }
+    }
+    [exportedFilenames release];
+    [extension release];
+    if (!verifiedEveryNote) {
+        if (error)
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorConversionFailed
+                             description:@"Spiral could not verify that every legacy note was converted to a clean file."];
+        return nil;
+    }
+
+    NVLegacyCollectionPreparation *result = [[[NVLegacyCollectionPreparation alloc] init] autorelease];
+    result.storageFormat = targetFormat;
+    result.noteCount = noteCount;
+    result.detectedSignificantFormatting = significantFormatting;
+    return result;
+}
+
+@end
 
 @interface NVSettingsBridge ()
 @property(nonatomic, retain) GlobalPrefs *globalPrefs;

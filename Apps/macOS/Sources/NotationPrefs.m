@@ -675,6 +675,22 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	}
 }
 
+- (void)disableEncryptionForMigrationWithoutRemovingLegacyKeychainItem {
+	doesEncryption = NO;
+	storesPasswordInKeychain = NO;
+	preferencesChanged = YES;
+
+	// The working archive is a disposable copy. Forget its reference to the
+	// legacy credential, but never delete the original application's Keychain
+	// item while preparing clean plaintext files.
+	[keychainDatabaseIdentifier release]; keychainDatabaseIdentifier = nil;
+	[verifierKey release]; verifierKey = nil;
+	[masterKey release]; masterKey = nil;
+
+	if ([delegate respondsToSelector:@selector(databaseEncryptionSettingsChanged)])
+		[delegate databaseEncryptionSettingsChanged];
+}
+
 - (void)setSecureTextEntry:(BOOL)value {
 	
 	secureTextEntry = value;
@@ -945,6 +961,17 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		return YES;
 	}
 	return NO;
+}
+
+- (void)useDefaultPathExtensionForFormatForMigration:(int)format {
+	NSString *defaultExtension = [NotationPrefs pathExtensionForFormat:format];
+	NSUInteger index = [pathExtensions[format] indexOfObject:defaultExtension];
+	if (index == NSNotFound) {
+		[pathExtensions[format] insertObject:defaultExtension atIndex:0];
+		index = 0;
+	}
+	chosenExtIndices[format] = (unsigned int)index;
+	preferencesChanged = YES;
 }
 
 - (BOOL)addAllowedType:(NSString*)type {

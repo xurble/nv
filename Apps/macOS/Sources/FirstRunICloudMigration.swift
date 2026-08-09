@@ -6,6 +6,7 @@ import SwiftUI
 final class SpiralFirstRunMigrationController: NSObject {
     private static let offerVersion = 1
     private static let offerVersionKey = "SpiralICloudMigrationOfferVersion"
+    private static let legacyImportOfferVersionKey = "SpiralLegacyNotesImportOfferVersion"
     private static let containerIdentifierKey = "SpiralICloudContainerIdentifier"
     private static let containerResolutionTimeout: TimeInterval = 15
 
@@ -31,9 +32,137 @@ final class SpiralFirstRunMigrationController: NSObject {
         case .useICloudByDefault:
             return prepareNewInstallICloudDefault(fallbackURL: currentURL)
 
-        case .offerICloudMigration:
-            return prepareICloudSwitch(from: currentURL)
+        case .offerLegacyNotesImport:
+            return prepareLegacyNotesImport(fallbackURL: currentURL)
         }
+    }
+
+    private static func prepareLegacyNotesImport(
+        fallbackURL: URL
+    ) -> SpiralPreparedNotesDirectory {
+        guard let source = SpiralPreferencesMigrationController.detectedLegacySource else {
+            return prepareNewInstallICloudDefault(fallbackURL: fallbackURL)
+        }
+
+        guard confirmLegacyNotesImport(from: source) else {
+            UserDefaults.standard.set(offerVersion, forKey: legacyImportOfferVersionKey)
+            return prepareNewInstallICloudDefault(fallbackURL: fallbackURL)
+        }
+
+        guard let selectedFolder = selectLegacyNotesFolder(for: source) else {
+            return prepareNewInstallICloudDefault(fallbackURL: fallbackURL)
+        }
+
+        guard let containerIdentifier = configuredContainerIdentifier,
+              let containerURL = resolveContainer(
+                identifier: containerIdentifier,
+                progressMessage: "Spiral is preparing iCloud Drive for the imported notes."
+              ) else {
+            showError(
+                title: "The notes weren’t imported",
+                message: "Spiral couldn’t access its iCloud Drive container. The selected \(source.displayName) folder was not changed."
+            )
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+        }
+
+        let destinationURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
+        let migration = NotesMigrationService()
+        do {
+            switch try migration.classifyFolder(at: destinationURL) {
+            case .empty:
+                break
+            case .noteCollection:
+                showError(
+                    title: "Spiral Notes already exist in iCloud Drive",
+                    message: "Spiral did not import the selected legacy collection because its iCloud folder already contains notes. The legacy folder was not changed. Spiral will use the existing iCloud collection."
+                )
+                UserDefaults.standard.set(offerVersion, forKey: legacyImportOfferVersionKey)
+                return SpiralPreparedNotesDirectory(
+                    directoryURL: destinationURL,
+                    marksMigrationOfferHandled: true
+                )
+            case .regularFolder:
+                showError(
+                    title: "The notes weren’t imported",
+                    message: "Spiral’s iCloud Documents folder contains unrelated files. Nothing was copied and the selected legacy folder was not changed."
+                )
+                return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            }
+        } catch {
+            showError(title: "The iCloud folder can’t be inspected", message: error.localizedDescription)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+        }
+
+        let workingRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SpiralLegacyImport-\(UUID().uuidString)", isDirectory: true)
+        let workingCollection = workingRoot.appendingPathComponent("Collection", isDirectory: true)
+
+        do {
+            try FileManager.default.createDirectory(at: workingRoot, withIntermediateDirectories: false)
+            defer { try? FileManager.default.removeItem(at: workingRoot) }
+
+            let stageResult: Result<Void, Error> = performWithProgress(
+                title: "Preparing \(source.displayName) notes…",
+                informativeText: "Spiral is making and verifying a temporary working copy. The original notes will not be changed."
+            ) {
+                try migration.copyAndVerifyCollection(from: selectedFolder, to: workingCollection)
+            }
+            try stageResult.get()
+
+            let preparation = try NVLegacyCollectionImporter.prepareWorkingCopy(
+                at: workingCollection
+            )
+
+            let copyResult: Result<Void, Error> = performWithProgress(
+                title: "Copying notes to iCloud Drive…",
+                informativeText: "Spiral is copying and verifying \(preparation.noteCount) converted notes. The original legacy folder will be kept."
+            ) {
+                try migration.copyAndVerifyCollection(from: workingCollection, to: destinationURL)
+            }
+            try copyResult.get()
+
+            UserDefaults.standard.set(offerVersion, forKey: legacyImportOfferVersionKey)
+            NSLog(
+                "Spiral imported %lu legacy notes to iCloud using storage format %ld.",
+                preparation.noteCount,
+                preparation.storageFormat
+            )
+            return SpiralPreparedNotesDirectory(
+                directoryURL: destinationURL,
+                marksMigrationOfferHandled: true
+            )
+        } catch {
+            showError(
+                title: "The notes weren’t imported",
+                message: "\(error.localizedDescription)\n\nThe selected \(source.displayName) folder was not changed."
+            )
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+        }
+    }
+
+    private static func confirmLegacyNotesImport(from source: LegacyPreferencesSource) -> Bool {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Import your \(source.displayName) notes?"
+        alert.informativeText = "Spiral found \(source.displayName) preferences. If you continue, choose its notes folder and Spiral will copy the notes into Spiral Notes in iCloud Drive. The original folder will be kept. Encrypted database notes are decrypted into ordinary TXT, RTF, or HTML files."
+        alert.addButton(withTitle: "Import Notes…")
+        let defaultsButton = alert.addButton(withTitle: "Don’t Import")
+        defaultsButton.keyEquivalent = "\u{1b}"
+        NSApp.activate(ignoringOtherApps: true)
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    private static func selectLegacyNotesFolder(for source: LegacyPreferencesSource) -> URL? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.resolvesAliases = true
+        panel.title = "Select \(source.displayName) Notes Folder"
+        panel.prompt = "Import"
+        panel.message = "Choose the folder containing “Notes & Settings” or the separate TXT, RTF, or HTML note files."
+        return panel.runModal() == .OK ? panel.url : nil
     }
 
     private static func prepareNewInstallICloudDefault(
@@ -173,7 +302,7 @@ final class SpiralFirstRunMigrationController: NSObject {
         }
 
         let result: Result<Void, Error> = performWithProgress(
-            title: choice == .moveToICloud ? "Moving notes to iCloud Drive…" : "Copying notes to iCloud Drive…",
+            title: "Copying notes to iCloud Drive…",
             informativeText: NotesMigrationProgressText.copyingNotes(for: choice)
         ) {
             try NotesMigrationService().copyAndVerifyCollection(from: currentURL, to: destinationURL)
@@ -206,21 +335,9 @@ final class SpiralFirstRunMigrationController: NSObject {
             UserDefaults.standard.set(offerVersion, forKey: offerVersionKey)
         }
 
-        guard let originalURL = prepared.originalURL,
-              let choice = prepared.choice else {
+        guard prepared.originalURL != nil,
+              prepared.choice != nil else {
             return
-        }
-
-        if choice == .moveToICloud {
-            do {
-                var trashedURL: NSURL?
-                try FileManager.default.trashItem(at: originalURL, resultingItemURL: &trashedURL)
-            } catch {
-                showError(
-                    title: "The iCloud copy is ready",
-                    message: "Spiral verified the iCloud copy but couldn’t move the original folder to the Trash. Spiral will use iCloud Drive; the original remains at:\n\n\(originalURL.path)"
-                )
-            }
         }
 
         UserDefaults.standard.set(offerVersion, forKey: offerVersionKey)
@@ -436,7 +553,7 @@ private enum MigrationChoiceWindow {
         )
         let hostingController = NSHostingController(rootView: rootView)
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "Move Notes to iCloud Drive"
+        window.title = "Copy Notes to iCloud Drive"
         window.styleMask = [.titled]
         window.isReleasedWhenClosed = false
         window.setContentSize(NSSize(width: 560, height: 390))
@@ -474,7 +591,7 @@ private struct FirstRunICloudMigrationView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Move removes the original only after the iCloud copy has been verified. Copy keeps the original folder as a backup. In both cases, Spiral will use the iCloud copy from then on.")
+                Text("Spiral will make and verify a copy in iCloud Drive, then use that copy from then on. The original notes folder will be kept as a backup.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -492,9 +609,6 @@ private struct FirstRunICloudMigrationView: View {
                 Spacer()
                 Button("Copy to iCloud") {
                     choose(.copyToICloud)
-                }
-                Button("Move to iCloud") {
-                    choose(.moveToICloud)
                 }
                 .keyboardShortcut(.defaultAction)
             }

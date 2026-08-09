@@ -2,10 +2,9 @@ import Foundation
 
 enum NotesMigrationChoice: String, Equatable {
     case keepCurrentLocation
-    case moveToICloud
     case copyToICloud
 
-    static let defaultChoice: NotesMigrationChoice = .moveToICloud
+    static let defaultChoice: NotesMigrationChoice = .copyToICloud
 }
 
 enum NotesMigrationProgressText {
@@ -16,8 +15,6 @@ enum NotesMigrationProgressText {
         switch choice {
         case .copyToICloud:
             return "Spiral is copying and verifying your notes. The original folder will be kept."
-        case .moveToICloud:
-            return "Spiral is copying and verifying your notes first. The original folder will only be moved to the Trash after verification succeeds."
         case .keepCurrentLocation:
             return "Your current notes folder will not be changed."
         }
@@ -55,7 +52,7 @@ enum NotesFolderClassification: Equatable {
 enum NotesStartupLocationDecision: Equatable {
     case useCurrentLocation
     case useICloudByDefault
-    case offerICloudMigration
+    case offerLegacyNotesImport
 }
 
 struct NotesStartupLocationPolicy {
@@ -65,8 +62,8 @@ struct NotesStartupLocationPolicy {
         switch preferencesStartupState {
         case .existingSpiralPreferences:
             return .useCurrentLocation
-        case .importedLegacyPreferences:
-            return .offerICloudMigration
+        case .legacyPreferencesFound:
+            return .offerLegacyNotesImport
         case .freshInstall:
             return .useICloudByDefault
         }

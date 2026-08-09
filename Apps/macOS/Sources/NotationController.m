@@ -41,6 +41,12 @@
 #import "BookmarksController.h"
 #import "DeletionManager.h"
 
+@interface NotationController ()
+- (id)initWithDirectoryRef:(FSRef*)directoryRef
+                     error:(OSStatus*)err
+  suppressGlobalPreferences:(BOOL)suppressGlobalPreferences;
+@end
+
 @implementation NotationController
 
 - (id)init {
@@ -126,6 +132,20 @@
 }
 
 - (id)initWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err {
+    return [self initWithDirectoryRef:directoryRef
+                                error:err
+             suppressGlobalPreferences:NO];
+}
+
+- (id)initLegacyMigrationWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err {
+    return [self initWithDirectoryRef:directoryRef
+                                error:err
+             suppressGlobalPreferences:YES];
+}
+
+- (id)initWithDirectoryRef:(FSRef*)directoryRef
+                     error:(OSStatus*)err
+  suppressGlobalPreferences:(BOOL)suppressGlobalPreferences {
     
     *err = noErr;
     
@@ -133,6 +153,7 @@
 		aliasNeedsUpdating = YES; //we don't know if we have an alias yet
 		
 		noteDirectoryRef = *directoryRef;
+		suppressGlobalPreferenceAdoption = suppressGlobalPreferences;
 		
 		//check writable and readable perms, warning user if necessary
 		
@@ -330,9 +351,10 @@ returnResult:
 	if (!(deletedNotes = [[frozenNotation deletedNotes] retain]))
 	    deletedNotes = [[NSMutableSet alloc] init];
 			
-	[prefsController setNotationPrefs:notationPrefs sender:self];
-	
-	[self makeForegroundTextColorMatchGlobalPrefs];
+	if (!suppressGlobalPreferenceAdoption) {
+		[prefsController setNotationPrefs:notationPrefs sender:self];
+		[self makeForegroundTextColorMatchGlobalPrefs];
+	}
 	
 	if(notesData)
 	    free(notesData);
@@ -624,6 +646,31 @@ bail:
 
 - (int)currentNoteStorageFormat {
     return [notationPrefs notesStorageFormat];
+}
+
+// A read-only snapshot for the quarantined legacy importer. Returning copied
+// attributed strings prevents migration-format inspection from mutating the
+// live legacy model while it decides between clean TXT and RTF output.
+- (NSArray*)noteContentsForMigration {
+    NSMutableArray *contents = [NSMutableArray arrayWithCapacity:[allNotes count]];
+    for (NoteObject *note in allNotes) {
+        NSAttributedString *content = [[note contentString] copy];
+        if (content) {
+            [contents addObject:content];
+            [content release];
+        }
+    }
+    return contents;
+}
+
+- (NSArray*)noteFileNamesForMigration {
+    NSMutableArray *filenames = [NSMutableArray arrayWithCapacity:[allNotes count]];
+    for (NoteObject *note in allNotes) {
+        NSString *filename = filenameOfNote(note);
+        if (filename)
+            [filenames addObject:[[filename copy] autorelease]];
+    }
+    return filenames;
 }
 
 - (void)noteDidNotWrite:(NoteObject*)note errorCode:(OSStatus)error {

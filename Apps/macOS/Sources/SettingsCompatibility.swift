@@ -52,22 +52,85 @@ struct StorageFormat: Identifiable {
 enum MigrationChoiceModalResponse {
     private static let keepCurrentLocation = NSApplication.ModalResponse(rawValue: 2001)
     private static let copyToICloud = NSApplication.ModalResponse(rawValue: 2002)
-    private static let moveToICloud = NSApplication.ModalResponse(rawValue: 2003)
 
     static func response(for choice: NotesMigrationChoice) -> NSApplication.ModalResponse {
         switch choice {
         case .keepCurrentLocation: return keepCurrentLocation
         case .copyToICloud: return copyToICloud
-        case .moveToICloud: return moveToICloud
         }
     }
 
     static func choice(for response: NSApplication.ModalResponse) -> NotesMigrationChoice {
         switch response {
         case copyToICloud: return .copyToICloud
-        case moveToICloud: return .moveToICloud
         default: return .keepCurrentLocation
         }
+    }
+}
+
+@objc(SpiralLegacyNoteFormattingDetector)
+final class SpiralLegacyNoteFormattingDetector: NSObject {
+    @objc(containsSignificantFormattingInContents:baseAttributes:)
+    static func containsSignificantFormatting(
+        in contents: [NSAttributedString],
+        baseAttributes: [NSAttributedString.Key: Any]
+    ) -> Bool {
+        contents.contains { content in
+            guard content.length > 0 else { return false }
+            var foundFormatting = false
+            content.enumerateAttributes(
+                in: NSRange(location: 0, length: content.length),
+                options: []
+            ) { attributes, _, stop in
+                if attributesAreSignificantlyFormatted(attributes, baseAttributes: baseAttributes) {
+                    foundFormatting = true
+                    stop.pointee = true
+                }
+            }
+            return foundFormatting
+        }
+    }
+
+    private static func attributesAreSignificantlyFormatted(
+        _ attributes: [NSAttributedString.Key: Any],
+        baseAttributes: [NSAttributedString.Key: Any]
+    ) -> Bool {
+        var remaining = attributes
+
+        let hasSyntheticHeading = remaining[NSAttributedString.Key("NVHeadingTag")] != nil
+        let hasSyntheticDoneStyle = remaining[NSAttributedString.Key("NVDoneTag")] != nil
+        remaining = remaining.filter { !$0.key.rawValue.hasPrefix("NV") }
+
+        if hasSyntheticHeading {
+            remaining.removeValue(forKey: .underlineStyle)
+        }
+        if hasSyntheticDoneStyle {
+            remaining.removeValue(forKey: .strikethroughStyle)
+        }
+
+        // These are display or editor annotations that plain-text notes can
+        // regenerate without changing their user-authored content.
+        remaining.removeValue(forKey: .foregroundColor)
+        remaining.removeValue(forKey: .link)
+        remaining.removeValue(forKey: .cursor)
+        remaining.removeValue(forKey: .toolTip)
+
+        for (key, baseValue) in baseAttributes {
+            guard let value = remaining[key] else { continue }
+            if valuesEqual(value, baseValue) {
+                remaining.removeValue(forKey: key)
+            }
+        }
+
+        return !remaining.isEmpty
+    }
+
+    private static func valuesEqual(_ first: Any, _ second: Any) -> Bool {
+        guard let firstObject = first as? NSObject,
+              let secondObject = second as? NSObject else {
+            return false
+        }
+        return firstObject == secondObject
     }
 }
 

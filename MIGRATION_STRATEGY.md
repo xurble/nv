@@ -12,13 +12,15 @@ The objective is not to rewrite the application for its own sake. Success means 
 - exposes a tested, platform-neutral storage boundary that both the macOS and future iOS applications can use;
 - can place a user-approved note collection in iCloud Drive without silently moving, rewriting, duplicating, or losing existing data;
 - handles delayed downloads, offline edits, coordinated writes, external changes, and file conflicts explicitly;
+- gives every app-managed note a stable, cross-device identity suitable for iCloud conflict handling, deep links, Spotlight, App Intents, and Siri, while preserving both files when an external rename-plus-edit makes identity ambiguous;
+- exposes only user-approved note content to Spotlight, Apple Intelligence, and Siri, with unavailable legacy-encrypted content and privacy-excluded notes omitted by default;
 - no longer depends on unsupported Carbon APIs or obsolete binary frameworks;
 - has automated coverage for important behaviour and compatibility formats; and
 - uses Swift for new and substantially refactored code where Swift improves safety and clarity.
 
 ## Current Assessment
 
-The project contains approximately 40,000 lines of Objective-C and C. Its largest and most interconnected classes include `NoteObject`, `AppController`, `NotationController`, `LinkingEditor`, and `NotesTableView`. There is currently no automated test target.
+The project contains approximately 40,000 lines of Objective-C and C. Its largest and most interconnected classes include `NoteObject`, `AppController`, `NotationController`, `LinkingEditor`, and `NotesTableView`. A small automated test target and several characterization executables now exist, but they do not yet cover the persistence, encryption, recovery, and cross-device behavior needed for this migration.
 
 The main modernization risks are not caused by Objective-C itself. They are:
 
@@ -43,22 +45,126 @@ Changing the SDK used to build the app and changing its minimum supported macOS 
 5. **Use modern platform APIs.** Remove compatibility code for operating systems outside the declared support range.
 6. **Treat warnings as migration inventory.** Establish a warning baseline, prevent new warnings, and reduce the existing set by subsystem.
 7. **Do not equate modernization with a complete Swift or SwiftUI rewrite.** Language and UI migrations should follow stable boundaries and tests.
+8. **Design identity before synchronization.** Titles and filenames are mutable presentation, not note identity. Assign a permanent UUID before iCloud, deep-link, or App Entity work.
+9. **Keep cloud data and local indexes separate.** Rebuildable search indexes, thumbnails, caches, and local database accelerators must not be synchronized as user documents.
+10. **Keep canonical note files clean.** New notes are ordinary attachment-free plain text, RTF, or HTML files. Do not embed Spiral UUIDs, revision records, tags, application state, or other private metadata in their content.
 
 ## Recommended Target Architecture
 
-The near-term architecture should remain a native AppKit application, retaining `NSTextView` and established command handling for the core editing experience.
+The product should become a shared Swift domain and storage system with separate SwiftUI application shells. Platform-specific text views and integrations remain behind narrow adapters:
 
-New and refactored functionality should move behind explicit modules or service boundaries:
+- **NoteDomain (shared Swift package):** `Sendable` value types for notes, tags, folders, revisions, and conflicts. Attachments are not part of the product model. An app-managed note has a permanent UUID that does not change when its title, filename, or folder changes.
+- **NoteFileCodec (shared Swift package):** deterministic, fixture-tested readers and writers for ordinary `.txt`, `.rtf`, and `.html` files. UTF-8 plain text is the preferred format for new notes. RTF is limited to textual rich formatting, and HTML must be self-contained textual markup with no linked assets, embedded media, or companion resource directories. The canonical file contains only user content and the syntax required by its declared format; it contains no Spiral manifest or embedded application metadata. The legacy Notational Velocity/nvAlt collection database remains a migration input only, not a competing live store or a format for new exports.
+- **ReconciliationStore (shared Swift package):** private, per-note reconciliation records stored outside the public `Documents` directory of Spiral's iCloud ubiquity container. Local-only collections use the equivalent private Application Support location and migrate their records when the collection explicitly moves to iCloud. A record maps a UUID to its current and recent relative paths, raw-content hash, last common revision, bounded merge-base snapshot, app-only metadata, and tombstone state. Use one independently replaceable record directory per note rather than one global manifest or database file. The visible note must remain usable if this state is unavailable; loss of reconciliation state may lose app-only metadata or require conservative identity recovery, but must never make note content unreadable.
+- **NoteStore (shared Swift package):** an actor-isolated storage contract for enumeration, lookup by stable ID, search, create/update/delete, coordinated saves, change observation, conflict representation, migration, and index events. It must not expose `AppKit`, `UIKit`, SwiftUI scene state, or Objective-C model objects.
+- **Document adapters:** use the OS 27 SwiftUI `Document`/`ReadableDocument`/`WritableDocument` APIs for new iPhone and iPad document access when OS 27 is the deployment minimum. These APIs provide async URL access, snapshots, progress, and a framework-provided file coordinator. If older systems remain supported, isolate `FileDocument`/`ReferenceFileDocument` fallback code in the adapter because Apple no longer recommends those protocols for new document types on OS 27.
+- **Local index:** a rebuildable local SQLite, SwiftData, or Core Spotlight index may accelerate collection search, but it lives in Application Support, never in iCloud Drive, and is never authoritative. If SwiftData-to-CloudKit synchronization is later used for app-only metadata, keep its store local and treat file delivery and CloudKit delivery as independent, asynchronously ordered channels.
+- **SystemIntegration (shared Swift sources where possible):** `NoteEntity`, entity queries, App Intents, Spotlight donation, deep-link routing, and privacy policy. The Mac and iOS applications link the same entity and intent definitions.
+- **Notational Velocity/nvAlt LegacyCompatibility:** permanently retained, fixture-tested support for opening the single-database archive, deriving and verifying its encryption keys, decrypting encrypted archives, replaying its WAL, and reading historic sync metadata, filenames, and encodings. This code exists specifically so people can migrate collections created by Notational Velocity or nvAlt. It is important compatibility code, not disposable technical debt, but it must not pull the AppKit-era object graph into the new store after migration.
+- **Application UI:** SwiftUI owns navigation, search/list presentation, inspector/panels, settings, onboarding, migration, conflicts, and platform-adaptive layout. The Mac initially wraps its proven `NSTextView`/`LinkingEditor` behavior; iPhone and iPad use a SwiftUI editor or a wrapped `UITextView` where TextKit control is required.
+- **macOSIntegration:** menus, commands, responder-chain behavior, services, global hotkey, external editor handoff, multiwindow behavior, and updater/distribution remain Mac-only adapters.
 
-- **NoteCore:** typed note values, labels, search rules, filename rules, and format-independent transformations;
-- **NoteStore:** a platform-neutral storage contract covering URL-based file access, atomic writes, metadata, change observation, WAL recovery, conflict representation, and migration coordination. It should support both a local directory and an iCloud Drive container without exposing AppKit or UIKit;
-- **LegacyCrypto:** a small, thoroughly tested compatibility layer for reading and writing existing encrypted formats;
-- **Legacy Sync Compatibility:** retain the ability to read historical per-note and account metadata without activating a remote service; any future synchronization provider should be introduced as a new, separately tested module;
-- **Shared iCloud Drive Storage:** platform-specific adapters should locate and coordinate access to the shared ubiquity container while `NoteStore` owns file-format and recovery semantics. Treat iCloud Drive as a coordinated, eventually available filesystem rather than as an immediately consistent database;
-- **Application UI:** the AppKit editor and window shell, with SwiftUI used selectively for new auxiliary views; and
-- **Update and Distribution:** current Sparkle integration, signing, hardened runtime, notarization, and release automation.
+Objective-C and Swift can coexist while the boundary is extracted. C should remain only for small, stable legacy compatibility algorithms. New boundaries use typed async APIs and errors rather than notifications, dynamic selectors, or shared controller state.
 
-Objective-C and Swift can coexist in the application target. C should remain where it provides a small, stable compatibility implementation. Boundaries between these areas should use explicit types and errors rather than dynamic selector dispatch.
+## Storage Decision: Per-Note Documents in iCloud Drive
+
+The canonical iCloud Drive store should use one coordinated document per note, not one live collection database.
+
+| Option | Decision | Reason |
+| --- | --- | --- |
+| One legacy archive/WAL in iCloud Drive | Do not use as the live shared store | Every edit changes the collection file, unrelated offline edits conflict at whole-library granularity, and the current archive/WAL implementation is not an iCloud document implementation. |
+| One SQLite database file in iCloud Drive | Do not use | Apple's iCloud guidance explicitly says a SQLite store file must not be stored in iCloud document storage. WAL/SHM sidecars and cross-device conflict copies make it especially unsafe. |
+| One collection document/package containing an internal database | Technically possible, not recommended | `Document`, `UIDocument`, or `NSDocument` can coordinate a single package and surface versions, but cross-device conflicts still concern the whole collection and require a custom record-level merge. It also increases download, recovery, and corruption blast radius. |
+| Local database mirrored with CloudKit | Viable alternative if Finder-visible documents cease to be a requirement | `NSPersistentCloudKitContainer` or `CKSyncEngine` keeps a local database and syncs records, rather than copying the database file through iCloud Drive. This is a different product/storage decision and a much larger legacy migration. |
+| One `.spiralnote` package per note | Do not use for the canonical store | There are no attachments, and a package would hide metadata inside what appears to be a note while reducing interoperability with external text editors. |
+| One clean `.txt`, `.rtf`, or `.html` file per note, with private per-note reconciliation records | Recommended | Conflicts, download, repair, and history are scoped to one note; the visible files remain directly editable and portable; and app metadata does not contaminate their contents. |
+
+The existing single-file format and its encryption implementation are legacy compatibility formats for people migrating from Notational Velocity or nvAlt. Retain the code required to identify, open, verify, decrypt, recover, and migrate those collections for as long as the product supports those users. Existing users must be able to migrate a verified copy to per-note documents without losing note content, metadata, or WAL-recoverable changes, while retaining the encrypted source backup until they deliberately remove it. Do not use the legacy format for newly created collections, do not continue writing it after a user completes migration to the modern store, and do not silently convert it merely because it was read successfully.
+
+This compatibility promise includes encrypted collections, but the clean-file migration does not introduce a replacement application-encryption writer. Remove an old primitive only if an equivalent, fixture-verified implementation continues to read every supported Notational Velocity and nvAlt encryption variant. Any future encrypted modern mode would be a separate product and storage decision because a file cannot simultaneously be externally editable plaintext and application-encrypted content.
+
+The clean-file store and its reconciliation layer need these properties:
+
+- the canonical note is a single ordinary `.txt`, `.rtf`, or `.html` file with no embedded UUID, schema version, tags, pin state, revision token, or Spiral-specific metadata;
+- the filename supplies the display title and the containing directories supply visible folder organization;
+- app-only metadata and stable UUID mapping live in the private per-note reconciliation record outside the public `Documents` directory;
+- app-produced serialization is deterministic so unchanged saves do not create noisy iCloud revisions, while externally produced valid files are preserved without gratuitous normalization;
+- raw-byte content hashes and bounded merge-base snapshots support verification and three-way conflict handling;
+- tombstones prevent an offline client from accidentally resurrecting a deleted note;
+- `NSFileCoordinator`, `NSFilePresenter`, `NSMetadataQuery`, and `NSFileVersion` are used through platform adapters for coordinated access, discovery, and conflict inspection;
+- discovery includes a full reconciliation scan at launch and foregrounding because uncoordinated external writes do not reliably generate file-presenter notifications;
+- a locally absent iCloud file is not treated as deleted until metadata state distinguishes deletion from eviction or delayed download; and
+- no identity depends on OpenMeta tags, extended attributes, HFS catalog IDs, volume UUIDs, or other metadata attached to the clean file.
+
+Use a title-derived filename with collision handling. App-coordinated renames retain the UUID. For external changes, match the current path first, then use prior paths and content hashes to recognize safe rename and move cases. A new unmatched file receives a new UUID; an unambiguous copy receives a new UUID; and a missing file creates a tombstone only after deletion is confirmed. A rename combined with a content edit outside Spiral can be indistinguishable from delete-plus-create or copy-plus-edit because the file carries no stable identifier. When identity or a merge is ambiguous, preserve both versions and ask the user rather than silently assigning history or overwriting content.
+
+The reconciliation history is not an unlimited second copy of the collection. Retain only the revision ancestry and bounded common-base content required for conflict recovery, define a deletion and retention policy, and ensure deleting a note also makes its private history eligible for deletion. A local SwiftData index may map UUIDs to current URLs and can regenerate from the clean files and reconciliation records; do not put its SQLite store file in iCloud Drive.
+
+Clean files are necessarily readable plaintext at the application level. Migrating a legacy encrypted collection to the modern clean-file store must explicitly warn the user that the destination is no longer protected by Notational Velocity/nvAlt application-level encryption, retain the verified encrypted source backup until the user deliberately removes it, and never imply that iCloud account or device protection is equivalent to the legacy passphrase format. Legacy decryptors remain permanently supported for migration.
+
+### Implemented Transitional First-Run Import
+
+As of August 2026, the Mac application has a guarded first-run importer that establishes the intended user experience while reusing the existing legacy controller as a quarantined conversion engine:
+
+1. Before application launch, Spiral checks for its own persistent preference domain. If Spiral preferences already exist, it uses the configured Spiral location and does not offer a legacy import. Otherwise it detects the Notational Velocity and nvAlt preference domains; when both exist, Notational Velocity currently takes precedence. Detection does not copy any legacy preference values into Spiral.
+2. When a legacy domain is detected, Spiral asks whether to import the notes. Acceptance opens a directory-only selection panel; Spiral does not automatically follow the legacy `DirectoryAlias` or access a legacy notes directory without this explicit user selection.
+3. Spiral resolves its entitled iCloud container and accepts an empty destination. It refuses a destination containing unrelated data. If a recognizable Spiral collection already exists there, Spiral adopts it without overwriting it and leaves the selected legacy collection untouched.
+4. Spiral makes and byte-verifies a disposable local copy of the selected folder. All archive opening, WAL recovery, passphrase handling, decryption, storage-format changes, and note-file generation operate on that copy. The migration-specific legacy-controller initializer does not adopt the legacy collection's font or other presentation preferences into Spiral.
+5. A collection with a `Notes & Settings` database uses the archived collection format as its first format signal. If that format is the single database, Spiral inspects every note's attributed content. Base styling, display colour, automatically detected links, and nvAlt's synthetic Markdown/task display attributes do not count as authored rich formatting. If any remaining formatting is present, the complete collection is exported as `.rtf`; otherwise it is exported as `.txt`. The exporter forces those standard extensions and verifies that every note has a corresponding regular file before publication.
+6. A folder without the database is inferred from its visible note extensions. TXT-family extensions (`txt`, `text`, `utf8`, and `taskpaper`), RTF, and HTML-family extensions (`html` and `htm`) are recognized. A folder with no recognized note files or a mixture of storage families is rejected rather than guessed.
+7. For an encrypted database, the retained compatibility code obtains the passphrase and decrypts only the disposable copy. The confirmation text warns that the destination files are ordinary unencrypted files. Disabling encryption in the working copy neither modifies the original archive nor removes its legacy Keychain item.
+8. Spiral copies and byte-verifies the converted working collection into its iCloud `Documents` directory, switches to that verified destination, and deletes the disposable copy. The original selected folder is always retained. There is no move option. The manual “switch to iCloud” workflow is also copy-or-keep only.
+
+This is a transitional bridge, not the Phase 4 production store. The current Mac runtime still requires `Notes & Settings` and may retain legacy journal or metadata state alongside the generated per-note files; it continues to use that compatibility database as part of its live object graph. Consequently, the present iCloud folder is not yet the clean, metadata-free canonical store and must not be opened concurrently by the future iPhone/iPad clients. Phase 2 must move migration output into `NoteStore`, clean codecs, and private reconciliation records, and Phase 4 must publish only canonical note files in the public `Documents` directory before multi-client iCloud use is enabled.
+
+## UI Direction and Mac Retention Decisions
+
+SwiftUI moves onto the critical path because the iPhone, iPad, and Mac products need shared navigation, note list, search, selection, command models, sheets, and system-context annotations. The first iOS application should not wait for a complete Objective-C or ARC migration.
+
+The first vertical slice should show the same temporary fixture collection in a SwiftUI `NavigationSplitView` on iPad and Mac and a compact navigation stack on iPhone. It should support search, open, create, edit, save, rename, tag, delete, and conflict display through `NoteStore`. The Mac can host its existing editor inside this shell while the iOS version uses a new editor adapter.
+
+Do not make a source-level SwiftUI view automatically shared just because it compiles on every platform. Share feature state, commands, and views where interaction is genuinely common; use platform-specific toolbars, menus, keyboard commands, windowing, and text-editor wrappers.
+
+Apple's current TextKit guidance continues to recommend `NSTextView` and `UITextView` for convenient, powerful rich-text editors, including when they are wrapped in SwiftUI. SwiftUI `TextEditor` with `AttributedString` is a credible iOS editor candidate, but it must pass characterization tests for links, indentation, find, selection, undo, input methods, accessibility, large notes, and the Mac's command semantics before replacing the AppKit editor.
+
+### Retain as behavior, but replace the implementation
+
+- the Mac's keyboard-first search/create flow, menus, responder chain, selection behavior, and global activation shortcut;
+- external-editor interoperability, if current users still rely on it;
+- import/export for supported text and rich-text formats;
+- the ability to read legacy archives, WAL records, encrypted collections, and historical sync metadata; and
+- Mac-native multiwindow, Services, accessibility, printing, and update behavior where still used.
+
+### Do not retain in the modern Mac runtime
+
+- `SingleDatabaseFormat` as an active format for new or already-migrated collections; permanently retain its tested Notational Velocity/nvAlt identification, decryption, WAL recovery, verification, and migration implementation;
+- `RBSplitView`; replace its UI with SwiftUI split navigation or supported AppKit split views, then remove the dependency and old split-view nib wiring;
+- the old Simplenote/sync-service runtime (`NotationSyncServiceManager`, `SyncSessionController`, service plug-ins, bundled JSON/hashcash support) once fixtures prove historical metadata can be read without activating it;
+- Carbon/`FSRef`, Finder notification, catalog-node, volume-UUID, resource-fork, Launch Services, and Carbon hotkey implementations;
+- the bundled legacy Sparkle binary and the AutoHyperlinks framework files;
+- machine-specific OpenSSL linkage and legacy crypto as the writer for new documents; replace the dependency without removing the legacy decryption behavior required for Notational Velocity/nvAlt migration;
+- `NSArchiver`/unconstrained unarchiving as the current model format, legacy WebKit UI, synchronous alert/panel APIs, and selector-driven sheet callbacks;
+- duplicate legacy preference/about/migration controllers and their nibs after the SwiftUI replacements cover behavior and accessibility; and
+- AppKit model types (`NoteObject`, `NotationController`, `AppController`) as dependencies of the shared store, iOS target, App Intents, or Spotlight indexer.
+
+Do not remove any of these paths until fixtures cover the data they read and the replacement has shipped through the relevant migration. The Notational Velocity/nvAlt single-file and encryption compatibility subsystem is an explicit exception to eventual removal: retain it as quarantined migration code instead of leaving two general-purpose writable implementations active indefinitely.
+
+## OS 27 Apple Intelligence and Siri Preparation
+
+The OS 27 SDK adds a first-class Notes App Schema. Siri integration should therefore be designed into the shared model now, even if the deployment target remains older during early migration. These APIs are currently beta and must be revalidated against the final SDK before shipping.
+
+Implement the following in a Swift package shared by the Mac and iOS applications:
+
+1. **Stable entities.** Define `NoteEntity`, `TagEntity`, and `FolderEntity`. Apply `@AppEntity(schema: .notes.note)` to the note entity and conform it to `IndexedEntity` and `SyncableEntity`. Map the schema's name, attributed content, tags, pinned state, dates, and folder properties to the shared model; leave its optional attachment representation empty because Spiral has no attachment model. Use the reconciliation record's note UUID as the stable ID across all devices.
+2. **Entity resolution.** Implement an async query that resolves UUIDs through `NoteStore`, plus an `IndexedEntityQuery` that can reindex selected or all notes. Entity queries must be usable out of process and must not require an AppKit controller or a foreground window.
+3. **Semantic index.** Donate note entities to a named Core Spotlight index using stable identifiers and indexing keys for title, content, tags, and dates. Update the index transactionally after saves, renames, moves, deletes, conflict resolution, import, and encryption-state changes. Treat the index as disposable and implement full reindexing.
+4. **Navigation and onscreen awareness.** Add an `OpenIntent` and a `ShowInAppSearchResultsIntent`, with UUID-based deep links that work on every platform. Annotate the selected editor and visible note rows using `appEntityIdentifier`/`appEntityUIElements`; AppKit can annotate responder objects, so this does not require replacing the Mac editor first.
+5. **Note actions.** Adopt the `.notes.createNote` and `.notes.updateNote` intent schemas. Route both through the same tested `NoteStore` commands used by the UI. Use confirmation and authentication policies for mutations; the default App Intent policy permits locked-device execution, which is inappropriate for private notes.
+6. **Privacy and encryption.** Make Siri/Spotlight exposure a clear collection-level setting with a per-note exclusion. Do not index content from a legacy encrypted collection before the user explicitly migrates it to clean files, and use a protected Core Spotlight index for content the user elects to expose. Never place legacy encryption keys or transient decrypted migration content in intent parameters, donations, logs, or identifiers.
+7. **Cross-device and shared-note semantics.** OS 27's `SyncableEntity` requires a device-independent identifier so Siri can carry entity references between devices. If note sharing is later added, adopt `OwnershipProvidingEntity` so the system can request appropriate confirmation before changing shared content.
+8. **Testing.** Add App Intents Testing coverage for entity resolution, schema properties, create/update behavior, authentication, view annotations, deleted or unavailable documents, and conflict states. Then test progressively in Shortcuts, Spotlight semantic search, and Siri on physical devices using disposable iCloud accounts and collections.
+
+App Intents and Spotlight are the route for exposing the app's notes and actions to Siri. The Foundation Models framework and its OS 27 `SpotlightSearchTool` are a separate, optional route for an in-app “ask my notes” experience. If added later, it should query the same protected Spotlight index and return cited note identities through `NoteStore`; it is not a substitute for App Entities, schema intents, or Siri integration.
 
 ## Repository Layout and Future iOS Application
 
@@ -71,11 +177,11 @@ The repository is organized around explicit product and sharing boundaries:
 
 The existing application must not be treated as a multiplatform target merely because an iOS application is planned. Keep separate macOS and iOS app targets while their UI frameworks, life cycles, resources, and platform integrations differ substantially. Share code through narrow core, persistence, compatibility, and service boundaries only after those boundaries are characterized by tests.
 
-The future iOS application should normally use one universal target for both iPhone and iPad. Device-specific layouts may differ, but separate application targets should only be introduced if the products genuinely require different identities, capabilities, or release lifecycles. The macOS and iOS targets should use the same versioned note formats and shared `NoteStore` behavior, while each target owns its iCloud container access, lifecycle integration, user interface, and platform-specific capabilities.
+The future iOS application should use one universal target for both iPhone and iPad. Device-specific layouts may differ, but separate application targets should only be introduced if the products genuinely require different identities, capabilities, or release lifecycles. The macOS and iOS targets should use the same clean note formats, versioned reconciliation-record schema, stable IDs, entity definitions, and `NoteStore` behavior, while each target owns its container access, lifecycle integration, editor adapter, commands, and platform-specific capabilities.
 
 Moving an existing local collection into iCloud Drive must be an explicit, reversible migration with a preflight check, backup, progress reporting, failure recovery, and a documented rollback path. Tests and development builds must use temporary local directories and controlled coordination doubles rather than a developer's or user's live iCloud Drive data.
 
-On a fresh installation with no persisted notes location and no local notes, Spiral should use the entitled iCloud Drive container's `Documents` directory by default, adopting an existing Spiral collection there when present and falling back to the local Application Support directory when iCloud Drive is unavailable. On the first launch of an iCloud-capable version with an existing local collection, offer three explicit choices: **Move to iCloud** (the default), **Copy to iCloud**, or **Keep Current Location**. Both iCloud choices switch Spiral to the verified iCloud copy. Move retires the original only after the copy verifies and the new location is persisted; Copy preserves the original as a local backup. Any destination change must accept an empty folder, refuse a non-empty unrelated folder without modifying it, and offer **Merge** or **Cancel** when the destination contains an identifiable Notational Velocity or Spiral collection. A merge must preserve divergent versions rather than silently overwriting either collection.
+On a fresh installation with no persisted notes location and no local notes, Spiral should use the entitled iCloud Drive container's `Documents` directory by default, adopting an existing Spiral collection there when present and falling back to the local Application Support directory when iCloud Drive is unavailable. If Notational Velocity or nvAlt preferences are present on first launch, offer to import that application's notes without copying its preferences. After consent, require the user to select the notes folder; never infer or access a legacy folder from a preference path without that explicit selection. Infer whether the selected collection is a single database or a consistent family of separate TXT, RTF, or HTML files. Import an existing separate-file collection in its detected format. For a single database, inspect every note's attributed content: export the whole collection as RTF if any note has meaningful user-authored formatting, otherwise export it as TXT. Perform database recovery, decryption, inspection, and clean-file conversion only in a verified temporary copy. Copy and verify the converted collection into Spiral's iCloud container, retain the original legacy folder and its Keychain entry unchanged, clearly warn that an encrypted source becomes ordinary unencrypted files, and never offer a move option. Refuse a non-empty unrelated destination without modifying it; if an existing Spiral collection is already in the iCloud destination, adopt it without overwriting it and leave the selected legacy collection untouched. Manual migration of an existing Spiral collection is likewise copy-only and keeps the original folder as a backup. A future merge must preserve divergent versions rather than silently overwriting either collection.
 
 ## Phased Plan
 
@@ -100,30 +206,75 @@ Add a shared scheme and continuous integration that builds and tests Development
 
 **Exit criterion:** Critical file formats and behaviours can be changed with automated regression detection.
 
-**Progress as of August 2026:** A shared scheme, a small XCTest target, and five focused characterization executables are in place and passing. Temporary-directory tests now cover the initial iCloud migration default, verified copying, source preservation, destination classification, operation-specific progress text, and timeout/result arbitration for iCloud container discovery. Coverage does not yet protect the critical persistence, WAL, encryption, import/export, encoding, filename, historical synchronization, live legacy-model merge transaction, ongoing iCloud coordination/conflict behavior, or interrupted post-copy commit recovery, and no CI or warning-baseline enforcement is present.
+**Progress as of August 2026:** A shared scheme, a small XCTest target, and five focused characterization executables are in place and passing. Temporary-directory tests now cover the initial iCloud migration default, verified copying, source preservation, destination classification, operation-specific progress text, and timeout/result arbitration for iCloud container discovery. First-run preference detection now offers a copy-only legacy-notes import, and focused tests cover detection policy plus the TXT-versus-RTF formatting decision. The importer performs decryption and conversion in a disposable verified copy and suppresses legacy preference adoption, but golden end-to-end NV/nvAlt archive fixtures are still required before treating the path as production-complete. Coverage does not yet protect the critical persistence, WAL, encryption, full import/export, encoding, filename, historical synchronization, live legacy-model merge transaction, ongoing iCloud coordination/conflict behavior, or interrupted post-copy commit recovery, and no CI or warning-baseline enforcement is present.
 
-### Phase 2: Make the Product Reproducible and Distributable
+### Phase 2: Establish the Shared Model, Clean Note Codecs, and Reconciliation Store
 
-- Decide and document the minimum supported macOS version.
+- Establish a permanent `LegacyCompatibility` boundary for Notational Velocity and nvAlt migration. Move or wrap the existing single-file archive, encryption, passphrase verification, and WAL recovery behavior without changing its accepted inputs.
+- Add golden fixtures from representative Notational Velocity and nvAlt versions for unencrypted databases, encrypted databases, changed KDF iteration counts, legacy cipher variants, intact and interrupted WALs, wrong passphrases, damaged archives, separate-file formats, encodings, and historical metadata before extracting model values.
+- Add end-to-end migration tests proving that each legacy fixture can be opened or recovered, converted to the new model, verified note-for-note and metadata-for-metadata, and rolled back without modifying the source collection.
+- Characterize the transitional first-run importer with those fixtures, including preference isolation, folder-format inference, TXT-versus-RTF selection, standard extension enforcement, source and Keychain preservation, cancellation, wrong passphrases, mixed-format refusal, and failure before iCloud publication.
+- Introduce stable UUID identity without changing existing filenames or embedding identity in note contents. During explicit, backed-up migration, create a private per-note reconciliation record outside the public `Documents` directory for each clean note file.
+- Define `NoteDomain`, deterministic `.txt`/`.rtf`/`.html` codecs, the private per-note `ReconciliationStore`, conflict values, and the `NoteStore` contract in a shared Swift package. Do not introduce `.spiralnote` packages or an attachment model.
+- Implement a local temporary-directory store first, with fixture-based import from both the single database and legacy separate files.
+- Add local cache/index rebuilding and prove that deleting it loses no user data.
+- Specify rollback: the migration retains a verified, byte-for-byte source backup and can export readable clean files without making legacy and modern stores active dual writers. For encrypted sources, require explicit confirmation that the clean destination is plaintext and retain the encrypted backup until the user deliberately removes it.
+
+**Exit criterion:** The shared Swift package can import and, where necessary, WAL-recover all supported Notational Velocity and nvAlt fixtures; save clean per-note files and private reconciliation records; reopen them losslessly; rebuild its local index; and represent conflicts without linking AppKit or UIKit. The source fixtures remain byte-for-byte unchanged.
+
+### Phase 3: Build a Cross-Platform SwiftUI Vertical Slice
+
+- Add the universal iPhone/iPad target and a SwiftUI feature package.
+- Build adaptive collection navigation, search, note list, editor hosting, create/rename/tag/pin/delete, empty/error/download/conflict states, and settings against `NoteStore`.
+- Reuse the same feature views in a new Mac shell where behavior is common. Wrap the existing Mac editor and its command bridge rather than translating `LinkingEditor` immediately.
+- Use a `UITextView` adapter on iOS if SwiftUI rich-text editing cannot meet the formatting, selection, and performance tests.
+- Add UI tests for iPhone compact navigation, iPad split navigation and keyboard use, Mac keyboard-first workflows, VoiceOver, Dynamic Type, multitasking/resizing, state restoration, and large collections.
+
+**Exit criterion:** iPhone, iPad, and Mac can operate on the same disposable local fixture collection through the shared model and store, with no legacy controller dependency in the iOS target.
+
+### Phase 4: Make iCloud Drive the Production Store
+
+- Implement platform adapters for ubiquity-container discovery, download state, coordinated access, file presentation, version conflicts, moves, and deletes.
+- On OS 27, adopt the new SwiftUI `Document` APIs for the iPhone/iPad document layer; keep availability-specific implementation out of `NoteStore`.
+- Implement three-way per-note merges where safe. Plain text may use line-based merging after encoding validation; RTF and HTML require format-aware validation and should preserve both versions whenever an automatic merge could damage formatting or markup.
+- Reconcile external edits through coordinated notifications plus full scans at launch and foregrounding. Match by current path first and then by recent paths and content hashes; preserve both when rename-plus-edit, copy-versus-move, or history assignment is ambiguous.
+- Handle offline create/edit/delete, duplicate reconciliation UUIDs, external file renames and replacements, eviction, account changes, delayed downloads, note/reconciliation-record arrival in either order, interrupted saves, tombstones, and storage exhaustion.
+- Run two-device and three-device fault tests with disposable collections, including edits performed by unrelated text editors and by direct uncoordinated file writes. Never test against the user's live notes directory.
+- Replace the transitional publication of the compatibility database with guarded copy-only migration through `NoteStore`, clean per-note files, private per-note reconciliation records, and a durable transaction journal; do not add a move option.
+
+**Exit criterion:** Multiple devices can edit different notes offline and converge, while same-note conflicts remain visible and recoverable and interrupted migration can resume or roll back.
+
+### Phase 5: Add Spotlight, App Intents, and Siri
+
+- Implement the OS 27 preparation plan above behind availability boundaries where the product still supports older systems.
+- Ship Spotlight entity indexing and UUID deep links first, then `OpenIntent` and in-app search, then the Notes schema create/update intents, and finally onscreen awareness and content transfer.
+- Add an explicit privacy control and define indexing behavior for privacy-excluded notes and content that remains unavailable while a legacy encrypted collection is locked.
+- Keep intents thin; all reads and mutations go through `NoteStore` authorization and conflict rules.
+
+**Exit criterion:** Automated App Intents tests pass, indexed notes open reliably on each platform, private notes remain excluded according to policy, and create/update commands work through Siri on disposable OS 27 test devices.
+
+### Phase 6: Make the Products Reproducible and Distributable
+
+- Decide and document the minimum supported macOS, iOS, and iPadOS versions. In particular, decide whether the new mobile application requires OS 27 or carries an older document-adapter fallback.
 - Reconcile the deployment target with `Info.plist`; remove PowerPC, i386, and macOS 10.4-era metadata.
 - Move hand-maintained build settings into `.xcconfig` files and reduce configuration-specific drift.
 - Remove machine-specific header and library search paths.
 - Verify Debug, Release, Archive, and clean-machine launch workflows.
-- Add Developer ID signing, hardened runtime, archive validation, and notarization.
+- Add Developer ID signing, hardened runtime, archive validation, and notarization for Mac, plus App Store/TestFlight signing and archive validation for iPhone and iPad.
 - Document the shared iCloud Drive container identifiers, capabilities, and signing requirements for both applications. Keep the guarded first-run copy-and-verify migration separate from the ongoing storage path, which must not be considered production-ready until the storage contract and recovery tests exist.
 - Evaluate App Sandbox separately; do not enable it until user-selected folders, security-scoped bookmarks, external editors, and Apple Events have an explicit design.
 
-**Exit criterion:** A release archive runs on a clean supported Mac without Homebrew or developer tools.
+**Exit criterion:** Release archives install and run on clean supported Mac, iPhone, and iPad devices without Homebrew or developer tools.
 
-**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, and the macOS target now declares the shared `iCloud.farm.poplar.spiral` Documents container with the Finder name “Spiral Notes.” Fresh installations default to this container when it is available, while existing local collections retain the guarded migration choice. The container identifier still needs registration and verification with the intended Apple Developer team. Deployment metadata remains inconsistent, build settings still contain Homebrew OpenSSL paths, and broader `.xcconfig` extraction, hardened-runtime, signing, notarization, archive, clean-machine, and live-container verification work remains outstanding.
+**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, and the macOS target now declares the shared `iCloud.farm.poplar.spiral` Documents container with the Finder name “Spiral Notes.” Fresh installations default to this container when it is available. A first run that detects Notational Velocity or nvAlt preferences now offers the guarded, folder-selected, copy-only import described above; the manual switch workflow offers Copy or Keep and no longer offers Move. This behavior is provisional: the current Mac controller still publishes and writes its compatibility database alongside the generated note files. Production iCloud enablement must target the per-note store from Phase 4, and iPhone/iPad clients must not share the transitional collection. The container identifier still needs registration and verification with the intended Apple Developer team. Deployment metadata remains inconsistent, build settings still contain Homebrew OpenSSL paths, and broader `.xcconfig` extraction, hardened-runtime, signing, notarization, archive, clean-machine, and live-container verification work remains outstanding.
 
-### Phase 3: Replace Obsolete Dependencies
+### Phase 7: Replace Obsolete Dependencies and Deprecated Platform APIs
 
 #### OpenSSL and encryption
 
-The built executable currently refers to a Homebrew `libcrypto.3.dylib`. Remove that runtime dependency.
+The built executable currently refers to a Homebrew `libcrypto.3.dylib`. Remove that machine-specific runtime dependency without removing support for the Notational Velocity/nvAlt encrypted database formats.
 
-Before replacing it, add golden fixtures for PBKDF2, AES-CBC, MD5-derived identifiers, base64, and legacy IDEA data. Preserve legacy decryption even if a modern authenticated encryption format is introduced for newly written data. Any new format requires an explicit version marker, backup, migration path, and rollback strategy.
+Before replacing it, add golden fixtures for PBKDF2, AES-CBC, MD5-derived identifiers, base64, and legacy IDEA data. Preserve legacy key derivation, passphrase verification, database decryption, and WAL recovery as migration compatibility behavior. Treat this as a compatibility implementation that may be isolated or reimplemented behind tests, not deleted, and do not add a new encryption writer as part of the clean-file migration. Any future encrypted format requires a separate product decision, explicit version marker, backup, migration path, and rollback strategy.
 
 #### AutoHyperlinks
 
@@ -133,13 +284,7 @@ Replace the dynamically loaded AutoHyperlinks framework with Foundation text che
 
 Replace the bundled legacy Sparkle framework with the current supported release through Swift Package Manager. Move from the old `SUUpdater` path to the current updater controller and adopt HTTPS, modern update signatures, code signing, and notarized update archives.
 
-**Exit criterion:** The application contains no unsupported architecture slices, obsolete executable frameworks, or host-specific dynamic-library references.
-
-**Progress as of August 2026:** Editor URL detection now uses `NSDataDetector` with characterization coverage, and AutoHyperlinks is no longer referenced by the Xcode project, although its framework files remain in the repository. Legacy Sparkle is still bundled, and the executable still links to Homebrew's `libcrypto.3.dylib`.
-
-### Phase 4: Replace Deprecated Platform APIs
-
-Modernize one subsystem at a time:
+Also modernize one subsystem at a time:
 
 - replace `FSRef`, Carbon fork access, and path buffers with `NSURL`/`URL` and `NSFileManager`/`FileManager` behind a platform-neutral storage interface that supports both local and iCloud Drive roots;
 - preserve atomic-write and recovery guarantees while replacing file primitives;
@@ -148,15 +293,19 @@ Modernize one subsystem at a time:
 - replace `NSArchiver` with a versioned, secure archive or an explicitly modeled format;
 - replace legacy WebKit views with `WKWebView`, or remove them if the feature is obsolete;
 - replace deprecated file notification mechanisms with an appropriate modern observer; and
-- replace `RBSplitView` with `NSSplitViewController` rather than porting the custom implementation.
+- replace `RBSplitView` through the cross-platform SwiftUI shell, using `NSSplitViewController` only where a Mac-specific AppKit split remains necessary;
+- retain the global-hotkey behavior while replacing the Carbon `PTHotKeys` implementation with supported event APIs; and
+- retain external-editor behavior while replacing the bundled ODBEditor implementation or quarantining it as Mac-only.
 
 Each replacement should include tests and land independently where practical.
 
-**Exit criterion:** Normal application paths do not call unsupported Carbon or deprecated framework APIs.
+**Exit criterion:** The products contain no unsupported architecture slices, obsolete executable frameworks, host-specific dynamic-library references, or normal paths that call unsupported Carbon or deprecated framework APIs.
 
 **Progress as of August 2026:** A few isolated UI and text-detection paths have been modernized, but the main file, persistence, import, and application-control paths still use Carbon, `FSRef`, legacy archive/WebKit APIs, and extensive dynamic selector dispatch. The phase remains largely outstanding.
 
-### Phase 5: Adopt ARC and Stronger Objective-C Interfaces
+Editor URL detection now uses `NSDataDetector` with characterization coverage, and AutoHyperlinks is no longer referenced by the Xcode project, although its framework files remain in the repository. Legacy Sparkle is still bundled, and the executable still links to Homebrew's `libcrypto.3.dylib`.
+
+### Phase 8: Quarantine and Shrink the Legacy Mac Core
 
 - Add nullability annotations and lightweight generics to headers at subsystem boundaries.
 - Replace avoidable `performSelector:` calls with protocols, blocks, or direct typed calls.
@@ -170,56 +319,13 @@ ARC migration should be separate from Swift migration so memory-management regre
 
 **Progress as of August 2026:** A narrow Objective-C bridge supports the new Swift settings code, demonstrating basic interoperability. The wider application remains predominantly manual-memory-managed Objective-C, and systematic ARC conversion, nullability, generics, static analysis, and interface strengthening have not begun.
 
-### Phase 6: Introduce Swift Incrementally
-
-Swift is the preferred language for new code and for refactored components with clear boundaries. Good early candidates include:
-
-- typed networking for any newly introduced remote service;
-- typed request and response models using `Codable`;
-- preference models and new settings UI;
-- import/export helpers and format-independent transformations;
-- filename and search utilities;
-- updater integration;
-- structured error reporting; and
-- concurrency-isolated storage coordination behind an Objective-C-compatible façade.
-
-Poor initial migration candidates include:
-
-- `NoteObject`;
-- `NotationController` and `AppController`;
-- `LinkingEditor` and the central editor command path;
-- controllers tightly coupled to old nibs and dynamic selectors; and
-- stable C compatibility algorithms.
-
-Migrate one class or component at a time. Do not rewrite an Objective-C class and redesign its behaviour in the same change.
-
-**Exit criterion:** New non-legacy functionality is normally written in Swift, while remaining Objective-C exists intentionally.
-
-**Progress as of August 2026:** The modern settings model and interface provide the first successful Swift component inside the existing application target. A small Foundation-only migration service is now shared at the repository boundary and performs staged, coordinated, verified collection copies. This validates another mixed-language boundary, but no complete cross-platform `NoteStore`, ongoing iCloud Drive adapter, import/export, updater, or concurrency-isolated storage service exists yet.
-
-### Phase 7: Modernize the Interface Selectively
-
-Retain AppKit for the main window, text system, menus, responder chain, and advanced keyboard handling until there is a demonstrated reason to replace them.
-
-Use SwiftUI first for low-risk, self-contained areas:
-
-- preferences;
-- onboarding and migration status;
-- empty and error states;
-- inspectors and informational panels; and
-- update UI.
-
-Embed SwiftUI in the existing AppKit hierarchy with `NSHostingView` or `NSHostingController`. Reassess a broader SwiftUI lifecycle migration only after storage, commands, application state, and window ownership have clear boundaries.
-
-**Exit criterion:** Modern UI components coexist cleanly with the editor, without degrading keyboard behaviour, accessibility, or native text handling.
-
-**Progress as of August 2026:** Preferences, the About window, and the first-run iCloud migration choice are implemented as SwiftUI interfaces while the AppKit application shell and editor remain intact. Characterization tests cover settings compatibility and selected keyboard/UI behavior, but broader accessibility, launch, migration-window UI automation, and workflow regression coverage is still needed.
-
-### Phase 8: Reassess the Legacy Core
-
 Once tests, ARC, and service boundaries are established, review the large core classes. Split responsibilities before deciding whether to migrate them to Swift. A smaller Objective-C façade over tested Swift services may be safer than translating a large class line for line.
 
-Delete old compatibility paths, nibs, frameworks, and source files only after their replacements have shipped and migration compatibility has been verified.
+Delete obsolete compatibility paths, nibs, frameworks, and source files only after their replacements have shipped and migration compatibility has been verified. Do not delete the permanently supported Notational Velocity/nvAlt single-file, encryption, or WAL migration capability; only isolate or replace its implementation behind equivalent fixtures.
+
+Do not port `NoteObject`, `NotationController`, `AppController`, or `LinkingEditor` to iOS. Their responsibilities must move into `NoteDomain`, `NoteStore`, feature state, and platform adapters. On Mac, retain only the thin behavior-specific pieces that remain valuable after the shared stack takes ownership.
+
+**Exit criterion:** Remaining Objective-C/C exists intentionally as a Mac UI adapter or legacy compatibility reader, and the iOS application, shared store, Spotlight indexer, and App Intents have no dependency on it.
 
 ## Swift Decision
 
@@ -236,28 +342,34 @@ A wholesale Swift rewrite is not recommended. It would create substantial regres
 
 ## Suggested Initial Backlog
 
-1. Add shared schemes, XCTest targets, and CI builds.
-2. Create golden note-directory, WAL, encoding, encrypted-data, and simulated iCloud Drive coordination/conflict fixtures.
-3. Decide the supported macOS range and correct deployment metadata.
-4. Remove the Homebrew OpenSSL runtime dependency without breaking old encrypted data.
-5. Replace AutoHyperlinks with Foundation text detection.
-6. Upgrade Sparkle and establish signed, notarized release archives.
-7. Introduce a platform-neutral, URL-based `NoteStore`; preserve the local-directory implementation first, then add iCloud Drive behind the same contract.
-8. Add nullability and generics at the first Swift boundary.
-9. Implement one low-coupling service in Swift to validate the mixed-language toolchain.
-10. Begin replacing deprecated panels and leaf UI with modern AppKit or embedded SwiftUI.
+1. Establish the permanently retained Notational Velocity/nvAlt `LegacyCompatibility` boundary around the transitional importer and add golden fixtures for the single database, WAL, separate files, encodings, metadata, and every encryption variant. Prove that the current copy-only flow preserves its source and Keychain item before extracting or changing its behavior.
+2. Specify permanent note UUID assignment and a reversible legacy-to-UUID migration, including duplicate and rollback behavior.
+3. Specify clean `.txt`, `.rtf`, and `.html` behavior, deterministic app writes, supported encodings and markup, and golden fixtures before implementing the codecs. Explicitly exclude attachments and `.spiralnote` packages.
+4. Specify the private per-note reconciliation record, bounded merge-base retention, tombstones, external-change matching rules, and ambiguous-change preserve-both behavior; then create the shared Swift package with `NoteDomain`, `NoteFileCodec`, `ReconciliationStore`, conflict values, and a temporary-directory `NoteStore`.
+5. Add lossless, source-preserving migration tests from Notational Velocity and nvAlt single databases—including encrypted and WAL-recovery cases—and every supported separate-file format.
+6. Build one SwiftUI navigation/search/list vertical slice on iPhone, iPad, and Mac using fixture data; wrap the existing Mac editor.
+7. Decide the supported OS ranges and whether the mobile target can require OS 27's new `Document` APIs.
+8. Implement the local rebuildable index and prove that deletion/rebuild cannot lose user data.
+9. Implement per-note coordinated iCloud access and two-device offline/conflict tests before switching any real collection to it.
+10. Define `NoteEntity` with the OS 27 Notes schema, `IndexedEntity`, and `SyncableEntity`; add App Intents Testing and a protected Spotlight indexing policy.
+11. Remove the Homebrew OpenSSL runtime dependency, upgrade Sparkle, remove the unused AutoHyperlinks files, and establish signed release archives without combining those changes with the storage migration.
+12. Add CI for shared tests and all product configurations, with a warning baseline and disposable-data enforcement.
 
 ## Definition of Done for Modernization Changes
 
 A modernization change is complete when:
 
 - existing user data and compatibility formats remain readable;
-- local and iCloud Drive-backed collections preserve offline, coordination, conflict, and recovery behavior without silent migration or rewriting;
+- supported Notational Velocity and nvAlt single-file, encryption, and WAL fixtures remain migratable through the permanently retained legacy compatibility subsystem;
+- local and per-note iCloud Drive-backed collections preserve offline, coordination, conflict, and recovery behavior without silent migration or rewriting;
+- stable note IDs survive app-coordinated rename, move, device changes, and conflict recovery; externally ambiguous rename-plus-edit and copy-versus-move cases preserve both notes instead of claiming false identity certainty;
 - new or changed behaviour is covered by automated tests;
 - all configurations build without new warnings;
 - the application launches against both representative fixtures and a clean data directory;
 - release packaging remains self-contained and signable;
-- migration and rollback behaviour is documented where data changes are involved; and
+- migration and rollback behaviour is documented where data changes are involved;
+- a completed modern migration leaves only canonical note files in public iCloud `Documents`, with app metadata and reconciliation state outside that directory;
+- Spotlight, App Intents, and Siri exposure obey the documented privacy, legacy-encryption, authentication, and deletion policy; and
 - obsolete code or dependencies replaced by the change are removed rather than left as an untested parallel path.
 
 ## References
@@ -265,6 +377,25 @@ A modernization change is complete when:
 - [Apple: Migrating Objective-C Code to Swift](https://developer.apple.com/documentation/swift/migrating-your-objective-c-code-to-swift)
 - [Apple: Importing Objective-C into Swift](https://developer.apple.com/documentation/swift/importing-objective-c-into-swift)
 - [Apple: AppKit integration with SwiftUI](https://developer.apple.com/documentation/swiftui/appkit-integration)
+- [Apple: Creating a document-based app with the OS 27 `Document` protocol](https://developer.apple.com/documentation/swiftui/creating-a-document-based-app)
+- [Apple: Updating an existing document-based app for OS 27](https://developer.apple.com/documentation/swiftui/updating-your-document-based-app)
+- [Apple: Building rich SwiftUI text experiences](https://developer.apple.com/documentation/swiftui/building-rich-swiftui-text-experiences)
+- [Apple: Elevate your app's text experience with TextKit (WWDC26)](https://developer.apple.com/videos/play/wwdc2026/370/)
+- [Apple: Notes App Schema domain](https://developer.apple.com/documentation/appintents/app-schema-domain-notes)
+- [Apple: OS 27 note entity schema](https://developer.apple.com/documentation/appintents/appschema/notesentity/note)
+- [Apple: Apple Intelligence and Siri AI](https://developer.apple.com/documentation/appintents/apple-intelligence-and-siri-ai)
+- [Apple: Making App Entities available in Spotlight](https://developer.apple.com/documentation/appintents/making-app-entities-available-in-spotlight)
+- [Apple: Providing contextual cues to Apple Intelligence and Siri](https://developer.apple.com/documentation/appintents/providing-contextual-cues-to-apple-intelligence-and-siri)
+- [Apple: `SyncableEntity`](https://developer.apple.com/documentation/appintents/syncableentity)
+- [Apple: App Intents Testing](https://developer.apple.com/documentation/appintentstesting)
+- [Apple: Adding content to protected Core Spotlight indexes](https://developer.apple.com/documentation/corespotlight/adding-your-app-s-content-to-spotlight-indexes)
+- [Apple: Deciding whether CloudKit is right for your app](https://developer.apple.com/documentation/cloudkit/deciding-whether-cloudkit-is-right-for-your-app)
+- [Apple: Syncing SwiftData model data across a person's devices](https://developer.apple.com/documentation/swiftdata/syncing-model-data-across-a-persons-devices)
+- [Apple: Synchronizing documents in the iCloud environment](https://developer.apple.com/documentation/uikit/synchronizing-documents-in-the-icloud-environment)
+- [Apple: `NSFilePresenter`](https://developer.apple.com/documentation/foundation/nsfilepresenter)
+- [Apple: `NSFileVersion`](https://developer.apple.com/documentation/foundation/nsfileversion)
+- [Apple: Designing for Documents in iCloud](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForDocumentsIniCloud.html)
+- [Apple: iCloud fundamentals and SQLite store-file guidance](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/iCloudFundametals.html)
 - [Apple: Configuring the Hardened Runtime](https://developer.apple.com/documentation/xcode/configuring-the-hardened-runtime/)
 - [Sparkle documentation](https://sparkle-project.org/documentation/)
 - [Sparkle upgrade guidance](https://sparkle-project.org/documentation/upgrading/)

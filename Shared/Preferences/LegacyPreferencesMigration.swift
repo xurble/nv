@@ -1,8 +1,8 @@
-import AppKit
+import Foundation
 
 @objc enum SpiralPreferencesStartupState: Int {
     case existingSpiralPreferences
-    case importedLegacyPreferences
+    case legacyPreferencesFound
     case freshInstall
 }
 
@@ -20,24 +20,20 @@ enum LegacyPreferencesSource: String, Equatable {
     }
 }
 
-struct SpiralPreferencesMigrationResult: Equatable {
+struct SpiralPreferencesDetectionResult: Equatable {
     let startupState: SpiralPreferencesStartupState
-    let importedSource: LegacyPreferencesSource?
-    let declinedSource: LegacyPreferencesSource?
+    let detectedSource: LegacyPreferencesSource?
 
     func consoleLogMessage(spiralDomain: String) -> String {
         switch startupState {
         case .existingSpiralPreferences:
             return "Spiral preferences: loaded existing preferences from domain \(spiralDomain)."
 
-        case .importedLegacyPreferences:
-            let sourceDomain = importedSource?.rawValue ?? "an unknown legacy domain"
-            return "Spiral preferences: loaded legacy preferences from domain \(sourceDomain) and saved them to domain \(spiralDomain)."
+        case .legacyPreferencesFound:
+            let sourceDomain = detectedSource?.rawValue ?? "an unknown legacy domain"
+            return "Spiral preferences: found legacy preferences in domain \(sourceDomain); the user will be offered a notes import."
 
         case .freshInstall:
-            if let declinedSource {
-                return "Spiral preferences: found legacy preferences in domain \(declinedSource.rawValue), but import was declined; using registered defaults for domain \(spiralDomain)."
-            }
             return "Spiral preferences: no persistent Spiral or legacy preferences found; using registered defaults for domain \(spiralDomain)."
         }
     }
@@ -45,12 +41,11 @@ struct SpiralPreferencesMigrationResult: Equatable {
 
 protocol PreferencesDomainStoring: AnyObject {
     func persistentDomain(forName domainName: String) -> [String: Any]?
-    func setPersistentDomain(_ domain: [String: Any], forName domainName: String)
 }
 
 extension UserDefaults: PreferencesDomainStoring {}
 
-struct LegacyPreferencesMigrator {
+struct LegacyPreferencesDetector {
     let spiralDomain: String
 
     private let legacyDomains: [LegacyPreferencesSource] = [
@@ -58,41 +53,27 @@ struct LegacyPreferencesMigrator {
         .nvALT
     ]
 
-    func migrate(
-        using store: PreferencesDomainStoring,
-        shouldImport: (LegacyPreferencesSource) -> Bool = { _ in true }
-    ) -> SpiralPreferencesMigrationResult {
+    func detect(using store: PreferencesDomainStoring) -> SpiralPreferencesDetectionResult {
         if store.persistentDomain(forName: spiralDomain) != nil {
-            return SpiralPreferencesMigrationResult(
+            return SpiralPreferencesDetectionResult(
                 startupState: .existingSpiralPreferences,
-                importedSource: nil,
-                declinedSource: nil
+                detectedSource: nil
             )
         }
 
         for source in legacyDomains {
-            guard let preferences = store.persistentDomain(forName: source.rawValue) else {
+            guard store.persistentDomain(forName: source.rawValue) != nil else {
                 continue
             }
-            guard shouldImport(source) else {
-                return SpiralPreferencesMigrationResult(
-                    startupState: .freshInstall,
-                    importedSource: nil,
-                    declinedSource: source
-                )
-            }
-            store.setPersistentDomain(preferences, forName: spiralDomain)
-            return SpiralPreferencesMigrationResult(
-                startupState: .importedLegacyPreferences,
-                importedSource: source,
-                declinedSource: nil
+            return SpiralPreferencesDetectionResult(
+                startupState: .legacyPreferencesFound,
+                detectedSource: source
             )
         }
 
-        return SpiralPreferencesMigrationResult(
+        return SpiralPreferencesDetectionResult(
             startupState: .freshInstall,
-            importedSource: nil,
-            declinedSource: nil
+            detectedSource: nil
         )
     }
 }
@@ -100,6 +81,7 @@ struct LegacyPreferencesMigrator {
 @objc(SpiralPreferencesMigrationController)
 final class SpiralPreferencesMigrationController: NSObject {
     @objc private(set) static var startupState = SpiralPreferencesStartupState.freshInstall
+    static private(set) var detectedLegacySource: LegacyPreferencesSource?
 
     @objc static func migrateBeforeApplicationLaunch() {
         guard let spiralDomain = Bundle.main.bundleIdentifier else {
@@ -108,34 +90,11 @@ final class SpiralPreferencesMigrationController: NSObject {
             return
         }
 
-        let defaults = UserDefaults.standard
-        let result = LegacyPreferencesMigrator(spiralDomain: spiralDomain).migrate(
-            using: defaults,
-            shouldImport: confirmLegacyPreferencesImport
+        let result = LegacyPreferencesDetector(spiralDomain: spiralDomain).detect(
+            using: UserDefaults.standard
         )
         startupState = result.startupState
+        detectedLegacySource = result.detectedSource
         NSLog("%@", result.consoleLogMessage(spiralDomain: spiralDomain))
-
-        // The migration precedes all UI so its result survives every choice
-        // in the later iCloud migration dialog, including cancellation.
-        if result.importedSource != nil {
-            defaults.synchronize()
-        }
-    }
-
-    private static func confirmLegacyPreferencesImport(
-        from source: LegacyPreferencesSource
-    ) -> Bool {
-        _ = NSApplication.shared
-
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = "Import \(source.displayName) settings?"
-        alert.informativeText = "Spiral found existing \(source.displayName) preferences. Import them into Spiral? The original preferences will not be changed."
-        alert.addButton(withTitle: "Import Settings")
-        let defaultsButton = alert.addButton(withTitle: "Use Spiral Defaults")
-        defaultsButton.keyEquivalent = "\u{1b}"
-        NSApp.activate(ignoringOtherApps: true)
-        return alert.runModal() == .alertFirstButtonReturn
     }
 }
