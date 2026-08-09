@@ -68,7 +68,7 @@ private struct ModernAboutView: View {
             .textSelection(.enabled)
             .padding(.top, 24)
 
-            Link("Original Notational Velocity", destination: URL(string: "https://notational.net/")!)
+            Link("Based on Notational Velocity", destination: URL(string: "https://notational.net/")!)
                 .font(.callout)
                 .padding(.top, 20)
 
@@ -77,6 +77,11 @@ private struct ModernAboutView: View {
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 12)
+
+            Link("Source Code on Github", destination: URL(string: "https://github.com/xurble/nv/")!)
+                .font(.callout)
+                .padding(.vertical, 20)
+
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 40)

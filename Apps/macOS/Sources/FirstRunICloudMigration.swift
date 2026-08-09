@@ -123,9 +123,10 @@ final class SpiralFirstRunMigrationController: NSObject {
 
             UserDefaults.standard.set(offerVersion, forKey: legacyImportOfferVersionKey)
             NSLog(
-                "Spiral imported %lu legacy notes to iCloud using storage format %ld.",
+                "Spiral imported %lu legacy notes to iCloud using storage format %ld (encrypted source: %@).",
                 preparation.noteCount,
-                preparation.storageFormat
+                preparation.storageFormat,
+                preparation.sourceWasEncrypted ? "yes" : "no"
             )
             return SpiralPreparedNotesDirectory(
                 directoryURL: destinationURL,

@@ -1,0 +1,23 @@
+{
+  "collectionMetadata" : {},
+  "notes" : [
+    {
+      "content" : {
+        "format" : "txt",
+        "text" : "- [ ] task\n# heading"
+      },
+      "createdAt" : 120,
+      "isPinned" : true,
+      "isPrivate" : false,
+      "legacyMetadata" : {},
+      "modifiedAt" : 180,
+      "tags" : [
+        "nvAlt"
+      ],
+      "title" : "nvAlt task"
+    }
+  ],
+  "recoveredWAL" : true,
+  "sourceApplication" : "nvAlt",
+  "sourceVersion" : "2.2"
+}

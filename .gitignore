@@ -16,3 +16,7 @@ Notation.xcodeproj/xcuserdata/g.xcuserdatad/xcschemes/xcschememanagement.plist
 
 # Per-developer Xcode signing settings
 /Config/Xcode/Local.xcconfig
+
+# Swift Package Manager products and local workspace state
+/Shared/SpiralCore/.build/
+/Shared/SpiralCore/.swiftpm/

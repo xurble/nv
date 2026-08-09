@@ -1,23 +1,9 @@
 #import <Cocoa/Cocoa.h>
+#import "LegacyCompatibility/NVLegacyCompatibility.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
-
-@interface NVLegacyCollectionPreparation : NSObject
-
-@property(nonatomic, readonly) NSInteger storageFormat;
-@property(nonatomic, readonly) NSUInteger noteCount;
-@property(nonatomic, readonly) BOOL detectedSignificantFormatting;
-
-@end
-
-@interface NVLegacyCollectionImporter : NSObject
-
-+ (nullable NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
-                                                              error:(NSError **)error;
-
-@end
 
 @interface NVSettingsBridge : NSObject <NSFontChanging>
 

@@ -588,7 +588,7 @@
 		6E6AFB7624DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Este é o título de uma nota.nvhelp"; sourceTree = "<group>"; };
 		6E6AFB7724DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Informações de Contato.nvhelp"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		8D1107320486CEB800E47090 /* Spiral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spiral.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D1107320486CEB800E47090 /* SpiralDebug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiralDebug.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* ApplicationBranding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplicationBranding.h; sourceTree = "<group>"; };
 		A10000000000000000000003 /* ApplicationBranding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApplicationBranding.m; sourceTree = "<group>"; };
 		A20000000000000000000011 /* ModernSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettings.swift; sourceTree = "<group>"; };
@@ -796,7 +796,7 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D1107320486CEB800E47090 /* Spiral.app */,
+				8D1107320486CEB800E47090 /* SpiralDebug.app */,
 				A20000000000000000000032 /* NotationSettingsTests.xctest */,
 				D10000000000000000000012 /* NotationIntegrationTests.xctest */,
 			);
@@ -1135,14 +1135,6 @@
 			path = ../../Tests/macOS/Settings;
 			sourceTree = "<group>";
 		};
-		D10000000000000000000030 /* ../../Tests/macOS/Integration */ = {
-			isa = PBXGroup;
-			children = (
-				D10000000000000000000011 /* TemporaryCollectionIntegrationTests.swift */,
-			);
-			path = ../../Tests/macOS/Integration;
-			sourceTree = "<group>";
-		};
 		B10000000000000000000021 /* Build Configuration */ = {
 			isa = PBXGroup;
 			children = (
@@ -1152,6 +1144,14 @@
 			);
 			name = "Build Configuration";
 			path = ../../Config/Xcode;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000030 /* ../../Tests/macOS/Integration */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000011 /* TemporaryCollectionIntegrationTests.swift */,
+			);
+			path = ../../Tests/macOS/Integration;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1172,7 +1172,7 @@
 			name = Notation;
 			productInstallPath = "$(HOME)/Applications";
 			productName = Notation;
-			productReference = 8D1107320486CEB800E47090 /* Spiral.app */;
+			productReference = 8D1107320486CEB800E47090 /* SpiralDebug.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A20000000000000000000071 /* NotationSettingsTests */ = {
@@ -2003,7 +2003,7 @@
 				LD_GENERATE_MAP_FILE = YES;
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = "2.0 β7";
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"-weak_framework",
 					PDFKit,
@@ -2017,8 +2017,8 @@
 				SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = "";
 				SPIRAL_WINDOW_TITLE = "Spiral (Debug)";
 				STRIP_STYLE = "non-global";
-				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
 				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WARNING_CFLAGS = "-pg";
 				WARNING_LDFLAGS = "";
@@ -2084,7 +2084,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(LIBRARY_SEARCH_PATHS)";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = "2.0 β7";
+				MARKETING_VERSION = 1.0.0;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;
 				PRODUCT_NAME = Spiral;
@@ -2104,8 +2104,8 @@
 				SPIRAL_WINDOW_TITLE = Spiral;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = all;
-				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
 				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;

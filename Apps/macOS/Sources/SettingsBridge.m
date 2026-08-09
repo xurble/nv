@@ -1,4 +1,5 @@
 #import "SettingsBridge.h"
+#import "LegacyCompatibility/NVLegacyCompatibility.h"
 #import "Spiral-Swift.h"
 
 #import "AppController.h"
@@ -31,6 +32,7 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 @property(nonatomic, readwrite) NSInteger storageFormat;
 @property(nonatomic, readwrite) NSUInteger noteCount;
 @property(nonatomic, readwrite) BOOL detectedSignificantFormatting;
+@property(nonatomic, readwrite) BOOL sourceWasEncrypted;
 @end
 
 @implementation NVLegacyCollectionPreparation
@@ -178,8 +180,26 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
         return nil;
     }
 
-    if ([prefs doesEncryption])
+    BOOL sourceWasEncrypted = [prefs doesEncryption];
+    if (sourceWasEncrypted) {
+        NSAlert *plaintextWarning = [[[NSAlert alloc] init] autorelease];
+        [plaintextWarning setAlertStyle:NSAlertStyleWarning];
+        [plaintextWarning setMessageText:@"The imported notes will no longer use legacy encryption"];
+        [plaintextWarning setInformativeText:
+            @"Spiral will create ordinary unencrypted TXT, RTF, or HTML files. "
+             "The original encrypted Notational Velocity or nvAlt folder and its Keychain item will be kept until you deliberately remove them."];
+        [plaintextWarning addButtonWithTitle:@"Import Unencrypted Files"];
+        [plaintextWarning addButtonWithTitle:@"Cancel"];
+        if ([plaintextWarning runModal] != NSAlertFirstButtonReturn) {
+            [controller closeAllResources];
+            [controller release];
+            if (error)
+                *error = [self errorWithCode:NVLegacyCollectionImportErrorOpenFailed
+                                 description:@"The encrypted notes import was cancelled before unencrypted files were created."];
+            return nil;
+        }
         [prefs disableEncryptionForMigrationWithoutRemovingLegacyKeychainItem];
+    }
     if (sourceFormat == SingleDatabaseFormat)
         [prefs useDefaultPathExtensionForFormatForMigration:targetFormat];
     if ([prefs notesStorageFormat] != targetFormat)
@@ -215,6 +235,7 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     result.storageFormat = targetFormat;
     result.noteCount = noteCount;
     result.detectedSignificantFormatting = significantFormatting;
+    result.sourceWasEncrypted = sourceWasEncrypted;
     return result;
 }
 

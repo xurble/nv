@@ -1,0 +1,28 @@
+{
+  "collectionMetadata" : {
+    "epochIteration" : "BAAAAA=="
+  },
+  "notes" : [
+    {
+      "content" : {
+        "format" : "txt",
+        "text" : "A representative Notational Velocity note."
+      },
+      "createdAt" : 0,
+      "isPinned" : false,
+      "isPrivate" : false,
+      "legacyMetadata" : {
+        "syncServicesMD" : "YnBsaXN0MDDUAQIDBAUGBwxYJHZlcnNpb25YJG9iamVjdHNUJGFyY2hpdmVyVCR0b3ASAAABhqAHCAkKVSRudWxs0QsMDQ5dTlMua2V5c1pOUy5vYmplY3RzVqEPV2tleV8QHGhpc3RvcmljLXJlbW90ZS1pZGVudGlmaWVyCBEaIykyN0lMUVVXX2IAAAAAAAABAQAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAfw=="
+      },
+      "modifiedAt" : 60,
+      "tags" : [
+        "archive",
+        "legacy"
+      ],
+      "title" : "Historical synchronized note"
+    }
+  ],
+  "recoveredWAL" : false,
+  "sourceApplication" : "Notational Velocity",
+  "sourceVersion" : "2.0b5"
+}
