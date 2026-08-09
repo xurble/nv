@@ -87,6 +87,10 @@ final class ModernSettingsTests: XCTestCase {
             info["SpiralDefaultNotesDirectoryName"] as? String,
             "$(SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME)"
         )
+        XCTAssertEqual(
+            info["SpiralDefaultNotesParentDirectory"] as? String,
+            "$(SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY)"
+        )
         XCTAssertEqual(info["SpiralWindowTitle"] as? String, "$(SPIRAL_WINDOW_TITLE)")
     }
 
@@ -112,13 +116,15 @@ final class ModernSettingsTests: XCTestCase {
 
         XCTAssertTrue(debugSettings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.debug;"))
         XCTAssertTrue(debugSettings.contains("PRODUCT_NAME = SpiralDebug;"))
-        XCTAssertTrue(debugSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Notational Data Debug\";"))
+        XCTAssertTrue(debugSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Spiral Debug Notes\";"))
+        XCTAssertTrue(debugSettings.contains("SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY = Documents;"))
         XCTAssertTrue(debugSettings.contains("SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = \"\";"))
         XCTAssertTrue(debugSettings.contains("SPIRAL_WINDOW_TITLE = \"Spiral (Debug)\";"))
         XCTAssertTrue(debugSettings.contains("SWIFT_OBJC_INTERFACE_HEADER_NAME = \"Spiral-Swift.h\";"))
         XCTAssertTrue(releaseSettings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;"))
         XCTAssertTrue(releaseSettings.contains("PRODUCT_NAME = Spiral;"))
-        XCTAssertTrue(releaseSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Notational Data\";"))
+        XCTAssertTrue(releaseSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Spiral Notes\";"))
+        XCTAssertTrue(releaseSettings.contains("SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY = Documents;"))
         XCTAssertTrue(releaseSettings.contains("SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = iCloud.farm.poplar.spiral;"))
         XCTAssertTrue(releaseSettings.contains("SPIRAL_WINDOW_TITLE = Spiral;"))
         XCTAssertFalse(project.contains("name = Development;"))

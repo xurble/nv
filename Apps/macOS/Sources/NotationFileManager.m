@@ -391,18 +391,23 @@ terminate:
 }
 
 + (OSStatus)getDefaultNotesDirectoryRef:(FSRef*)notesDir {
-    FSRef appSupportFoundRef;
+    FSRef parentDirectoryRef;
     NSString *directoryName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"SpiralDefaultNotesDirectoryName"];
     if (![directoryName length])
-        directoryName = @"Notational Data";
-    
-    OSErr err = FSFindFolder(kUserDomain, kApplicationSupportFolderType, kCreateFolder, &appSupportFoundRef);
+        directoryName = @"Spiral Notes";
+
+    NSString *parentDirectoryName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"SpiralDefaultNotesParentDirectory"];
+    OSType parentDirectoryType = [parentDirectoryName isEqualToString:@"ApplicationSupport"]
+        ? kApplicationSupportFolderType
+        : kDocumentsFolderType;
+
+    OSErr err = FSFindFolder(kUserDomain, parentDirectoryType, kCreateFolder, &parentDirectoryRef);
     if (err != noErr) {
-	NSLog(@"Unable to locate or create an Application Support directory: %d", err);
+	NSLog(@"Unable to locate or create the default notes parent directory: %d", err);
 	return err;
     } else {
 	//now try to get Notational Database directory
-	if ((err = CreateDirectoryIfNotPresent(&appSupportFoundRef, (CFStringRef)directoryName, notesDir)) != noErr) {
+	if ((err = CreateDirectoryIfNotPresent(&parentDirectoryRef, (CFStringRef)directoryName, notesDir)) != noErr) {
 	    
 	    return err;
 	}

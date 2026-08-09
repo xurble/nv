@@ -244,6 +244,8 @@
 	<string>SCR-51ED0F7B2A</string>
 	<key>SpiralDefaultNotesDirectoryName</key>
 	<string>$(SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME)</string>
+	<key>SpiralDefaultNotesParentDirectory</key>
+	<string>$(SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY)</string>
 	<key>SpiralICloudContainerIdentifier</key>
 	<string>$(SPIRAL_ICLOUD_CONTAINER_IDENTIFIER)</string>
 </dict>

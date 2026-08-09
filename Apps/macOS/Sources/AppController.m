@@ -289,7 +289,7 @@ void outletObjectAwoke(id sender) {
 	if (err == kPassCanceledErr)
 		goto showOpenPanel;
 	
-	NSString *location = (aliasData ? [[NSFileManager defaultManager] pathCopiedFromAliasData:aliasData] : NSLocalizedString(@"your Application Support directory",nil));
+	NSString *location = (aliasData ? [[NSFileManager defaultManager] pathCopiedFromAliasData:aliasData] : NSLocalizedString(@"your default notes directory",nil));
 	if (!location) { //fscopyaliasinfo sucks
 		FSRef locationRef;
 		if ([aliasData fsRefAsAlias:&locationRef] && LSCopyDisplayNameForRef(&locationRef, (CFStringRef*)&location) == noErr) {
