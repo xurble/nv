@@ -29,8 +29,8 @@ The main modernization risks are not caused by Objective-C itself. They are:
 - extensive dynamic selector use and weakly typed interfaces;
 - deprecated synchronous AppKit panels and alerts;
 - old archive, WebKit, Launch Services, and notification APIs;
-- pre-Apple-Silicon Sparkle and AutoHyperlinks frameworks;
-- an executable dependency on a Homebrew OpenSSL installation;
+- obsolete AutoHyperlinks framework files that are no longer part of the target;
+- legacy cryptographic compatibility code that must remain isolated and fixture-tested;
 - legacy encryption and recovery formats that must remain readable; and
 - inconsistent deployment metadata and build settings inherited from much older macOS releases.
 
@@ -62,7 +62,7 @@ The product should become a shared Swift domain and storage system with separate
 - **SystemIntegration (shared Swift sources where possible):** `NoteEntity`, entity queries, App Intents, Spotlight donation, deep-link routing, and privacy policy. The Mac and iOS applications link the same entity and intent definitions.
 - **Notational Velocity/nvAlt LegacyCompatibility:** permanently retained, fixture-tested support for opening the single-database archive, deriving and verifying its encryption keys, decrypting encrypted archives, replaying its WAL, and reading historic sync metadata, filenames, and encodings. This code exists specifically so people can migrate collections created by Notational Velocity or nvAlt. It is important compatibility code, not disposable technical debt, but it must not pull the AppKit-era object graph into the new store after migration.
 - **Application UI:** SwiftUI owns navigation, search/list presentation, inspector/panels, settings, onboarding, migration, conflicts, and platform-adaptive layout. The Mac initially wraps its proven `NSTextView`/`LinkingEditor` behavior; iPhone and iPad use a SwiftUI editor or a wrapped `UITextView` where TextKit control is required.
-- **macOSIntegration:** menus, commands, responder-chain behavior, services, global hotkey, external editor handoff, multiwindow behavior, and updater/distribution remain Mac-only adapters.
+- **macOSIntegration:** menus, commands, responder-chain behavior, services, global hotkey, external editor handoff, multiwindow behavior, and distribution remain Mac-only adapters.
 
 Objective-C and Swift can coexist while the boundary is extracted. C should remain only for small, stable legacy compatibility algorithms. New boundaries use typed async APIs and errors rather than notifications, dynamic selectors, or shared controller state.
 
@@ -141,28 +141,43 @@ Apple's current TextKit guidance continues to recommend `NSTextView` and `UIText
 - `RBSplitView`; replace its UI with SwiftUI split navigation or supported AppKit split views, then remove the dependency and old split-view nib wiring;
 - the old Simplenote/sync-service runtime (`NotationSyncServiceManager`, `SyncSessionController`, service plug-ins, bundled JSON/hashcash support) once fixtures prove historical metadata can be read without activating it;
 - Carbon/`FSRef`, Finder notification, catalog-node, volume-UUID, resource-fork, Launch Services, and Carbon hotkey implementations;
-- the bundled legacy Sparkle binary and the AutoHyperlinks framework files;
-- machine-specific OpenSSL linkage and legacy crypto as the writer for new documents; replace the dependency without removing the legacy decryption behavior required for Notational Velocity/nvAlt migration;
+- the removed legacy Sparkle updater path and the remaining AutoHyperlinks framework files;
+- legacy crypto as the writer for new documents; the machine-specific OpenSSL linkage has been removed, while the legacy decryption behavior required for Notational Velocity/nvAlt migration remains;
 - `NSArchiver`/unconstrained unarchiving as the current model format, legacy WebKit UI, synchronous alert/panel APIs, and selector-driven sheet callbacks;
 - duplicate legacy preference/about/migration controllers and their nibs after the SwiftUI replacements cover behavior and accessibility; and
 - AppKit model types (`NoteObject`, `NotationController`, `AppController`) as dependencies of the shared store, iOS target, App Intents, or Spotlight indexer.
 
 Do not remove any of these paths until fixtures cover the data they read and the replacement has shipped through the relevant migration. The Notational Velocity/nvAlt single-file and encryption compatibility subsystem is an explicit exception to eventual removal: retain it as quarantined migration code instead of leaving two general-purpose writable implementations active indefinitely.
 
+## OS 26 Spotlight Integration
+
+Core Spotlight and `IndexedEntity` do not depend on the OS 27 Notes App Schema. If OS 26 is the product minimum, ship first-class Spotlight search in the OS 26 timeframe rather than holding all system integration for the OS 27 Siri work.
+
+Implement the following in a Swift package shared by the Mac and future iOS applications:
+
+1. **Stable generic entity.** Define `NoteEntity` as an `IndexedEntity` without adopting the OS 27 Notes schema. Use the reconciliation record's permanent note UUID as its identifier; never use a title, filename, path, file-resource identifier, or legacy volume metadata as Spotlight identity.
+2. **Entity resolution.** Implement an async entity query that resolves UUIDs through `NoteStore`. It must work without an AppKit controller, foreground window, or live legacy object graph.
+3. **Protected semantic index.** Donate eligible note entities to a named, protected Core Spotlight index using indexing keys for title, textual content, tags, and created/modified dates. Associate the canonical file URL where appropriate. Update or delete entries after saves, renames, moves, deletes, conflict resolution, import, migration, and privacy or encryption-state changes.
+4. **Opening and searching.** Add an `OpenIntent` and UUID-based deep links so selecting a result opens the exact note even after a rename or move. On macOS 26, expose focused App Intents such as Open Note and Search Notes for direct use from Spotlight; keep mutations out of this first milestone.
+5. **Recovery.** Treat the Spotlight index as disposable. Support a full rebuild and system-requested reindexing through the OS 26 Core Spotlight reindexing delegate or index-extension path, while keeping the index out of iCloud Drive and out of the authoritative storage model.
+6. **Privacy and native-file indexing.** Make Spiral's Spotlight donation an explicit collection-level setting with per-note exclusion, omit unavailable legacy-encrypted content, and never donate transient plaintext produced during migration. Because canonical `.txt`, `.rtf`, and `.html` files in Finder-visible or iCloud Drive locations may also be indexed independently by macOS, document that disabling Spiral's donation does not by itself guarantee removal of filesystem-generated Spotlight results. Characterize duplicate-result and exclusion behavior before promising complete Spotlight privacy.
+7. **Testing.** Add disposable-collection coverage for initial indexing, incremental update and deletion, full rebuild, UUID deep links, rename and move behavior, locked legacy collections, privacy changes, unavailable iCloud files, conflicts, and possible duplication with filesystem-indexed canonical files. Verify results and actions manually in Spotlight on macOS 26.
+
+This OS 26 work establishes the durable Spotlight entity, index, privacy policy, and navigation contract. The OS 27 work extends those same identities rather than replacing or reindexing them under a new identifier scheme.
+
 ## OS 27 Apple Intelligence and Siri Preparation
 
-The OS 27 SDK adds a first-class Notes App Schema. Siri integration should therefore be designed into the shared model now, even if the deployment target remains older during early migration. These APIs are currently beta and must be revalidated against the final SDK before shipping.
+The OS 27 SDK adds a first-class Notes App Schema. Siri integration should therefore build on the OS 26 `NoteEntity` and Spotlight index. These APIs are currently beta and must be revalidated against the final SDK before shipping.
 
-Implement the following in a Swift package shared by the Mac and iOS applications:
+Implement the following in the shared system-integration package:
 
-1. **Stable entities.** Define `NoteEntity`, `TagEntity`, and `FolderEntity`. Apply `@AppEntity(schema: .notes.note)` to the note entity and conform it to `IndexedEntity` and `SyncableEntity`. Map the schema's name, attributed content, tags, pinned state, dates, and folder properties to the shared model; leave its optional attachment representation empty because Spiral has no attachment model. Use the reconciliation record's note UUID as the stable ID across all devices.
-2. **Entity resolution.** Implement an async query that resolves UUIDs through `NoteStore`, plus an `IndexedEntityQuery` that can reindex selected or all notes. Entity queries must be usable out of process and must not require an AppKit controller or a foreground window.
-3. **Semantic index.** Donate note entities to a named Core Spotlight index using stable identifiers and indexing keys for title, content, tags, and dates. Update the index transactionally after saves, renames, moves, deletes, conflict resolution, import, and encryption-state changes. Treat the index as disposable and implement full reindexing.
-4. **Navigation and onscreen awareness.** Add an `OpenIntent` and a `ShowInAppSearchResultsIntent`, with UUID-based deep links that work on every platform. Annotate the selected editor and visible note rows using `appEntityIdentifier`/`appEntityUIElements`; AppKit can annotate responder objects, so this does not require replacing the Mac editor first.
-5. **Note actions.** Adopt the `.notes.createNote` and `.notes.updateNote` intent schemas. Route both through the same tested `NoteStore` commands used by the UI. Use confirmation and authentication policies for mutations; the default App Intent policy permits locked-device execution, which is inappropriate for private notes.
-6. **Privacy and encryption.** Make Siri/Spotlight exposure a clear collection-level setting with a per-note exclusion. Do not index content from a legacy encrypted collection before the user explicitly migrates it to clean files, and use a protected Core Spotlight index for content the user elects to expose. Never place legacy encryption keys or transient decrypted migration content in intent parameters, donations, logs, or identifiers.
-7. **Cross-device and shared-note semantics.** OS 27's `SyncableEntity` requires a device-independent identifier so Siri can carry entity references between devices. If note sharing is later added, adopt `OwnershipProvidingEntity` so the system can request appropriate confirmation before changing shared content.
-8. **Testing.** Add App Intents Testing coverage for entity resolution, schema properties, create/update behavior, authentication, view annotations, deleted or unavailable documents, and conflict states. Then test progressively in Shortcuts, Spotlight semantic search, and Siri on physical devices using disposable iCloud accounts and collections.
+1. **Schema and cross-device identity.** Apply `@AppEntity(schema: .notes.note)` to the existing `NoteEntity` and conform it to `SyncableEntity`. Map the schema's name, attributed content, tags, pinned state, dates, and folder properties to the shared model; leave its optional attachment representation empty because Spiral has no attachment model. Preserve the UUID identifiers already donated on OS 26.
+2. **Enhanced reindexing.** Add `IndexedEntityQuery` support for selected or complete entity reindexing while continuing to use the same protected Core Spotlight index and `NoteStore` resolution boundary.
+3. **Navigation and onscreen awareness.** Add `ShowInAppSearchResultsIntent` and annotate the selected editor and visible note rows using `appEntityIdentifier`/`appEntityUIElements`; AppKit can annotate responder objects, so this does not require replacing the Mac editor first.
+4. **Note actions.** Adopt the `.notes.createNote` and `.notes.updateNote` intent schemas. Route both through the same tested `NoteStore` commands used by the UI. Use confirmation and authentication policies for mutations; the default App Intent policy permits locked-device execution, which is inappropriate for private notes.
+5. **Privacy and encryption.** Extend the OS 26 Spotlight policy to Siri and Apple Intelligence. Never place legacy encryption keys or transient decrypted migration content in intent parameters, donations, logs, or identifiers.
+6. **Cross-device and shared-note semantics.** `SyncableEntity` requires a device-independent identifier so Siri can carry entity references between devices. If note sharing is later added, adopt `OwnershipProvidingEntity` so the system can request appropriate confirmation before changing shared content.
+7. **Testing.** Add App Intents Testing coverage for schema properties, create/update behavior, authentication, view annotations, deleted or unavailable documents, and conflict states. Then test progressively in Shortcuts and Siri on physical devices using disposable iCloud accounts and collections, while retaining the OS 26 Spotlight regression suite.
 
 App Intents and Spotlight are the route for exposing the app's notes and actions to Siri. The Foundation Models framework and its OS 27 `SpotlightSearchTool` are a separate, optional route for an in-app “ask my notes” experience. If added later, it should query the same protected Spotlight index and return cited note identities through `NoteStore`; it is not a substitute for App Entities, schema intents, or Siri integration.
 
@@ -222,6 +237,17 @@ Add a shared scheme and continuous integration that builds and tests Development
 
 **Exit criterion:** The shared Swift package can import and, where necessary, WAL-recover all supported Notational Velocity and nvAlt fixtures; save clean per-note files and private reconciliation records; reopen them losslessly; rebuild its local index; and represent conflicts without linking AppKit or UIKit. The source fixtures remain byte-for-byte unchanged.
 
+### OS 26 Milestone: Ship Spotlight Search on Mac
+
+- Implement the OS 26 Spotlight plan above as soon as `NoteStore` and permanent reconciliation UUIDs are available; it may proceed alongside the Phase 3 UI work and must not wait for the OS 27 Notes schema.
+- Donate title, textual content, tags, and dates through a generic `NoteEntity` to a named, protected Core Spotlight index.
+- Route Spotlight results and the Open Note action through UUID-based navigation, initially adapting the Mac's existing UUID-aware URL handling at the application boundary.
+- Keep the index current through `NoteStore` index events and support deterministic full rebuilding without reading or writing a user's authoritative note data outside normal coordinated access.
+- Add an opt-in collection policy with per-note exclusion, omit locked or unmigrated legacy-encrypted content, and characterize duplicate and exclusion behavior for Finder-visible canonical files.
+- Do not adopt the OS 27 Notes schema, `SyncableEntity`, Siri create/update intents, or OS 27-only reindexing APIs in this milestone.
+
+**Exit criterion:** On macOS 26, eligible notes from a disposable collection appear in Spotlight by title and content, selecting a result opens the same UUID after rename or move, update/delete/rebuild behavior is covered by automated tests, and the documented privacy policy matches observed Core Spotlight and filesystem-index behavior.
+
 ### Phase 3: Build a Cross-Platform SwiftUI Vertical Slice
 
 - Add the universal iPhone/iPad target and a SwiftUI feature package.
@@ -244,14 +270,14 @@ Add a shared scheme and continuous integration that builds and tests Development
 
 **Exit criterion:** Multiple devices can edit different notes offline and converge, while same-note conflicts remain visible and recoverable and interrupted migration can resume or roll back.
 
-### Phase 5: Add Spotlight, App Intents, and Siri
+### Phase 5: Add the OS 27 Notes Schema, App Intents, and Siri
 
-- Implement the OS 27 preparation plan above behind availability boundaries where the product still supports older systems.
-- Ship Spotlight entity indexing and UUID deep links first, then `OpenIntent` and in-app search, then the Notes schema create/update intents, and finally onscreen awareness and content transfer.
-- Add an explicit privacy control and define indexing behavior for privacy-excluded notes and content that remains unavailable while a legacy encrypted collection is locked.
+- Extend the OS 26 `NoteEntity`, protected index, UUID navigation, and privacy policy according to the OS 27 preparation plan above; do not create a parallel entity or change stable identifiers.
+- Add `SyncableEntity` and the Notes schema, then schema create/update intents, onscreen awareness, and content transfer.
 - Keep intents thin; all reads and mutations go through `NoteStore` authorization and conflict rules.
+- Retain OS 26 Spotlight coverage as a compatibility suite and test that the OS 27 additions do not duplicate entries or break existing result navigation.
 
-**Exit criterion:** Automated App Intents tests pass, indexed notes open reliably on each platform, private notes remain excluded according to policy, and create/update commands work through Siri on disposable OS 27 test devices.
+**Exit criterion:** Automated App Intents tests pass, existing OS 26 Spotlight entries continue to open reliably, private notes remain excluded according to the documented policy, and create/update commands work through Siri on disposable OS 27 test devices.
 
 ### Phase 6: Make the Products Reproducible and Distributable
 
@@ -266,23 +292,23 @@ Add a shared scheme and continuous integration that builds and tests Development
 
 **Exit criterion:** Release archives install and run on clean supported Mac, iPhone, and iPad devices without Homebrew or developer tools.
 
-**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, and the macOS target now declares the shared `iCloud.farm.poplar.spiral` Documents container with the Finder name “Spiral Notes.” Fresh installations default to this container when it is available. A first run that detects Notational Velocity or nvAlt preferences now offers the guarded, folder-selected, copy-only import described above; the manual switch workflow offers Copy or Keep and no longer offers Move. This behavior is provisional: the current Mac controller still publishes and writes its compatibility database alongside the generated note files. Production iCloud enablement must target the per-note store from Phase 4, and iPhone/iPad clients must not share the transitional collection. The container identifier still needs registration and verification with the intended Apple Developer team. Deployment metadata remains inconsistent, build settings still contain Homebrew OpenSSL paths, and broader `.xcconfig` extraction, hardened-runtime, signing, notarization, archive, clean-machine, and live-container verification work remains outstanding.
+**Progress as of August 2026:** The application builds with the current Xcode and macOS SDK, and the macOS target now declares the shared `iCloud.farm.poplar.spiral` Documents container with the Finder name “Spiral Notes.” Fresh installations default to this container when it is available. A first run that detects Notational Velocity or nvAlt preferences now offers the guarded, folder-selected, copy-only import described above; the manual switch workflow offers Copy or Keep and no longer offers Move. This behavior is provisional: the current Mac controller still publishes and writes its compatibility database alongside the generated note files. Production iCloud enablement must target the per-note store from Phase 4, and iPhone/iPad clients must not share the transitional collection. The container identifier still needs registration and verification with the intended Apple Developer team. The Homebrew OpenSSL dependency and architecture-specific legacy deployment overrides have been removed, and unsigned Debug and Release builds now produce universal `arm64`/`x86_64` executables. Broader `.xcconfig` extraction, hardened-runtime, signing, notarization, archive, clean-machine, and live-container verification work remains outstanding.
 
 ### Phase 7: Replace Obsolete Dependencies and Deprecated Platform APIs
 
 #### OpenSSL and encryption
 
-The built executable currently refers to a Homebrew `libcrypto.3.dylib`. Remove that machine-specific runtime dependency without removing support for the Notational Velocity/nvAlt encrypted database formats.
+The machine-specific Homebrew `libcrypto.3.dylib` dependency has been removed. Legacy AES-256-CBC and MD5 compatibility now use the system CommonCrypto implementation, while Base64 uses Foundation. The Notational Velocity/nvAlt encrypted database and WAL formats remain readable and writable by the quarantined compatibility subsystem.
 
-Before replacing it, add golden fixtures for PBKDF2, AES-CBC, MD5-derived identifiers, base64, and legacy IDEA data. Preserve legacy key derivation, passphrase verification, database decryption, and WAL recovery as migration compatibility behavior. Treat this as a compatibility implementation that may be isolated or reimplemented behind tests, not deleted, and do not add a new encryption writer as part of the clean-file migration. Any future encrypted format requires a separate product decision, explicit version marker, backup, migration path, and rollback strategy.
+Golden compatibility vectors now cover the replaced AES-CBC, MD5, and Base64 operations for both universal architectures. Add fixture coverage for complete encrypted databases, PBKDF2, WAL recovery, and legacy IDEA data before changing those paths. Preserve legacy key derivation, passphrase verification, database decryption, and WAL recovery as migration compatibility behavior. Treat this as a compatibility implementation that may be isolated or reimplemented behind tests, not deleted, and do not add a new encryption writer as part of the clean-file migration. Any future encrypted format requires a separate product decision, explicit version marker, backup, migration path, and rollback strategy.
 
 #### AutoHyperlinks
 
 Replace the dynamically loaded AutoHyperlinks framework with Foundation text checking, such as `NSDataDetector`, plus compatibility tests for URLs currently recognized by the editor.
 
-#### Sparkle
+#### Application updates
 
-Replace the bundled legacy Sparkle framework with the current supported release through Swift Package Manager. Move from the old `SUUpdater` path to the current updater controller and adopt HTTPS, modern update signatures, code signing, and notarized update archives.
+The bundled legacy Sparkle framework, update feed, signature key, startup loader, and Check for Updates command have been removed. The Mac App Store build must obtain updates exclusively through the Mac App Store. If direct distribution is introduced later, treat adding a separately configured, supported updater as a new distribution decision rather than restoring the legacy framework.
 
 Also modernize one subsystem at a time:
 
@@ -303,7 +329,7 @@ Each replacement should include tests and land independently where practical.
 
 **Progress as of August 2026:** A few isolated UI and text-detection paths have been modernized, but the main file, persistence, import, and application-control paths still use Carbon, `FSRef`, legacy archive/WebKit APIs, and extensive dynamic selector dispatch. The phase remains largely outstanding.
 
-Editor URL detection now uses `NSDataDetector` with characterization coverage, and AutoHyperlinks is no longer referenced by the Xcode project, although its framework files remain in the repository. Legacy Sparkle is still bundled, and the executable still links to Homebrew's `libcrypto.3.dylib`.
+Editor URL detection now uses `NSDataDetector` with characterization coverage, and AutoHyperlinks is no longer referenced by the Xcode project, although its framework files remain in the repository. Legacy Sparkle, its update metadata, and its update command have been removed. Homebrew OpenSSL linkage has also been removed, with universal compatibility vectors covering the substituted AES-CBC, MD5, and Base64 implementations.
 
 ### Phase 8: Quarantine and Shrink the Legacy Mac Core
 
@@ -350,10 +376,11 @@ A wholesale Swift rewrite is not recommended. It would create substantial regres
 6. Build one SwiftUI navigation/search/list vertical slice on iPhone, iPad, and Mac using fixture data; wrap the existing Mac editor.
 7. Decide the supported OS ranges and whether the mobile target can require OS 27's new `Document` APIs.
 8. Implement the local rebuildable index and prove that deletion/rebuild cannot lose user data.
-9. Implement per-note coordinated iCloud access and two-device offline/conflict tests before switching any real collection to it.
-10. Define `NoteEntity` with the OS 27 Notes schema, `IndexedEntity`, and `SyncableEntity`; add App Intents Testing and a protected Spotlight indexing policy.
-11. Remove the Homebrew OpenSSL runtime dependency, upgrade Sparkle, remove the unused AutoHyperlinks files, and establish signed release archives without combining those changes with the storage migration.
-12. Add CI for shared tests and all product configurations, with a warning baseline and disposable-data enforcement.
+9. For the OS 26 milestone, define a generic UUID-backed `NoteEntity: IndexedEntity`, donate eligible notes to a named protected Core Spotlight index, add UUID opening and focused Spotlight actions, and test update/delete/rebuild plus native-file duplicate and privacy behavior.
+10. Implement per-note coordinated iCloud access and two-device offline/conflict tests before switching any real collection to it.
+11. For OS 27, extend the same `NoteEntity` with the Notes schema and `SyncableEntity`; add Siri create/update intents and App Intents Testing without changing Spotlight identifiers.
+12. Remove the unused AutoHyperlinks files, then establish signed release archives and verify the Mac App Store update path without combining those changes with the storage migration.
+13. Add CI for shared tests and all product configurations, with a warning baseline and disposable-data enforcement.
 
 ## Definition of Done for Modernization Changes
 
@@ -384,6 +411,7 @@ A modernization change is complete when:
 - [Apple: Notes App Schema domain](https://developer.apple.com/documentation/appintents/app-schema-domain-notes)
 - [Apple: OS 27 note entity schema](https://developer.apple.com/documentation/appintents/appschema/notesentity/note)
 - [Apple: Apple Intelligence and Siri AI](https://developer.apple.com/documentation/appintents/apple-intelligence-and-siri-ai)
+- [Apple: Develop for Shortcuts and Spotlight with App Intents (WWDC25)](https://developer.apple.com/videos/play/wwdc2025/260/)
 - [Apple: Making App Entities available in Spotlight](https://developer.apple.com/documentation/appintents/making-app-entities-available-in-spotlight)
 - [Apple: Providing contextual cues to Apple Intelligence and Siri](https://developer.apple.com/documentation/appintents/providing-contextual-cues-to-apple-intelligence-and-siri)
 - [Apple: `SyncableEntity`](https://developer.apple.com/documentation/appintents/syncableentity)
@@ -397,5 +425,3 @@ A modernization change is complete when:
 - [Apple: Designing for Documents in iCloud](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForDocumentsIniCloud.html)
 - [Apple: iCloud fundamentals and SQLite store-file guidance](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/iCloudFundametals.html)
 - [Apple: Configuring the Hardened Runtime](https://developer.apple.com/documentation/xcode/configuring-the-hardened-runtime/)
-- [Sparkle documentation](https://sparkle-project.org/documentation/)
-- [Sparkle upgrade guidance](https://sparkle-project.org/documentation/upgrading/)

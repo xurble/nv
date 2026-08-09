@@ -44,6 +44,8 @@
     IBOutlet NotesTableView *notesTableView;
     IBOutlet LinkingEditor *textView;
 	IBOutlet EmptyView *editorStatusView;
+	// Retained only as a compatibility outlet for the compiled legacy nibs.
+	// AppController removes this obsolete update item during awakeFromNib.
 	IBOutlet NSMenuItem *sparkleUpdateItem;
     IBOutlet NSWindow *window;
 	IBOutlet NSPanel *syncWaitPanel;
