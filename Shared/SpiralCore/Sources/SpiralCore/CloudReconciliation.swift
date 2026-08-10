@@ -45,7 +45,7 @@ public struct ReconciliationIdentityResolver: Sendable {
             let hashes = available.filter { $0.rawContentHash == hash }
             if let result = uniqueOrAmbiguous(hashes) { return result }
         }
-        return .newIdentity(NoteID())
+        return .newIdentity(deterministicIdentity(for: item))
     }
 
     private func uniqueOrAmbiguous(
@@ -56,6 +56,22 @@ public struct ReconciliationIdentityResolver: Sendable {
         if ids.count == 1 { return .matched(ids[0]) }
         if ids.count > 1 { return .ambiguous(ids) }
         return nil
+    }
+
+    /// Two clients discovering the same previously unmanaged file at once must
+    /// publish the same initial UUID rather than create competing records. The
+    /// path participates so an unambiguous copy with identical bytes receives
+    /// a distinct identity.
+    private func deterministicIdentity(for item: CloudDocumentSnapshot) -> NoteID {
+        let seed = item.relativePath + "\u{0}" + (item.contentHash ?? "")
+        let hex = ContentHash.sha256(Data(seed.utf8))
+        let first = String(hex.prefix(8))
+        let second = String(hex.dropFirst(8).prefix(4))
+        let third = "5" + String(hex.dropFirst(13).prefix(3))
+        let fourth = "8" + String(hex.dropFirst(17).prefix(3))
+        let fifth = String(hex.dropFirst(20).prefix(12))
+        let uuidString = "\(first)-\(second)-\(third)-\(fourth)-\(fifth)"
+        return NoteID(UUID(uuidString: uuidString)!)
     }
 }
 

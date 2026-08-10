@@ -35,10 +35,12 @@ container.
 | Three-device faults | Delayed replicas merge three non-overlapping same-note edits; divergent same-line edits retain a visible conflict copy |
 | Durable migration | Per-item atomic journal resumes interrupted publication and verifies the retained backup and final destination |
 | Guarded rollback | Rollback removes only journal-owned bytes whose hashes still match and refuses to erase a later external edit |
+| Production shared store | Two `CloudNoteStore` clients share coordinated documents and private records; a Mac-created note keeps its UUID through a mobile edit and Mac reload |
+| Legacy handoff gate | Mobile preflight refuses legacy/unrelated public data, and Mac retirement byte-verifies a retained database/WAL backup before deleting only those artifacts |
 
 Run the shared coverage in Debug or Release through
 `Scripts/ci/run-phase2.sh Debug` and `Scripts/ci/run-phase2.sh Release`; the
 Phase 3 gate composes the same package suite with platform UI coverage. Before
-production enablement, separately verify the registered container on physical
-Mac, iPhone, and iPad devices for account changes, eviction, storage exhaustion,
+release, separately verify the registered container on physical Mac, iPhone,
+and iPad devices for first handoff, account changes, eviction, storage exhaustion,
 unrelated text-editor writes, and real network interruption.

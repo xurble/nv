@@ -13,22 +13,22 @@ The work is deliberately incremental. Its priorities are to:
 - replace obsolete dependencies and deprecated platform APIs without risking user data;
 - extract a tested, platform-neutral core and storage boundary;
 - use iCloud Drive as a shared data store while supporting offline use, coordinated writes, conflicts, and safe migration from local collections; and
-- prepare for a future universal iPhone and iPad application with its own platform-appropriate interface.
+- maintain the universal iPhone and iPad application with its own platform-appropriate interface.
 
 This is not intended to be a wholesale rewrite. Stable Objective-C and C code can remain where replacing it offers no concrete safety or maintenance benefit. New and deliberately extracted components should use Swift where it provides clearer boundaries and stronger correctness.
 
 ## Project status
 
-The macOS application is being modernized in stages. Automated coverage, embedded Swift and SwiftUI components, and the guarded first-run path for copying an existing collection into the shared “Spiral Notes” iCloud Drive container are in place. The iCloud container still needs production developer-team registration and live verification, and ongoing coordinated storage, conflict handling, substantial persistence, dependency, distribution, and compatibility work remain. The iOS application has not yet been implemented.
+The macOS application is being modernized in stages. Automated coverage, the universal iPhone/iPad app, shared SwiftUI features, and the guarded first-run path for copying an existing collection into the shared “Spiral Notes” iCloud Drive container are in place. After the Mac completes its legacy handoff, Mac, iPhone, and iPad all select the same coordinated per-note iCloud store with private reconciliation records. The next migration goal is registered-container and physical-device verification; substantial platform cleanup, distribution, Spotlight, and compatibility work remains.
 
 See [MIGRATION_STRATEGY.md](MIGRATION_STRATEGY.md) for the architecture, migration phases, current progress, and data-safety requirements.
 
 ## Repository layout
 
 - `Apps/macOS` contains the existing AppKit application.
-- `Apps/iOS` is reserved for the future universal iPhone and iPad application.
-- `Shared` is reserved for tested code shared across platforms.
-- `Tests` contains platform-specific and future shared test suites.
+- `Apps/iOS` contains the universal iPhone and iPad application.
+- `Shared` contains tested core and feature code shared across platforms.
+- `Tests` contains platform-specific and shared test suites.
 - `Notation.xcodeproj` is the Xcode project.
 
 Contributors should read [AGENTS.md](AGENTS.md) before making architectural, persistence, encryption, synchronization, or migration changes.

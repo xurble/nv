@@ -15,6 +15,7 @@
     along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
 
 import AppKit
+import SpiralCore
 
 @objc(SpiralFirstRunMigrationController)
 @MainActor
@@ -22,7 +23,6 @@ final class SpiralFirstRunMigrationController: NSObject {
     private static let offerVersion = 1
     private static let offerVersionKey = "SpiralICloudMigrationOfferVersion"
     private static let legacyImportOfferVersionKey = "SpiralLegacyNotesImportOfferVersion"
-    private static let containerIdentifierKey = "SpiralICloudContainerIdentifier"
     private static let containerResolutionTimeout: TimeInterval = 15
 
     @objc(prepareNotesDirectoryAtURL:preferencesStartupState:)
@@ -227,12 +227,7 @@ final class SpiralFirstRunMigrationController: NSObject {
     }
 
     static var configuredContainerIdentifier: String? {
-        guard let identifier = Bundle.main.object(
-            forInfoDictionaryKey: containerIdentifierKey
-        ) as? String, !identifier.isEmpty else {
-            return nil
-        }
-        return identifier
+        SharedICloudStoreConfiguration.containerIdentifier
     }
 
     private static func prepareICloudSwitch(

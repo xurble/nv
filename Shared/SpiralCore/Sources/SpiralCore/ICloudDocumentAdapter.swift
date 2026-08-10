@@ -403,3 +403,48 @@ public final class CloudMetadataMonitor: NSObject, @unchecked Sendable {
 
     deinit { stop() }
 }
+
+/// Retains and starts both Foundation change-signal bridges for an app-owned
+/// CloudNoteStore. Signals are coalesced by the store's full reconciliation;
+/// they never carry authoritative file state themselves.
+public final class CloudCollectionObserver: @unchecked Sendable {
+    private let presenter: CloudDocumentPresenter
+    private let metadataMonitor: CloudMetadataMonitor
+    private let lock = NSLock()
+    private var isStarted = false
+
+    public init(
+        rootURL: URL,
+        changeHandler: @escaping @MainActor @Sendable () -> Void
+    ) {
+        let signal: @Sendable () -> Void = {
+            Task { @MainActor in changeHandler() }
+        }
+        presenter = CloudDocumentPresenter(rootURL: rootURL, changeHandler: signal)
+        metadataMonitor = CloudMetadataMonitor(rootURL: rootURL, changeHandler: signal)
+    }
+
+    public func start() {
+        let shouldStart = lock.withLock {
+            guard !isStarted else { return false }
+            isStarted = true
+            return true
+        }
+        guard shouldStart else { return }
+        NSFileCoordinator.addFilePresenter(presenter)
+        metadataMonitor.start()
+    }
+
+    public func stop() {
+        let shouldStop = lock.withLock {
+            guard isStarted else { return false }
+            isStarted = false
+            return true
+        }
+        guard shouldStop else { return }
+        metadataMonitor.stop()
+        NSFileCoordinator.removeFilePresenter(presenter)
+    }
+
+    deinit { stop() }
+}

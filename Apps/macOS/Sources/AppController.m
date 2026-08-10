@@ -307,8 +307,17 @@ void outletObjectAwoke(id sender) {
 	BOOL foundCurrentNotesDirectory = aliasData
 		? [aliasData fsRefAsAlias:&currentNotesDirectoryRef]
 		: ([NotationController getDefaultNotesDirectoryRef:&currentNotesDirectoryRef] == noErr);
+	NSURL *currentNotesDirectoryURL = foundCurrentNotesDirectory
+		? [(NSURL *)CFURLCreateFromFSRef(kCFAllocatorDefault, &currentNotesDirectoryRef) autorelease]
+		: nil;
+	SpiralPhase3TestShellController = [[SpiralPhase3MacShellController
+		openSharedICloudStoreIfReadyWithCurrentCollectionPath:[currentNotesDirectoryURL path]] retain];
+	if (SpiralPhase3TestShellController) {
+		[SpiralPhase3TestShellController showWindow:self];
+		[window orderOut:nil];
+		return;
+	}
 	if (foundCurrentNotesDirectory) {
-		NSURL *currentNotesDirectoryURL = [(NSURL *)CFURLCreateFromFSRef(kCFAllocatorDefault, &currentNotesDirectoryRef) autorelease];
 		SpiralPreparedNotesDirectory *preparedNotesDirectory =
 			[SpiralFirstRunMigrationController prepareNotesDirectoryAtURL:currentNotesDirectoryURL
 									 preferencesStartupState:[SpiralPreferencesMigrationController startupState]];

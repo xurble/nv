@@ -210,6 +210,8 @@ final class ModernSettingsTests: XCTestCase {
             XCTAssertFalse(settings.contains("CODE_SIGNING_ALLOWED = NO;"))
             XCTAssertTrue(settings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;"))
             XCTAssertTrue(settings.contains("PRODUCT_NAME = Spiral;"))
+            XCTAssertTrue(settings.contains("CODE_SIGN_ENTITLEMENTS = Apps/iOS/Spiral.entitlements;"))
+            XCTAssertFalse(settings.contains("INFOPLIST_KEY_SpiralICloudContainerIdentifier"))
         }
         XCTAssertTrue(project.contains("F30000000000000000000012 /* Spiral.app */"))
         XCTAssertFalse(project.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile;"))
@@ -217,6 +219,63 @@ final class ModernSettingsTests: XCTestCase {
         XCTAssertFalse(project.contains("SpiralMobile.app"))
         XCTAssertTrue(scheme.contains("BuildableName = \"Spiral.app\""))
         XCTAssertFalse(scheme.contains("BuildableName = \"SpiralMobile.app\""))
+    }
+
+    func testProductionAppsSelectOneSharedICloudNoteStore() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let mobileSource = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/iOS/SpiralMobileApp.swift"),
+            encoding: .utf8
+        )
+        let macSource = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/macOS/Sources/AppController.m"),
+            encoding: .utf8
+        )
+        let macShellSource = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/macOS/Sources/Phase3MacShell.swift"),
+            encoding: .utf8
+        )
+        let sharedStoreSource = try String(
+            contentsOf: repositoryRoot.appendingPathComponent(
+                "Shared/SpiralCore/Sources/SpiralCore/SharedCloudNoteStore.swift"
+            ),
+            encoding: .utf8
+        )
+        let mobileEntitlements = try propertyListDictionary(
+            at: repositoryRoot.appendingPathComponent("Apps/iOS/Spiral.entitlements")
+        )
+        let containerIdentifier = "iCloud.farm.poplar.spiral"
+
+        XCTAssertTrue(mobileSource.contains("CloudNoteStore("))
+        XCTAssertTrue(mobileSource.contains("containerURL.appendingPathComponent(\"Documents\""))
+        XCTAssertTrue(mobileSource.contains("containerURL.appendingPathComponent(\"Data/Reconciliation\""))
+        XCTAssertTrue(mobileSource.contains("SPIRAL_UI_TEST_MODE"))
+        XCTAssertTrue(
+            mobileSource.contains("SharedICloudStoreConfiguration.containerIdentifier")
+        )
+        XCTAssertTrue(
+            macShellSource.contains("SharedICloudStoreConfiguration.containerIdentifier")
+        )
+        XCTAssertTrue(
+            sharedStoreSource.contains(
+                "static let containerIdentifier = \"\(containerIdentifier)\""
+            )
+        )
+        XCTAssertTrue(
+            macSource.contains("openSharedICloudStoreIfReadyWithCurrentCollectionPath:")
+        )
+        XCTAssertTrue(
+            (mobileEntitlements["com.apple.developer.icloud-container-identifiers"] as? [String])?
+                .contains(containerIdentifier) == true
+        )
+        XCTAssertTrue(
+            (mobileEntitlements["com.apple.developer.ubiquity-container-identifiers"] as? [String])?
+                .contains(containerIdentifier) == true
+        )
     }
 
     func testMobileBuildsUseSharedSpiralIcon() throws {

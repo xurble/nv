@@ -10,12 +10,12 @@ remains in `Apps/macOS` until characterization tests protect its behavior and
 platform dependencies have been removed behind an explicit boundary.
 
 `SpiralCore` is the shared Swift package established in Phase 2 and extended
-through the disabled-until-verified Phase 4 iCloud boundary. It contains the
+through the production-selected, live-verification-pending Phase 4 iCloud boundary. It contains the
 note domain, deterministic clean-file codecs, per-note reconciliation records,
 the actor-isolated local `NoteStore`, its disposable index, conflict values,
 the platform-neutral side of the legacy migration boundary, OS 26 coordinated
-document adapters, deterministic reconciliation, and the durable copy-only
-publication journal. Run its disposable-directory and multi-device fault suite
+document adapters, the production `CloudNoteStore`, deterministic reconciliation,
+legacy-artifact retirement, and the durable copy-only publication journal. Run its disposable-directory and multi-device fault suite
 with:
 
 ```sh

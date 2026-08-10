@@ -89,6 +89,16 @@ struct CloudReconciliationPolicyTests {
         )
     }
 
+    @Test("Concurrent first discovery derives one UUID while copies remain distinct")
+    func deterministicInitialIdentity() {
+        let resolver = ReconciliationIdentityResolver()
+        let original = snapshot(path: "New.txt", data: Data("new".utf8))
+        let copy = snapshot(path: "New Copy.txt", data: Data("new".utf8))
+
+        #expect(resolver.resolve(original, records: []) == resolver.resolve(original, records: []))
+        #expect(resolver.resolve(original, records: []) != resolver.resolve(copy, records: []))
+    }
+
     @Test("Plain-text non-overlapping edits merge and same-line edits conflict")
     func plainTextThreeWayMerge() throws {
         let id = NoteID()
@@ -463,6 +473,93 @@ struct CloudMigrationJournalTests {
         }
         #expect(documents.data(at: "First.txt") == Data("external edit".utf8))
         #expect(FileManager.default.fileExists(atPath: fixture.backup.path))
+    }
+}
+
+@Suite("Production shared iCloud NoteStore")
+struct SharedCloudNoteStoreTests {
+    @Test("Mac and mobile stores read and write one coordinated collection")
+    func macAndMobileShareOneCollection() async throws {
+        let documents = FaultCloudAdapter(identifier: "shared-documents")
+        let records = FaultCloudAdapter(identifier: "shared-records")
+        let root = temporaryRoot("SharedCloudStore")
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let mac = CloudNoteStore(
+            documents: documents,
+            reconciliationRecords: records,
+            indexURL: root.appendingPathComponent("Mac/index.json")
+        )
+        let mobile = CloudNoteStore(
+            documents: documents,
+            reconciliationRecords: records,
+            indexURL: root.appendingPathComponent("Mobile/index.json")
+        )
+        try await mac.reloadFromCloud()
+        let created = try await mac.create(
+            Note(title: "Shared", content: NoteContent(format: .plainText, text: "from Mac"))
+        )
+
+        try await mobile.reloadFromCloud()
+        var mobileCopy = try #require(await mobile.note(id: created.id))
+        #expect(mobileCopy.content.text == "from Mac")
+        mobileCopy.content.text = "edited on iPhone"
+        mobileCopy.modifiedAt = Date(timeIntervalSince1970: 500)
+        try await mobile.update(mobileCopy)
+
+        try await mac.reloadFromCloud()
+        #expect(await mac.note(id: created.id)?.content.text == "edited on iPhone")
+        #expect(try records.listDocuments().count == 1)
+        #expect(try documents.listDocuments().map(\.relativePath) == ["Shared.txt"])
+    }
+
+    @Test("Mobile preflight blocks legacy or unrelated public data")
+    func sharedStorePreflight() {
+        let policy = SharedCloudStorePolicy()
+        let note = snapshot(path: "Note.txt", data: Data("note".utf8))
+        let database = snapshot(path: "Notes & Settings", data: Data("legacy".utf8))
+        let unrelated = snapshot(path: "photo.jpg", data: Data("image".utf8))
+
+        #expect(policy.readiness(for: [note]) == .ready(canonicalNoteCount: 1))
+        #expect(
+            policy.readiness(for: [note, database])
+                == .requiresLegacyMigration(
+                    legacyPaths: ["Notes & Settings"],
+                    canonicalNoteCount: 1
+                )
+        )
+        #expect(
+            policy.readiness(for: [unrelated])
+                == .containsUnsupportedData(paths: ["photo.jpg"])
+        )
+    }
+
+    @Test("Legacy database retirement verifies a retained backup before deletion")
+    func retirementKeepsVerifiedBackup() throws {
+        let documents = FaultCloudAdapter(identifier: "retirement-documents")
+        documents.seed("Note.txt", data: Data("canonical".utf8))
+        documents.seed("Notes & Settings", data: Data("legacy database".utf8))
+        documents.seed("Interim Note-Changes", data: Data("legacy wal".utf8))
+        let root = temporaryRoot("LegacyRetirement")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let backup = root.appendingPathComponent("Retained Legacy Store", isDirectory: true)
+
+        let retired = try LegacyCloudArtifactRetirementService().retire(
+            from: documents,
+            retainedBackupURL: backup
+        )
+
+        #expect(retired == ["Interim Note-Changes", "Notes & Settings"])
+        #expect(documents.data(at: "Note.txt") == Data("canonical".utf8))
+        #expect(documents.data(at: "Notes & Settings") == nil)
+        #expect(
+            try Data(contentsOf: backup.appendingPathComponent("Notes & Settings"))
+                == Data("legacy database".utf8)
+        )
+        #expect(
+            try Data(contentsOf: backup.appendingPathComponent("Interim Note-Changes"))
+                == Data("legacy wal".utf8)
+        )
     }
 }
 
