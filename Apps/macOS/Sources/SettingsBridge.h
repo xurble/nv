@@ -7,6 +7,8 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 
 @interface NVSettingsBridge : NSObject <NSFontChanging>
 
++ (NSTextView *)newPhase3Editor;
+
 @property(nonatomic, readonly) BOOL autoCompleteSearches;
 @property(nonatomic, readonly) BOOL confirmNoteDeletion;
 @property(nonatomic, readonly) BOOL quitWhenClosingWindow;

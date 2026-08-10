@@ -7,6 +7,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstrict-prototypes"
 #import "GlobalPrefs.h"
+#import "LinkingEditor.h"
 #pragma clang diagnostic pop
 #import "NSData_transformations.h"
 #import "NotationPrefs.h"
@@ -247,6 +248,12 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 @end
 
 @implementation NVSettingsBridge
+
++ (NSTextView *)newPhase3Editor {
+    LinkingEditor *editor = [[[LinkingEditor alloc] initWithFrame:NSZeroRect] autorelease];
+    [editor awakeFromNib];
+    return editor;
+}
 
 - (id)init {
     self = [super init];

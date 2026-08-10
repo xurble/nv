@@ -54,6 +54,8 @@ static NSString *SpiralMainWindowTitle(void) {
 	return [title length] ? title : @"Spiral";
 }
 
+static NSWindowController *SpiralPhase3TestShellController = nil;
+
 
 @implementation AppController
 
@@ -204,6 +206,28 @@ void outletObjectAwoke(id sender) {
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification*)aNote {
+	NSDictionary *environment = [[NSProcessInfo processInfo] environment];
+	if ([[environment objectForKey:@"SPIRAL_PHASE3_UI_TEST_MODE"] isEqualToString:@"1"]) {
+		NSString *documentsPath = [[environment objectForKey:@"SPIRAL_PHASE3_DOCUMENTS"] stringByStandardizingPath];
+		NSString *reconciliationPath = [[environment objectForKey:@"SPIRAL_PHASE3_RECONCILIATION"] stringByStandardizingPath];
+		NSString *indexPath = [[environment objectForKey:@"SPIRAL_PHASE3_INDEX"] stringByStandardizingPath];
+		NSString *temporaryRoot = [NSTemporaryDirectory() stringByStandardizingPath];
+		NSString *requiredPrefix = [temporaryRoot hasSuffix:@"/"] ? temporaryRoot : [temporaryRoot stringByAppendingString:@"/"];
+		if ([documentsPath hasPrefix:requiredPrefix] &&
+			[reconciliationPath hasPrefix:requiredPrefix] &&
+			[indexPath hasPrefix:requiredPrefix]) {
+			SpiralPhase3TestShellController = [[SpiralPhase3MacShellController alloc]
+				initWithDocumentsPath:documentsPath
+				reconciliationPath:reconciliationPath
+				indexPath:indexPath];
+			[SpiralPhase3TestShellController showWindow:self];
+			[window orderOut:nil];
+			return;
+		}
+		NSLog(@"Refusing Phase 3 shell paths outside the temporary directory");
+		[NSApp terminate:self];
+		return;
+	}
 	
 	//on tiger dualfield is often not ready to add tracking tracks until this point:
 	[field setTrackingRect];

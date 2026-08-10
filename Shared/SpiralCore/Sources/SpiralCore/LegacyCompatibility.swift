@@ -123,8 +123,15 @@ public struct LegacySeparateFileSource: LegacyCompatibilitySource {
         let rootPath = verifiedWorkingCopyURL.standardizedFileURL.path
         let notes = try files.map { url -> LegacyNoteSnapshot in
             let values = try url.resourceValues(forKeys: [
-                .creationDateKey, .contentModificationDateKey, .tagNamesKey
+                .creationDateKey, .contentModificationDateKey
             ])
+            #if os(macOS)
+            let tags = try url.resourceValues(forKeys: [.tagNamesKey]).tagNames ?? []
+            #else
+            // Finder tags are Mac metadata. The canonical cross-platform tags
+            // are restored from reconciliation records after migration.
+            let tags: [String] = []
+            #endif
             let relative = String(url.standardizedFileURL.path.dropFirst(rootPath.count + 1))
             let folder = (relative as NSString).deletingLastPathComponent
             let relativeData = try PropertyListSerialization.data(
@@ -135,7 +142,7 @@ public struct LegacySeparateFileSource: LegacyCompatibilitySource {
             return LegacyNoteSnapshot(
                 title: url.deletingPathExtension().lastPathComponent,
                 content: try codec.read(from: url),
-                tags: values.tagNames ?? [],
+                tags: tags,
                 legacyMetadata: ["legacy.relativePath": relativeData],
                 folder: folder == "." ? nil : folder,
                 createdAt: values.creationDate ?? Date(timeIntervalSince1970: 0),

@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
         return SpiralRunDisposableLaunchProbe(launchProbeDirectory);
     }
 
-    [SpiralPreferencesMigrationController migrateBeforeApplicationLaunch];
+    if (![[[[NSProcessInfo processInfo] environment] objectForKey:@"SPIRAL_PHASE3_UI_TEST_MODE"] isEqualToString:@"1"])
+        [SpiralPreferencesMigrationController migrateBeforeApplicationLaunch];
     return NSApplicationMain(argc,  (const char **) argv);
 }

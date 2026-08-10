@@ -260,6 +260,8 @@ Add a shared scheme and continuous integration that builds and tests Development
 
 **Exit criterion:** iPhone, iPad, and Mac can operate on the same disposable local fixture collection through the shared model and store, with no legacy controller dependency in the iOS target.
 
+**Completed in August 2026:** `Shared/SpiralFeature` now supplies the common SwiftUI collection shell and `SpiralFeatureModel` over the Phase 2 `NoteStore`, including adaptive navigation/search, list and editor hosting, create/rename/tag/pin/delete, settings, and explicit loading/empty/download/error/conflict states. The universal `SpiralMobile` target supports iPhone and iPad and links only `SpiralCore` and `SpiralFeature`; its local Application Support collection is intentionally transitional until Phase 4. iOS text editing uses a Dynamic Type-aware `UITextView` adapter with selection preservation. The opt-in disposable Mac shell reuses the same feature while injecting the established `LinkingEditor` through `NVSettingsBridge`, and never opens a legacy user collection in its test mode. Model tests exercise the complete mutation workflow and a 1,000-note collection. UI suites cover compact and split navigation, keyboard commands, accessibility labels, accessibility-size Dynamic Type, rotation/resizing, restoration, and an identical 121-note disposable fixture on iPhone, iPad, and Mac. `Scripts/ci/run-phase3.sh` composes the Phase 2 safety net with the new package, universal app, and UI-test build checks.
+
 ### Phase 4: Make iCloud Drive the Production Store
 
 - Implement platform adapters for ubiquity-container discovery, download state, coordinated access, file presentation, version conflicts, moves, and deletes.

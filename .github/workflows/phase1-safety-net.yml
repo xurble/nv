@@ -17,5 +17,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: sudo xcode-select --switch /Applications/Xcode_26.5.app
-      - name: Build shared core, app, and complete migration safety net
-        run: Scripts/ci/run-phase2.sh "${{ matrix.configuration }}"
+      - name: Build shared UI, universal app, and complete migration safety net
+        run: Scripts/ci/run-phase3.sh "${{ matrix.configuration }}"

@@ -1,8 +1,27 @@
-# Xcode user-settings files
-build/*
+# Xcode build products and user-settings files
+build/
+DerivedData/
+*.xcresult/
+*.xcarchive/
+*.dSYM/
+*.dSYM.zip
+*.ipa
+*.app/
+*.xctest/
+*.swiftmodule
+*.swiftdoc
+*.swiftsourceinfo
+*.o
+*.dia
+ModuleCache.noindex/
+SourcePackages/
 *.pbxuser
 *.mode1v3
 *.mode1
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
 
 # Mac OS X specific
 .DS_Store
@@ -18,5 +37,12 @@ Notation.xcodeproj/xcuserdata/g.xcuserdatad/xcschemes/xcschememanagement.plist
 /Config/Xcode/Local.xcconfig
 
 # Swift Package Manager products and local workspace state
-/Shared/SpiralCore/.build/
-/Shared/SpiralCore/.swiftpm/
+.build/
+.swiftpm/
+
+# Test coverage and profiling products
+*.profdata
+*.profraw
+*.gcda
+*.gcno
+coverage/

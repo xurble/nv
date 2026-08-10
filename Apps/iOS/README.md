@@ -1,8 +1,11 @@
-# Future iOS Application
+# Spiral Mobile
 
-This directory is reserved for a future universal iOS application supporting
-both iPhone and iPad from one app target.
+`SpiralMobile` is one universal SwiftUI application target for iPhone and iPad.
+Its Phase 3 storage root is deliberately local Application Support; production
+iCloud coordination belongs to Phase 4.
 
-The iOS user interface and platform integrations belong here. Code should only
-move into `Shared` after it has a tested, platform-neutral boundary and no
-dependency on AppKit or UIKit.
+The target imports only `SpiralCore` and `SpiralFeature`. It must not link or
+import the legacy AppKit controllers, archive implementation, or Objective-C
+bridging header. UI test collections use a validated UUID beneath the app's own
+Application Support container and are never inferred from a user's notes
+location.

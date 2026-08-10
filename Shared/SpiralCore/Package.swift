@@ -4,7 +4,10 @@ import PackageDescription
 
 let package = Package(
     name: "SpiralCore",
-    platforms: [.macOS(.v13)],
+    platforms: [
+        .iOS(.v16),
+        .macOS(.v13)
+    ],
     products: [
         .library(name: "SpiralCore", targets: ["SpiralCore"])
     ],

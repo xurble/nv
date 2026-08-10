@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 45;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -215,6 +215,16 @@
 		D10000000000000000000003 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
 		D10000000000000000000004 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
 		D3EECA00106F66C70023D7F8 /* NVPasswordGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */; };
+		F30000000000000000000001 /* Phase3MacShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* Phase3MacShell.swift */; };
+		F30000000000000000000003 /* SpiralFeature in Frameworks */ = {isa = PBXBuildFile; productRef = F30000000000000000000063 /* SpiralFeature */; };
+		F30000000000000000000004 /* SpiralCore in Frameworks */ = {isa = PBXBuildFile; productRef = F30000000000000000000064 /* SpiralCore */; };
+		F30000000000000000000010 /* SpiralMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000011 /* SpiralMobileApp.swift */; };
+		F30000000000000000000013 /* SpiralFeature in Frameworks */ = {isa = PBXBuildFile; productRef = F30000000000000000000065 /* SpiralFeature */; };
+		F30000000000000000000014 /* SpiralCore in Frameworks */ = {isa = PBXBuildFile; productRef = F30000000000000000000066 /* SpiralCore */; };
+		F30000000000000000000015 /* SpiralMobileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000016 /* SpiralMobileUITests.swift */; };
+		F30000000000000000000018 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
+		F30000000000000000000070 /* SpiralPhase3MacUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000071 /* SpiralPhase3MacUITests.swift */; };
+		F30000000000000000000074 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -623,6 +633,13 @@
 		D10000000000000000000012 /* NotationIntegrationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationIntegrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVPasswordGenerator.m; sourceTree = "<group>"; };
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
+		F30000000000000000000002 /* Phase3MacShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase3MacShell.swift; sourceTree = "<group>"; };
+		F30000000000000000000011 /* SpiralMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiralMobileApp.swift; sourceTree = "<group>"; };
+		F30000000000000000000012 /* SpiralMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiralMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F30000000000000000000016 /* SpiralMobileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiralMobileUITests.swift; sourceTree = "<group>"; };
+		F30000000000000000000017 /* SpiralMobileUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpiralMobileUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F30000000000000000000071 /* SpiralPhase3MacUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiralPhase3MacUITests.swift; sourceTree = "<group>"; };
+		F30000000000000000000072 /* SpiralPhase3MacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpiralPhase3MacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -630,6 +647,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F30000000000000000000004 /* SpiralCore in Frameworks */,
+				F30000000000000000000003 /* SpiralFeature in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				2191926709C52AA600586B15 /* libz.dylib in Frameworks */,
 				21F459AD0A92E01D00FB6FFE /* Carbon.framework in Frameworks */,
@@ -659,12 +678,38 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F30000000000000000000022 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F30000000000000000000014 /* SpiralCore in Frameworks */,
+				F30000000000000000000013 /* SpiralFeature in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000026 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F30000000000000000000018 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000073 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F30000000000000000000074 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		080E96DDFE201D6D7F000001 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				F30000000000000000000002 /* Phase3MacShell.swift */,
 				C10000000000000000000002 /* LegacyNotePolicies.h */,
 				C10000000000000000000003 /* LegacyNotePolicies.m */,
 				A60000000000000000000011 /* FirstRunICloudMigration.swift */,
@@ -797,6 +842,9 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* SpiralDebug.app */,
+				F30000000000000000000012 /* SpiralMobile.app */,
+				F30000000000000000000017 /* SpiralMobileUITests.xctest */,
+				F30000000000000000000072 /* SpiralPhase3MacUITests.xctest */,
 				A20000000000000000000032 /* NotationSettingsTests.xctest */,
 				D10000000000000000000012 /* NotationIntegrationTests.xctest */,
 			);
@@ -1057,6 +1105,9 @@
 		29B97314FDCFA39411CA2CEA /* Notation */ = {
 			isa = PBXGroup;
 			children = (
+				F30000000000000000000031 /* Apps/iOS */,
+				F30000000000000000000032 /* Tests/iOS */,
+				F3000000000000000000007B /* Tests/macOS/Phase3 */,
 				B10000000000000000000021 /* Build Configuration */,
 				A20000000000000000000051 /* ../../Tests/macOS/Settings */,
 				D10000000000000000000030 /* ../../Tests/macOS/Integration */,
@@ -1154,6 +1205,33 @@
 			path = ../../Tests/macOS/Integration;
 			sourceTree = "<group>";
 		};
+		F30000000000000000000031 /* Apps/iOS */ = {
+			isa = PBXGroup;
+			children = (
+				F30000000000000000000011 /* SpiralMobileApp.swift */,
+			);
+			name = Apps/iOS;
+			path = ../../Apps/iOS;
+			sourceTree = "<group>";
+		};
+		F30000000000000000000032 /* Tests/iOS */ = {
+			isa = PBXGroup;
+			children = (
+				F30000000000000000000016 /* SpiralMobileUITests.swift */,
+			);
+			name = Tests/iOS;
+			path = ../../Tests/iOS;
+			sourceTree = "<group>";
+		};
+		F3000000000000000000007B /* Tests/macOS/Phase3 */ = {
+			isa = PBXGroup;
+			children = (
+				F30000000000000000000071 /* SpiralPhase3MacUITests.swift */,
+			);
+			name = Tests/macOS/Phase3;
+			path = ../../Tests/macOS/Phase3;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1170,6 +1248,10 @@
 			dependencies = (
 			);
 			name = Notation;
+			packageProductDependencies = (
+				F30000000000000000000063 /* SpiralFeature */,
+				F30000000000000000000064 /* SpiralCore */,
+			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = Notation;
 			productReference = 8D1107320486CEB800E47090 /* SpiralDebug.app */;
@@ -1209,6 +1291,61 @@
 			productReference = D10000000000000000000012 /* NotationIntegrationTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		F30000000000000000000040 /* SpiralMobile */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F30000000000000000000055 /* Build configuration list for PBXNativeTarget "SpiralMobile" */;
+			buildPhases = (
+				F30000000000000000000021 /* Sources */,
+				F30000000000000000000022 /* Frameworks */,
+				F30000000000000000000023 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpiralMobile;
+			packageProductDependencies = (
+				F30000000000000000000065 /* SpiralFeature */,
+				F30000000000000000000066 /* SpiralCore */,
+			);
+			productName = SpiralMobile;
+			productReference = F30000000000000000000012 /* SpiralMobile.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F30000000000000000000041 /* SpiralMobileUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F30000000000000000000058 /* Build configuration list for PBXNativeTarget "SpiralMobileUITests" */;
+			buildPhases = (
+				F30000000000000000000025 /* Sources */,
+				F30000000000000000000026 /* Frameworks */,
+				F30000000000000000000027 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpiralMobileUITests;
+			productName = SpiralMobileUITests;
+			productReference = F30000000000000000000017 /* SpiralMobileUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		F30000000000000000000077 /* SpiralPhase3MacUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3000000000000000000007A /* Build configuration list for PBXNativeTarget "SpiralPhase3MacUITests" */;
+			buildPhases = (
+				F30000000000000000000075 /* Sources */,
+				F30000000000000000000073 /* Frameworks */,
+				F30000000000000000000076 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpiralPhase3MacUITests;
+			productName = SpiralPhase3MacUITests;
+			productReference = F30000000000000000000072 /* SpiralPhase3MacUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1231,10 +1368,17 @@
 				pt,
 			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* Notation */;
+			packageReferences = (
+				F30000000000000000000061 /* XCLocalSwiftPackageReference "Shared/SpiralCore" */,
+				F30000000000000000000062 /* XCLocalSwiftPackageReference "Shared/SpiralFeature" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Notation */,
+				F30000000000000000000040 /* SpiralMobile */,
+				F30000000000000000000041 /* SpiralMobileUITests */,
+				F30000000000000000000077 /* SpiralPhase3MacUITests */,
 				A20000000000000000000071 /* NotationSettingsTests */,
 				D10000000000000000000040 /* NotationIntegrationTests */,
 			);
@@ -1352,6 +1496,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F30000000000000000000023 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000027 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000076 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -1359,6 +1524,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F30000000000000000000001 /* Phase3MacShell.swift in Sources */,
 				C10000000000000000000001 /* LegacyNotePolicies.m in Sources */,
 				A60000000000000000000001 /* FirstRunICloudMigration.swift in Sources */,
 				A60000000000000000000002 /* NotesMigration.swift in Sources */,
@@ -1480,6 +1646,30 @@
 				D10000000000000000000001 /* TemporaryCollectionIntegrationTests.swift in Sources */,
 				D10000000000000000000002 /* NotesMigration.swift in Sources */,
 				D10000000000000000000003 /* LegacyPreferencesMigration.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F30000000000000000000010 /* SpiralMobileApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000025 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F30000000000000000000015 /* SpiralMobileUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000075 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F30000000000000000000070 /* SpiralPhase3MacUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1944,6 +2134,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -2031,6 +2222,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -2252,6 +2444,124 @@
 			};
 			name = Release;
 		};
+		F30000000000000000000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Spiral;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile.debug;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F30000000000000000000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Spiral;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F30000000000000000000056 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "farm.poplar.spiral.mobile.ui-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SpiralMobile;
+			};
+			name = Debug;
+		};
+		F30000000000000000000057 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "farm.poplar.spiral.mobile.ui-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SpiralMobile;
+			};
+			name = Release;
+		};
+		F30000000000000000000078 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "farm.poplar.spiral.phase3-mac-ui-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Notation;
+			};
+			name = Debug;
+		};
+		F30000000000000000000079 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "farm.poplar.spiral.phase3-mac-ui-tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Notation;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2291,7 +2601,68 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F30000000000000000000055 /* Build configuration list for PBXNativeTarget "SpiralMobile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F30000000000000000000051 /* Debug */,
+				F30000000000000000000052 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F30000000000000000000058 /* Build configuration list for PBXNativeTarget "SpiralMobileUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F30000000000000000000056 /* Debug */,
+				F30000000000000000000057 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F3000000000000000000007A /* Build configuration list for PBXNativeTarget "SpiralPhase3MacUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F30000000000000000000078 /* Debug */,
+				F30000000000000000000079 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		F30000000000000000000061 /* XCLocalSwiftPackageReference "Shared/SpiralCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Shared/SpiralCore;
+		};
+		F30000000000000000000062 /* XCLocalSwiftPackageReference "Shared/SpiralFeature" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Shared/SpiralFeature;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F30000000000000000000063 /* SpiralFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F30000000000000000000062 /* XCLocalSwiftPackageReference "Shared/SpiralFeature" */;
+			productName = SpiralFeature;
+		};
+		F30000000000000000000064 /* SpiralCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F30000000000000000000061 /* XCLocalSwiftPackageReference "Shared/SpiralCore" */;
+			productName = SpiralCore;
+		};
+		F30000000000000000000065 /* SpiralFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F30000000000000000000062 /* XCLocalSwiftPackageReference "Shared/SpiralFeature" */;
+			productName = SpiralFeature;
+		};
+		F30000000000000000000066 /* SpiralCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F30000000000000000000061 /* XCLocalSwiftPackageReference "Shared/SpiralCore" */;
+			productName = SpiralCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 29B97313FDCFA39411CA2CEA /* Project object */;
 }
