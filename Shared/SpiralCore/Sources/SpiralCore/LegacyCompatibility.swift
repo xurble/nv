@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import CryptoKit
 import Foundation
 
@@ -17,7 +33,6 @@ public enum LegacyCollectionProtection: String, Codable, Sendable {
 
 public enum LegacyCompatibilityError: Error, Equatable, Sendable {
     case noNotes
-    case mixedSeparateFileFormats
     case unsupportedItem(String)
     case wrongPassphrase
     case passphraseCancelled
@@ -117,9 +132,6 @@ public struct LegacySeparateFileSource: LegacyCompatibilitySource {
     public func loadSnapshot(from verifiedWorkingCopyURL: URL) throws -> LegacyCollectionSnapshot {
         let files = try noteFiles(at: verifiedWorkingCopyURL)
         guard !files.isEmpty else { throw LegacyCompatibilityError.noNotes }
-        let formats = Set(files.compactMap { NoteFormat.format(forPathExtension: $0.pathExtension) })
-        guard formats.count == 1 else { throw LegacyCompatibilityError.mixedSeparateFileFormats }
-
         let rootPath = verifiedWorkingCopyURL.standardizedFileURL.path
         let notes = try files.map { url -> LegacyNoteSnapshot in
             let values = try url.resourceValues(forKeys: [

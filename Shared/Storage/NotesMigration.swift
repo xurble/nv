@@ -1,24 +1,27 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import Foundation
-
-enum NotesMigrationChoice: String, Equatable {
-    case keepCurrentLocation
-    case copyToICloud
-
-    static let defaultChoice: NotesMigrationChoice = .copyToICloud
-}
 
 enum NotesMigrationProgressText {
     static let connectingToICloud =
         "Spiral is waiting for iCloud Drive. Your current notes folder will not be changed."
 
-    static func copyingNotes(for choice: NotesMigrationChoice) -> String {
-        switch choice {
-        case .copyToICloud:
-            return "Spiral is copying and verifying your notes. The original folder will be kept."
-        case .keepCurrentLocation:
-            return "Your current notes folder will not be changed."
-        }
-    }
+    static let copyingNotes =
+        "Spiral is copying and verifying your notes. The original folder will be kept."
 }
 
 /// Arbitrates completion between a background operation and a deadline. Only
@@ -50,7 +53,7 @@ enum NotesFolderClassification: Equatable {
 }
 
 enum NotesStartupLocationDecision: Equatable {
-    case useCurrentLocation
+    case migrateCurrentLocationToICloud
     case useICloudByDefault
     case offerLegacyNotesImport
 }
@@ -61,7 +64,7 @@ struct NotesStartupLocationPolicy {
     ) -> NotesStartupLocationDecision {
         switch preferencesStartupState {
         case .existingSpiralPreferences:
-            return .useCurrentLocation
+            return .migrateCurrentLocationToICloud
         case .legacyPreferencesFound:
             return .offerLegacyNotesImport
         case .freshInstall:
@@ -99,16 +102,6 @@ struct NotesDefaultLocationService {
             break
         }
         return destinationURL
-    }
-}
-
-struct NotesICloudContainerStatus {
-    static func usesConfiguredDocumentsDirectory(
-        currentURL: URL,
-        containerURL: URL
-    ) -> Bool {
-        let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
-        return NotesMigrationService().sameDirectory(currentURL, documentsURL)
     }
 }
 

@@ -164,9 +164,21 @@
 			return nil;
 		}
 		
-		//set up the directory subscription, if necessary
-		//and sync based on notes in directory and their mod. dates
-		[self databaseSettingsChangedFromOldFormat:[notationPrefs notesStorageFormat]];
+		//A writable single database is now a quarantined legacy format. Ordinary
+		//app launches convert an unencrypted legacy collection to lossless RTF
+		//files; the migration importer keeps its disposable copy unchanged until
+		//it has inspected formatting and selected TXT or RTF itself.
+		int loadedStorageFormat = [notationPrefs notesStorageFormat];
+		if (!suppressGlobalPreferences &&
+			loadedStorageFormat == SingleDatabaseFormat &&
+			![notationPrefs doesEncryption]) {
+			[notationPrefs useDefaultPathExtensionForFormatForMigration:RTFTextFormat];
+			[notationPrefs setNotesStorageFormat:RTFTextFormat];
+		} else {
+			//set up the directory subscription, if necessary
+			//and sync based on notes in directory and their mod. dates
+			[self databaseSettingsChangedFromOldFormat:loadedStorageFormat];
+		}
 		if (!walWriter) {
 			*err = kJournalingError;
 			return nil;
@@ -626,7 +638,7 @@ bail:
 		//otherwise it would be necessary to set notesChanged = YES; after this method
 		
 		//also make sure not to write new notes unless changing to a different format; don't rewrite deleted notes upon launch
-		if (currentStorageFormat != oldFormat)
+		if (oldFormat == SingleDatabaseFormat)
 			[allNotes makeObjectsPerformSelector:@selector(writeUsingCurrentFileFormatIfNonExistingOrChanged)];
 
 		//flush and close the journal if necessary

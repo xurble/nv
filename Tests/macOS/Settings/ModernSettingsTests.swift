@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import Foundation
 import AppKit
 import XCTest
@@ -60,7 +76,31 @@ final class ModernSettingsTests: XCTestCase {
     }
 
     func testStorageFormatIdentifiersRemainCompatibleWithNotationPrefs() {
-        XCTAssertEqual(StorageFormat.supported.map(\.id), [0, 1, 2, 3])
+        XCTAssertEqual(StorageFormat.supported.map(\.id), [1, 2, 3])
+        XCTAssertFalse(StorageFormat.supported.contains { $0.title.localizedCaseInsensitiveContains("database") })
+    }
+
+    func testFreshCollectionsDefaultToPerNoteFilesAndImporterAllowsMixedFamilies() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let preferencesSource = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/macOS/Sources/NotationPrefs.m"),
+            encoding: .utf8
+        )
+        let importerSource = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/macOS/Sources/SettingsBridge.m"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(preferencesSource.contains("notesStorageFormat = PlainTextFormat;"))
+        XCTAssertTrue(preferencesSource.contains("appendFileExtensionToNewNotes = YES;"))
+        XCTAssertTrue(preferencesSource.contains("![decoder containsValueForKey:VAR_STR(appendFileExtensionToNewNotes)]"))
+        XCTAssertTrue(preferencesSource.contains("@\"md\", @\"markdown\""))
+        XCTAssertFalse(importerSource.contains("mixture of note file formats"))
+        XCTAssertTrue(importerSource.contains("[formats containsObject:@(PlainTextFormat)]"))
     }
 
     func testICloudContainerConfigurationMatchesEntitlements() throws {
@@ -94,7 +134,7 @@ final class ModernSettingsTests: XCTestCase {
         XCTAssertEqual(info["SpiralWindowTitle"] as? String, "$(SPIRAL_WINDOW_TITLE)")
     }
 
-    func testDebugAndReleaseKeepPreferencesAndDefaultNotesSeparate() throws {
+    func testDebugAndReleaseSharePreferencesAndDefaultNotesLocation() throws {
         let repositoryRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
@@ -114,19 +154,23 @@ final class ModernSettingsTests: XCTestCase {
         let debugSettings = project[debugStart.lowerBound..<releaseStart.lowerBound]
         let releaseSettings = project[releaseStart.lowerBound..<projectSettingsStart.lowerBound]
 
-        XCTAssertTrue(debugSettings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.debug;"))
-        XCTAssertTrue(debugSettings.contains("PRODUCT_NAME = SpiralDebug;"))
-        XCTAssertTrue(debugSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Spiral Debug Notes\";"))
+        XCTAssertTrue(debugSettings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;"))
+        XCTAssertTrue(debugSettings.contains("PRODUCT_NAME = Spiral;"))
+        XCTAssertTrue(debugSettings.contains("CODE_SIGN_ENTITLEMENTS = Apps/macOS/SupportingFiles/Spiral.entitlements;"))
+        XCTAssertTrue(debugSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Spiral Notes\";"))
         XCTAssertTrue(debugSettings.contains("SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY = Documents;"))
-        XCTAssertTrue(debugSettings.contains("SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = \"\";"))
-        XCTAssertTrue(debugSettings.contains("SPIRAL_WINDOW_TITLE = \"Spiral (Debug)\";"))
+        XCTAssertTrue(debugSettings.contains("SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = iCloud.farm.poplar.spiral;"))
+        XCTAssertTrue(debugSettings.contains("SPIRAL_WINDOW_TITLE = Spiral;"))
         XCTAssertTrue(debugSettings.contains("SWIFT_OBJC_INTERFACE_HEADER_NAME = \"Spiral-Swift.h\";"))
         XCTAssertTrue(releaseSettings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;"))
         XCTAssertTrue(releaseSettings.contains("PRODUCT_NAME = Spiral;"))
+        XCTAssertTrue(releaseSettings.contains("CODE_SIGN_ENTITLEMENTS = Apps/macOS/SupportingFiles/Spiral.entitlements;"))
         XCTAssertTrue(releaseSettings.contains("SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = \"Spiral Notes\";"))
         XCTAssertTrue(releaseSettings.contains("SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY = Documents;"))
         XCTAssertTrue(releaseSettings.contains("SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = iCloud.farm.poplar.spiral;"))
         XCTAssertTrue(releaseSettings.contains("SPIRAL_WINDOW_TITLE = Spiral;"))
+        XCTAssertFalse(project.contains("SpiralDebug"))
+        XCTAssertFalse(project.contains("Spiral-Debug.entitlements"))
         XCTAssertFalse(project.contains("name = Development;"))
         XCTAssertFalse(project.contains("name = Deployment;"))
         XCTAssertFalse(project.contains("name = Default;"))
@@ -134,17 +178,106 @@ final class ModernSettingsTests: XCTestCase {
         XCTAssertTrue(sharedConfiguration.contains("#include? \"Local.xcconfig\""))
     }
 
-    @MainActor
-    func testNotesFolderUsesReadOnlyStandardPathControl() {
-        let url = URL(fileURLWithPath: "/Users/example/Documents/Spiral Notes", isDirectory: true)
-        let control = NotesFolderPathControl.makePathControl(url: url)
+    func testMobileDebugAndReleaseShareProductIdentity() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let project = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Notation.xcodeproj/project.pbxproj"),
+            encoding: .utf8
+        )
+        let scheme = try String(
+            contentsOf: repositoryRoot.appendingPathComponent(
+                "Notation.xcodeproj/xcshareddata/xcschemes/SpiralMobile.xcscheme"
+            ),
+            encoding: .utf8
+        )
+        let debugStart = try XCTUnwrap(project.range(of: "F30000000000000000000051 /* Debug */ = {"))
+        let releaseStart = try XCTUnwrap(project.range(of: "F30000000000000000000052 /* Release */ = {"))
+        let uiTestStart = try XCTUnwrap(project.range(of: "F30000000000000000000056 /* Debug */ = {"))
+        let debugSettings = project[debugStart.lowerBound..<releaseStart.lowerBound]
+        let releaseSettings = project[releaseStart.lowerBound..<uiTestStart.lowerBound]
 
-        XCTAssertEqual(control.url, url)
-        XCTAssertEqual(control.pathStyle, .standard)
-        XCTAssertFalse(control.isEditable)
-        XCTAssertEqual(control.toolTip, url.path)
-        XCTAssertEqual(control.accessibilityIdentifier(), "settings.notes.folderPath")
-        XCTAssertEqual(control.accessibilityValue() as? String, url.path)
+        for settings in [debugSettings, releaseSettings] {
+            XCTAssertTrue(
+                settings.contains(
+                    "baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;"
+                )
+            )
+            XCTAssertTrue(settings.contains("CODE_SIGN_STYLE = Automatic;"))
+            XCTAssertFalse(settings.contains("CODE_SIGNING_ALLOWED = NO;"))
+            XCTAssertTrue(settings.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;"))
+            XCTAssertTrue(settings.contains("PRODUCT_NAME = Spiral;"))
+        }
+        XCTAssertTrue(project.contains("F30000000000000000000012 /* Spiral.app */"))
+        XCTAssertFalse(project.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile;"))
+        XCTAssertFalse(project.contains("PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile.debug;"))
+        XCTAssertFalse(project.contains("SpiralMobile.app"))
+        XCTAssertTrue(scheme.contains("BuildableName = \"Spiral.app\""))
+        XCTAssertFalse(scheme.contains("BuildableName = \"SpiralMobile.app\""))
+    }
+
+    func testMobileBuildsUseSharedSpiralIcon() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let project = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Notation.xcodeproj/project.pbxproj"),
+            encoding: .utf8
+        )
+        let debugStart = try XCTUnwrap(project.range(of: "F30000000000000000000051 /* Debug */ = {"))
+        let releaseStart = try XCTUnwrap(project.range(of: "F30000000000000000000052 /* Release */ = {"))
+        let uiTestStart = try XCTUnwrap(project.range(of: "F30000000000000000000056 /* Debug */ = {"))
+        let resourcesStart = try XCTUnwrap(
+            project.range(of: "F30000000000000000000023 /* Resources */ = {")
+        )
+        let nextResourcesStart = try XCTUnwrap(
+            project.range(of: "F30000000000000000000027 /* Resources */ = {")
+        )
+        let debugSettings = project[debugStart.lowerBound..<releaseStart.lowerBound]
+        let releaseSettings = project[releaseStart.lowerBound..<uiTestStart.lowerBound]
+        let mobileResources = project[resourcesStart.lowerBound..<nextResourcesStart.lowerBound]
+
+        XCTAssertTrue(debugSettings.contains("ASSETCATALOG_COMPILER_APPICON_NAME = spiral;"))
+        XCTAssertTrue(releaseSettings.contains("ASSETCATALOG_COMPILER_APPICON_NAME = spiral;"))
+        XCTAssertTrue(
+            project.contains(
+                "A30000000000000000000003 /* spiral.icon in Resources */ = {isa = PBXBuildFile;"
+            )
+        )
+        XCTAssertTrue(
+            mobileResources.contains(
+                "A30000000000000000000003 /* spiral.icon in Resources */"
+            )
+        )
+    }
+
+    func testNotesSettingsDoNotExposeLocationControls() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let settings = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/macOS/Sources/ModernSettings.swift"),
+            encoding: .utf8
+        )
+        let launchController = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("Apps/macOS/Sources/AppController.m"),
+            encoding: .utf8
+        )
+
+        XCTAssertFalse(settings.contains("Notes folder"))
+        XCTAssertFalse(settings.contains("Choose…"))
+        XCTAssertFalse(settings.contains("Use iCloud…"))
+        XCTAssertFalse(settings.contains("settings.notes.useICloud"))
+        XCTAssertFalse(launchController.contains("getNewNotesRefFromOpenPanel"))
+        XCTAssertFalse(launchController.contains("showOpenPanel"))
+        XCTAssertTrue(launchController.contains("if (![preparedNotesDirectory isUsable])"))
     }
 
     @MainActor

@@ -1,5 +1,20 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import AppKit
-import SwiftUI
 
 @objc(SpiralFirstRunMigrationController)
 @MainActor
@@ -15,10 +30,12 @@ final class SpiralFirstRunMigrationController: NSObject {
         at currentURL: URL,
         preferencesStartupState: SpiralPreferencesStartupState
     ) -> SpiralPreparedNotesDirectory {
-        // A build without an iCloud container (notably Debug) must remain on
-        // its configuration-specific local notes directory.
         guard configuredContainerIdentifier != nil else {
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+            showError(
+                title: "iCloud Drive isn’t configured",
+                message: "Spiral requires its shared iCloud container and can’t open this build."
+            )
+            return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
         }
 
         let decision = NotesStartupLocationPolicy.decision(
@@ -26,8 +43,8 @@ final class SpiralFirstRunMigrationController: NSObject {
         )
 
         switch decision {
-        case .useCurrentLocation:
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+        case .migrateCurrentLocationToICloud:
+            return prepareICloudSwitch(from: currentURL)
 
         case .useICloudByDefault:
             return prepareNewInstallICloudDefault(fallbackURL: currentURL)
@@ -62,7 +79,7 @@ final class SpiralFirstRunMigrationController: NSObject {
                 title: "The notes weren’t imported",
                 message: "Spiral couldn’t access its iCloud Drive container. The selected \(source.displayName) folder was not changed."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
         }
 
         let destinationURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
@@ -86,11 +103,11 @@ final class SpiralFirstRunMigrationController: NSObject {
                     title: "The notes weren’t imported",
                     message: "Spiral’s iCloud Documents folder contains unrelated files. Nothing was copied and the selected legacy folder was not changed."
                 )
-                return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+                return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
             }
         } catch {
             showError(title: "The iCloud folder can’t be inspected", message: error.localizedDescription)
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
         }
 
         let workingRoot = FileManager.default.temporaryDirectory
@@ -137,7 +154,7 @@ final class SpiralFirstRunMigrationController: NSObject {
                 title: "The notes weren’t imported",
                 message: "\(error.localizedDescription)\n\nThe selected \(source.displayName) folder was not changed."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return prepareNewInstallICloudDefault(fallbackURL: fallbackURL)
         }
     }
 
@@ -172,9 +189,9 @@ final class SpiralFirstRunMigrationController: NSObject {
         guard let containerIdentifier = configuredContainerIdentifier else {
             showError(
                 title: "iCloud Drive isn’t configured",
-                message: "Spiral will store notes locally until its shared iCloud container is configured."
+                message: "Spiral requires its shared iCloud container and can’t open this build."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
         }
 
         guard let containerURL = resolveContainer(
@@ -183,9 +200,9 @@ final class SpiralFirstRunMigrationController: NSObject {
         ) else {
             showError(
                 title: "iCloud Drive isn’t available",
-                message: "Check that you are signed in to iCloud Drive. Spiral will store notes locally for now."
+                message: "Check that you are signed in to iCloud Drive, then reopen Spiral."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
         }
 
         let destinationURL: URL
@@ -195,12 +212,12 @@ final class SpiralFirstRunMigrationController: NSObject {
         } catch NotesDefaultLocationError.destinationContainsUnrelatedData {
             showError(
                 title: "The iCloud folder can’t be used",
-                message: "Spiral Notes in iCloud Drive contains unrelated files and does not look like a Notational Velocity or Spiral collection. Spiral will store notes locally for now."
+                message: "Spiral Notes in iCloud Drive contains unrelated files and does not look like a Notational Velocity or Spiral collection. Spiral can’t open until the iCloud folder is usable."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
         } catch {
             showError(title: "The iCloud folder can’t be prepared", message: error.localizedDescription)
-            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL)
+            return SpiralPreparedNotesDirectory(directoryURL: fallbackURL, isUsable: false)
         }
 
         return SpiralPreparedNotesDirectory(
@@ -218,61 +235,30 @@ final class SpiralFirstRunMigrationController: NSObject {
         return identifier
     }
 
-    @objc(prepareICloudSwitchFromURL:)
-    static func prepareICloudSwitch(from currentURL: URL) -> SpiralPreparedNotesDirectory {
-        let choice = MigrationChoiceWindow.run(currentLocation: currentURL)
-        return prepareICloudSwitch(from: currentURL, choice: choice)
-    }
-
-    @objc(prepareICloudSwitchFromURL:forWindow:completion:)
-    static func prepareICloudSwitch(
-        from currentURL: URL,
-        for parentWindow: NSWindow,
-        completion: @escaping (SpiralPreparedNotesDirectory) -> Void
-    ) {
-        MigrationChoiceWindow.beginSheet(
-            currentLocation: currentURL,
-            for: parentWindow
-        ) { choice in
-            // Let AppKit finish the sheet-ending event before presenting any
-            // progress or merge UI required by the selected operation.
-            DispatchQueue.main.async {
-                completion(prepareICloudSwitch(from: currentURL, choice: choice))
-            }
-        }
-    }
-
     private static func prepareICloudSwitch(
-        from currentURL: URL,
-        choice: NotesMigrationChoice
+        from currentURL: URL
     ) -> SpiralPreparedNotesDirectory {
-        let defaults = UserDefaults.standard
         let migration = NotesMigrationService()
-
-        guard choice != .keepCurrentLocation else {
-            defaults.set(offerVersion, forKey: offerVersionKey)
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
-        }
 
         guard let containerIdentifier = configuredContainerIdentifier else {
             showError(
                 title: "iCloud Drive isn’t configured",
-                message: "Spiral’s shared iCloud container has not been configured for this build. Your notes remain in their current location."
+                message: "Spiral’s shared iCloud container has not been configured for this build. Spiral can’t open."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+            return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
         }
 
         guard let containerURL = resolveContainer(identifier: containerIdentifier) else {
             showError(
                 title: "iCloud Drive isn’t available",
-                message: "Check that you are signed in to iCloud Drive and try again. Your notes remain in their current location."
+                message: "Check that you are signed in to iCloud Drive, then reopen Spiral."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+            return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
         }
 
         let destinationURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
         if migration.sameDirectory(currentURL, destinationURL) {
-            defaults.set(offerVersion, forKey: offerVersionKey)
+            UserDefaults.standard.set(offerVersion, forKey: offerVersionKey)
             return SpiralPreparedNotesDirectory(directoryURL: currentURL)
         }
 
@@ -283,15 +269,14 @@ final class SpiralFirstRunMigrationController: NSObject {
                     title: "The iCloud folder can’t be used",
                     message: "Spiral Notes in iCloud Drive contains unrelated files and does not look like a Notational Velocity or Spiral collection. No files were changed."
                 )
-                return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+                return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
             case .noteCollection:
                 guard SpiralStorageLocationController.confirmMerge(targetURL: destinationURL) else {
-                    return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+                    return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
                 }
                 return SpiralPreparedNotesDirectory(
                     directoryURL: destinationURL,
                     originalURL: currentURL,
-                    choice: choice,
                     requiresMerge: true
                 )
             case .empty:
@@ -299,12 +284,12 @@ final class SpiralFirstRunMigrationController: NSObject {
             }
         } catch {
             showError(title: "The iCloud folder can’t be inspected", message: error.localizedDescription)
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+            return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
         }
 
         let result: Result<Void, Error> = performWithProgress(
             title: "Copying notes to iCloud Drive…",
-            informativeText: NotesMigrationProgressText.copyingNotes(for: choice)
+            informativeText: NotesMigrationProgressText.copyingNotes
         ) {
             try NotesMigrationService().copyAndVerifyCollection(from: currentURL, to: destinationURL)
         }
@@ -314,15 +299,14 @@ final class SpiralFirstRunMigrationController: NSObject {
             NSLog("Spiral iCloud notes copy failed: %@", error.localizedDescription)
             showError(
                 title: "The notes weren’t copied",
-                message: "\(error.localizedDescription)\n\nSpiral will continue using the current notes folder."
+                message: "\(error.localizedDescription)\n\nThe original folder was retained. Reopen Spiral to retry the iCloud copy."
             )
-            return SpiralPreparedNotesDirectory(directoryURL: currentURL)
+            return SpiralPreparedNotesDirectory(directoryURL: currentURL, isUsable: false)
 
         case .success:
             return SpiralPreparedNotesDirectory(
                 directoryURL: destinationURL,
                 originalURL: currentURL,
-                choice: choice,
                 createdDestination: true
             )
         }
@@ -336,8 +320,7 @@ final class SpiralFirstRunMigrationController: NSObject {
             UserDefaults.standard.set(offerVersion, forKey: offerVersionKey)
         }
 
-        guard prepared.originalURL != nil,
-              prepared.choice != nil else {
+        guard prepared.originalURL != nil else {
             return
         }
 
@@ -427,64 +410,30 @@ final class SpiralFirstRunMigrationController: NSObject {
 final class SpiralPreparedNotesDirectory: NSObject {
     @objc let directoryURL: URL
     @objc let requiresMerge: Bool
+    @objc let isUsable: Bool
     fileprivate let originalURL: URL?
-    fileprivate let choice: NotesMigrationChoice?
     fileprivate let createdDestination: Bool
     fileprivate let marksMigrationOfferHandled: Bool
 
     init(
         directoryURL: URL,
         originalURL: URL? = nil,
-        choice: NotesMigrationChoice? = nil,
         requiresMerge: Bool = false,
         createdDestination: Bool = false,
-        marksMigrationOfferHandled: Bool = false
+        marksMigrationOfferHandled: Bool = false,
+        isUsable: Bool = true
     ) {
         self.directoryURL = directoryURL
         self.originalURL = originalURL
-        self.choice = choice
         self.requiresMerge = requiresMerge
         self.createdDestination = createdDestination
         self.marksMigrationOfferHandled = marksMigrationOfferHandled
+        self.isUsable = isUsable
     }
 }
 
-@objc(SpiralFolderChangeDecision)
-enum SpiralFolderChangeDecision: Int {
-    case cancel
-    case useEmptyFolder
-    case mergeCollection
-    case refusedRegularFolder
-}
-
-@objc(SpiralStorageLocationController)
 @MainActor
-final class SpiralStorageLocationController: NSObject {
-    @objc(decisionForTargetFolderAtURL:)
-    static func decision(forTargetFolderAt targetURL: URL) -> SpiralFolderChangeDecision {
-        do {
-            switch try NotesMigrationService().classifyFolder(at: targetURL) {
-            case .empty:
-                return .useEmptyFolder
-            case .noteCollection:
-                return confirmMerge(targetURL: targetURL) ? .mergeCollection : .cancel
-            case .regularFolder:
-                let alert = NSAlert()
-                alert.alertStyle = .warning
-                alert.messageText = "That folder can’t be used"
-                alert.informativeText = "The selected folder contains files but does not look like a Notational Velocity or Spiral notes folder. Choose an empty folder or an existing notes collection. No files were changed."
-                alert.addButton(withTitle: "OK")
-                alert.runModal()
-                return .refusedRegularFolder
-            }
-        } catch {
-            let alert = NSAlert(error: error)
-            alert.messageText = "The selected folder can’t be inspected"
-            alert.runModal()
-            return .cancel
-        }
-    }
-
+private enum SpiralStorageLocationController {
     static func confirmMerge(targetURL: URL) -> Bool {
         let alert = NSAlert()
         alert.alertStyle = .warning
@@ -493,11 +442,6 @@ final class SpiralStorageLocationController: NSObject {
         alert.addButton(withTitle: "Merge")
         alert.addButton(withTitle: "Cancel")
         return alert.runModal() == .alertFirstButtonReturn
-    }
-
-    @objc(isURLInICloud:)
-    static func isInICloud(_ url: URL) -> Bool {
-        (try? url.resourceValues(forKeys: [.isUbiquitousItemKey]).isUbiquitousItem) == true
     }
 }
 
@@ -512,109 +456,5 @@ private enum NotesMigrationInternalError: LocalizedError {
         case .iCloudTimedOut:
             return "iCloud Drive did not respond within 15 seconds."
         }
-    }
-}
-
-@MainActor
-private enum MigrationChoiceWindow {
-    static func run(currentLocation: URL) -> NotesMigrationChoice {
-        let window = makeWindow(currentLocation: currentLocation) { choice in
-            NSApp.stopModal(withCode: MigrationChoiceModalResponse.response(for: choice))
-        }
-        NSApp.activate(ignoringOtherApps: true)
-        let response = ApplicationModalWindowRunner.run(window)
-        return MigrationChoiceModalResponse.choice(for: response)
-    }
-
-    static func beginSheet(
-        currentLocation: URL,
-        for parentWindow: NSWindow,
-        completion: @escaping (NotesMigrationChoice) -> Void
-    ) {
-        let sheetWindow = makeWindow(currentLocation: currentLocation) { selectedChoice in
-            guard let attachedSheet = parentWindow.attachedSheet else { return }
-            parentWindow.endSheet(
-                attachedSheet,
-                returnCode: MigrationChoiceModalResponse.response(for: selectedChoice)
-            )
-        }
-
-        ApplicationSheetWindowPresenter.begin(sheetWindow, for: parentWindow) { response in
-            completion(MigrationChoiceModalResponse.choice(for: response))
-        }
-    }
-
-    private static func makeWindow(
-        currentLocation: URL,
-        choose: @escaping (NotesMigrationChoice) -> Void
-    ) -> NSWindow {
-        let rootView = FirstRunICloudMigrationView(
-            currentLocation: currentLocation,
-            choose: choose
-        )
-        let hostingController = NSHostingController(rootView: rootView)
-        let window = NSWindow(contentViewController: hostingController)
-        window.title = "Copy Notes to iCloud Drive"
-        window.styleMask = [.titled]
-        window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 560, height: 390))
-        return window
-    }
-}
-
-private struct FirstRunICloudMigrationView: View {
-    let currentLocation: URL
-    let choose: (NotesMigrationChoice) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .top, spacing: 18) {
-                Image(systemName: "icloud.and.arrow.up")
-                    .font(.system(size: 42))
-                    .foregroundStyle(.blue)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Use Spiral Notes in iCloud Drive?")
-                        .font(.title2.weight(.semibold))
-                    Text("Spiral found an existing note collection. Using iCloud Drive will make the same collection available to the future iPhone and iPad apps.")
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            GroupBox("Current notes folder") {
-                NotesFolderPathControl(
-                    url: currentLocation,
-                    accessibilityIdentifier: "icloudMigration.currentFolder"
-                )
-                    .frame(maxWidth: .infinity, minHeight: 24)
-                    .padding(.vertical, 4)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Spiral will make and verify a copy in iCloud Drive, then use that copy from then on. The original notes folder will be kept as a backup.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("Choose Keep Current Location to leave the collection exactly where it is.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 0)
-
-            HStack {
-                Button("Keep Current Location") {
-                    choose(.keepCurrentLocation)
-                }
-                Spacer()
-                Button("Copy to iCloud") {
-                    choose(.copyToICloud)
-                }
-                .keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding(24)
-        .frame(width: 560, height: 390)
     }
 }

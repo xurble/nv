@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 #import <Foundation/Foundation.h>
 
 #import "LegacyNotePolicies.h"
@@ -46,6 +62,21 @@ int main(void)
             NVLegacyUniqueFilename(@"Meeting", @"txt", @[@"meeting.txt", @"Meeting.1.txt"]),
             @"Meeting.2.txt",
             @"collisions remain case-insensitive and monotonically numbered"
+        );
+        AssertEqualObjects(
+            NVLegacyUniqueFilename(@"Meeting", @"", @[]),
+            @"Meeting",
+            @"new notes may omit the file extension"
+        );
+        AssertEqualObjects(
+            NVLegacyUniqueFilename(@"Meeting", @"", @[@"meeting", @"Meeting.1"]),
+            @"Meeting.2",
+            @"extensionless collisions remain case-insensitive and monotonically numbered"
+        );
+        AssertEqualObjects(
+            NVLegacyUniqueFilename(@"Release 1.2", @"", @[]),
+            @"Release 1.2",
+            @"periods in extensionless note titles remain part of the title"
         );
 
         NSString *longTitle = [@"x" stringByPaddingToLength:300 withString:@"x" startingAtIndex:0];

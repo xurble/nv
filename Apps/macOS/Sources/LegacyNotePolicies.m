@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 #import "LegacyNotePolicies.h"
 
 NSString *NVLegacyUniqueFilename(
@@ -15,16 +31,21 @@ NSString *NVLegacyUniqueFilename(
     if ([uniqueFilename length] + reservedCharacterCount > 255) {
         uniqueFilename = [uniqueFilename substringToIndex:255 - reservedCharacterCount];
     }
+    NSString *extensionlessBaseFilename = uniqueFilename;
 
     unsigned int iteration = 0;
     BOOL isUnique = NO;
     do {
         isUnique = YES;
         for (NSString *existingFilename in existingFilenames) {
-            NSString *baseFilename = [existingFilename stringByDeletingPathExtension];
+            NSString *baseFilename = [pathExtension length] > 0
+                ? [existingFilename stringByDeletingPathExtension]
+                : existingFilename;
             if ([baseFilename caseInsensitiveCompare:uniqueFilename] == NSOrderedSame) {
                 isUnique = NO;
-                uniqueFilename = [uniqueFilename stringByDeletingPathExtension];
+                uniqueFilename = [pathExtension length] > 0
+                    ? [uniqueFilename stringByDeletingPathExtension]
+                    : extensionlessBaseFilename;
                 uniqueFilename = [uniqueFilename stringByAppendingPathExtension:
                     [[NSNumber numberWithInt:++iteration] stringValue]];
                 break;
@@ -32,7 +53,9 @@ NSString *NVLegacyUniqueFilename(
         }
     } while (!isUnique);
 
-    return [uniqueFilename stringByAppendingPathExtension:pathExtension];
+    return [pathExtension length] > 0
+        ? [uniqueFilename stringByAppendingPathExtension:pathExtension]
+        : uniqueFilename;
 }
 
 NSArray<NSString *> *NVLegacyLabelCompatibleWords(NSString *labels) {

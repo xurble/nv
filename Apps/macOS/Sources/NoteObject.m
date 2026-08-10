@@ -546,7 +546,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
     if ([self init]) {
 		delegate = aDelegate;
 		filename = [(NSString*)entry->filename copy];
-		currentFormatID = [delegate currentNoteStorageFormat];
+		currentFormatID = [delegate storageFormatForCatalogEntry:entry];
 		fileModifiedDate = entry->lastModified;
 		setAttrModifiedDate(self, &(entry->lastAttrModified));
 		setCatalogNodeID(self, entry->nodeID);
@@ -1159,7 +1159,11 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
     NSError *error = nil;
 	NSMutableAttributedString *contentMinusColor = nil;
 	
-    int formatID = [delegate currentNoteStorageFormat];
+	//The library preference is only the default for new notes. A note already
+	//backed by a clean file keeps its own representation when edited.
+	int formatID = currentFormatID == SingleDatabaseFormat
+		? [delegate currentNoteStorageFormat]
+		: currentFormatID;
     switch (formatID) {
 		case SingleDatabaseFormat:
 			//we probably shouldn't be here
@@ -1223,6 +1227,25 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		//if writing plaintext set the file encoding with setxattr
 		if (PlainTextFormat == formatID) {
 			(void)[self writeCurrentFileEncodingToFSRef:noteFileRefInit(self)];
+		}
+		NotationPrefs *prefs = [delegate notationPrefs];
+		if (![prefs pathExtensionAllowed:[filename pathExtension] forFormat:formatID]) {
+			//A title may itself contain a period, so an omitted appended extension
+			//cannot be inferred reliably from the filename. Mark the file with its
+			//format in Finder metadata so it can be decoded after a cache rebuild.
+			FSCatalogInfo finderCatalogInfo;
+			bzero(&finderCatalogInfo, sizeof(finderCatalogInfo));
+			OSStatus finderInfoError = FSGetCatalogInfo(noteFileRefInit(self),
+				kFSCatInfoFinderInfo, &finderCatalogInfo, NULL, NULL, NULL);
+			if (finderInfoError == noErr) {
+				FileInfo *finderInfo = (FileInfo *)finderCatalogInfo.finderInfo;
+				finderInfo->fileType = [prefs preferredFileTypeForFormat:formatID];
+				finderInfo->fileCreator = SpiralExtensionlessNoteCreator;
+				finderInfoError = FSSetCatalogInfo(noteFileRefInit(self),
+					kFSCatInfoFinderInfo, &finderCatalogInfo);
+			}
+			if (finderInfoError != noErr)
+				NSLog(@"Could not mark extensionless note format for %@: %d", filename, finderInfoError);
 		}
 		NSFileManager *fileMan = [NSFileManager defaultManager];
 		[fileMan setOpenMetaTags:[self orderedLabelTitles] atFSPath:[[fileMan pathWithFSRef:noteFileRefInit(self)] fileSystemRepresentation]];
@@ -1320,7 +1343,7 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 		if (!contentsWere7Bit && PlainTextFormat == currentFormatID) {
 			//this note exists on disk as a plaintext file, and its encoding is incompatible with UTF-8
 			
-			if ([delegate currentNoteStorageFormat] == PlainTextFormat) {
+			if (currentFormatID == PlainTextFormat) {
 				//actual conversion is expected because notes are presently being maintained as plain text files
 				
 				NSLog(@"rewriting %@ as utf8 data", titleString);
@@ -1397,6 +1420,13 @@ force_inline id unifiedCellForNote(NotesTableView *tv, NoteObject *note, NSInteg
 
 - (BOOL)updateFromCatalogEntry:(NoteCatalogEntry*)catEntry {
 	BOOL didRestoreLabels = NO;
+	int inferredFormat = [delegate storageFormatForCatalogEntry:catEntry];
+	//An extensionless filename cannot override a valid format restored from the
+	//metadata archive. A newly discovered file still falls back to the current
+	//new-note format selected by the collection.
+	if ([[(NSString*)catEntry->filename pathExtension] length] > 0 ||
+		currentFormatID < PlainTextFormat || currentFormatID > HTMLFormat)
+		currentFormatID = inferredFormat;
 	
     NSMutableData *data = [delegate dataFromFileInNotesDirectory:noteFileRefInit(self) forCatalogEntry:catEntry];
     if (!data) {

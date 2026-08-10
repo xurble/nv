@@ -194,6 +194,7 @@
 		A20000000000000000000042 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
 		A20000000000000000000043 /* SettingsCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* SettingsCompatibility.swift */; };
 		A30000000000000000000001 /* spiral.icon in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000002 /* spiral.icon */; };
+		A30000000000000000000003 /* spiral.icon in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000002 /* spiral.icon */; };
 		A40000000000000000000001 /* URLDetection.m in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000003 /* URLDetection.m */; };
 		A50000000000000000000001 /* ModernAbout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50000000000000000000011 /* ModernAbout.swift */; };
 		A50000000000000000000002 /* AboutInformation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50000000000000000000012 /* AboutInformation.swift */; };
@@ -203,8 +204,6 @@
 		A60000000000000000000002 /* NotesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000012 /* NotesMigration.swift */; };
 		A60000000000000000000003 /* NotesMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000013 /* NotesMigrationTests.swift */; };
 		A60000000000000000000004 /* NotesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000012 /* NotesMigration.swift */; };
-		A70000000000000000000001 /* NotesFolderPathControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70000000000000000000003 /* NotesFolderPathControl.swift */; };
-		A70000000000000000000002 /* NotesFolderPathControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70000000000000000000003 /* NotesFolderPathControl.swift */; };
 		A80000000000000000000001 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
 		A80000000000000000000002 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
 		A80000000000000000000003 /* LegacyPreferencesMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */; };
@@ -598,7 +597,7 @@
 		6E6AFB7624DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Este é o título de uma nota.nvhelp"; sourceTree = "<group>"; };
 		6E6AFB7724DAE639005CFF74 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text; name = pt; path = "pt.lproj/Informações de Contato.nvhelp"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		8D1107320486CEB800E47090 /* SpiralDebug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiralDebug.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D1107320486CEB800E47090 /* Spiral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spiral.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* ApplicationBranding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplicationBranding.h; sourceTree = "<group>"; };
 		A10000000000000000000003 /* ApplicationBranding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApplicationBranding.m; sourceTree = "<group>"; };
 		A20000000000000000000011 /* ModernSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernSettings.swift; sourceTree = "<group>"; };
@@ -619,8 +618,6 @@
 		A60000000000000000000012 /* NotesMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NotesMigration.swift; path = ../../../Shared/Storage/NotesMigration.swift; sourceTree = "<group>"; };
 		A60000000000000000000013 /* NotesMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesMigrationTests.swift; sourceTree = "<group>"; };
 		A60000000000000000000014 /* Spiral.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Spiral.entitlements; sourceTree = "<group>"; };
-		A60000000000000000000015 /* Spiral-Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Spiral-Debug.entitlements"; sourceTree = "<group>"; };
-		A70000000000000000000003 /* NotesFolderPathControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesFolderPathControl.swift; sourceTree = "<group>"; };
 		A80000000000000000000011 /* LegacyPreferencesMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LegacyPreferencesMigration.swift; path = ../../../Shared/Preferences/LegacyPreferencesMigration.swift; sourceTree = "<group>"; };
 		A80000000000000000000012 /* LegacyPreferencesMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyPreferencesMigrationTests.swift; sourceTree = "<group>"; };
 		B10000000000000000000011 /* Spiral.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Spiral.xcconfig; sourceTree = "<group>"; };
@@ -635,7 +632,7 @@
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
 		F30000000000000000000002 /* Phase3MacShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase3MacShell.swift; sourceTree = "<group>"; };
 		F30000000000000000000011 /* SpiralMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiralMobileApp.swift; sourceTree = "<group>"; };
-		F30000000000000000000012 /* SpiralMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiralMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F30000000000000000000012 /* Spiral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spiral.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F30000000000000000000016 /* SpiralMobileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiralMobileUITests.swift; sourceTree = "<group>"; };
 		F30000000000000000000017 /* SpiralMobileUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpiralMobileUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F30000000000000000000071 /* SpiralPhase3MacUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiralPhase3MacUITests.swift; sourceTree = "<group>"; };
@@ -718,7 +715,6 @@
 				A50000000000000000000011 /* ModernAbout.swift */,
 				A50000000000000000000012 /* AboutInformation.swift */,
 				A20000000000000000000011 /* ModernSettings.swift */,
-				A70000000000000000000003 /* NotesFolderPathControl.swift */,
 				A20000000000000000000015 /* SettingsCompatibility.swift */,
 				A20000000000000000000012 /* SettingsBridge.h */,
 				A20000000000000000000013 /* SettingsBridge.m */,
@@ -841,8 +837,8 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D1107320486CEB800E47090 /* SpiralDebug.app */,
-				F30000000000000000000012 /* SpiralMobile.app */,
+				8D1107320486CEB800E47090 /* Spiral.app */,
+				F30000000000000000000012 /* Spiral.app */,
 				F30000000000000000000017 /* SpiralMobileUITests.xctest */,
 				F30000000000000000000072 /* SpiralPhase3MacUITests.xctest */,
 				A20000000000000000000032 /* NotationSettingsTests.xctest */,
@@ -899,7 +895,6 @@
 			isa = PBXGroup;
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
-				A60000000000000000000015 /* Spiral-Debug.entitlements */,
 				A60000000000000000000014 /* Spiral.entitlements */,
 				32CA4F630368D1EE00C91783 /* Notation_Prefix.pch */,
 				57F27F7A11973A7F00C63ACF /* Notation.sdef */,
@@ -1254,7 +1249,7 @@
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = Notation;
-			productReference = 8D1107320486CEB800E47090 /* SpiralDebug.app */;
+			productReference = 8D1107320486CEB800E47090 /* Spiral.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A20000000000000000000071 /* NotationSettingsTests */ = {
@@ -1309,7 +1304,7 @@
 				F30000000000000000000066 /* SpiralCore */,
 			);
 			productName = SpiralMobile;
-			productReference = F30000000000000000000012 /* SpiralMobile.app */;
+			productReference = F30000000000000000000012 /* Spiral.app */;
 			productType = "com.apple.product-type.application";
 		};
 		F30000000000000000000041 /* SpiralMobileUITests */ = {
@@ -1500,6 +1495,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A30000000000000000000003 /* spiral.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1532,7 +1528,6 @@
 				A50000000000000000000001 /* ModernAbout.swift in Sources */,
 				A50000000000000000000002 /* AboutInformation.swift in Sources */,
 				A20000000000000000000021 /* ModernSettings.swift in Sources */,
-				A70000000000000000000001 /* NotesFolderPathControl.swift in Sources */,
 				A20000000000000000000023 /* SettingsBridge.m in Sources */,
 				A20000000000000000000024 /* SettingsCompatibility.swift in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
@@ -1634,7 +1629,6 @@
 				A60000000000000000000003 /* NotesMigrationTests.swift in Sources */,
 				A60000000000000000000004 /* NotesMigration.swift in Sources */,
 				A20000000000000000000041 /* ModernSettingsTests.swift in Sources */,
-				A70000000000000000000002 /* NotesFolderPathControl.swift in Sources */,
 				A20000000000000000000043 /* SettingsCompatibility.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2138,7 +2132,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
 				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_ENTITLEMENTS = "Apps/macOS/SupportingFiles/Spiral-Debug.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Apps/macOS/SupportingFiles/Spiral.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
@@ -2199,14 +2193,14 @@
 					"-weak_framework",
 					PDFKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.debug;
-				PRODUCT_NAME = SpiralDebug;
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;
+				PRODUCT_NAME = Spiral;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
-				SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = "Spiral Debug Notes";
+				SPIRAL_DEFAULT_NOTES_DIRECTORY_NAME = "Spiral Notes";
 				SPIRAL_DEFAULT_NOTES_PARENT_DIRECTORY = Documents;
-				SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = "";
-				SPIRAL_WINDOW_TITLE = "Spiral (Debug)";
+				SPIRAL_ICLOUD_CONTAINER_IDENTIFIER = iCloud.farm.poplar.spiral;
+				SPIRAL_WINDOW_TITLE = Spiral;
 				STRIP_STYLE = "non-global";
 				SWIFT_OBJC_BRIDGING_HEADER = "Apps/macOS/Sources/Settings-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Spiral-Swift.h";
@@ -2446,9 +2440,11 @@
 		};
 		F30000000000000000000051 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CODE_SIGNING_ALLOWED = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Spiral;
@@ -2460,8 +2456,8 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile.debug;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;
+				PRODUCT_NAME = Spiral;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -2473,9 +2469,11 @@
 		};
 		F30000000000000000000052 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000011 /* Spiral.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CODE_SIGNING_ALLOWED = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = spiral;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Spiral;
@@ -2487,8 +2485,8 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral.mobile;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = farm.poplar.spiral;
+				PRODUCT_NAME = Spiral;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

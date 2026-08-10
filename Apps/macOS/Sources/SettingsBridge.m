@@ -1,8 +1,23 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 #import "SettingsBridge.h"
 #import "LegacyCompatibility/NVLegacyCompatibility.h"
 #import "Spiral-Swift.h"
 
-#import "AppController.h"
 #import "ExternalEditorListController.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstrict-prototypes"
@@ -48,7 +63,7 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 }
 
 + (int)inferredSeparateFileFormatAtURL:(NSURL *)folderURL error:(NSError **)error {
-    NSSet *plainExtensions = [NSSet setWithObjects:@"txt", @"text", @"utf8", @"taskpaper", nil];
+    NSSet *plainExtensions = [NSSet setWithObjects:@"txt", @"text", @"utf8", @"taskpaper", @"md", @"markdown", nil];
     NSSet *rtfExtensions = [NSSet setWithObject:@"rtf"];
     NSSet *htmlExtensions = [NSSet setWithObjects:@"html", @"htm", nil];
     NSMutableSet *formats = [NSMutableSet set];
@@ -85,16 +100,20 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 
     if (error && *error)
         return -1;
-    if ([formats count] != 1) {
+    if ([formats count] == 0) {
         if (error) {
             *error = [self errorWithCode:NVLegacyCollectionImportErrorUnrecognizedFormat
-                             description:[formats count] == 0
-                                ? @"The selected folder does not contain recognizable Notational Velocity or nvAlt note files."
-                                : @"The selected folder contains a mixture of note file formats and cannot be imported safely as one legacy collection."];
+                             description:@"The selected folder does not contain recognizable Notational Velocity or nvAlt note files."];
         }
         return -1;
     }
-    return [[formats anyObject] intValue];
+    //This is the default for newly created notes, not a restriction on the
+    //existing files in the collection.
+    if ([formats containsObject:@(PlainTextFormat)])
+        return PlainTextFormat;
+    if ([formats containsObject:@(RTFTextFormat)])
+        return RTFTextFormat;
+    return HTMLFormat;
 }
 
 + (NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
@@ -206,6 +225,7 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     if ([prefs notesStorageFormat] != targetFormat)
         [prefs setNotesStorageFormat:targetFormat];
     [controller flushEverything];
+    BOOL convertedSingleDatabase = sourceFormat == SingleDatabaseFormat;
     NSString *extension = [[prefs chosenPathExtensionForFormat:targetFormat] copy];
     NSArray *exportedFilenames = [[controller noteFileNamesForMigration] copy];
     NSUInteger noteCount = [contents count];
@@ -213,10 +233,16 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     [controller release];
 
     BOOL verifiedEveryNote = [exportedFilenames count] == noteCount;
+    NSSet *cleanExtensions = [NSSet setWithObjects:
+        @"txt", @"text", @"utf8", @"taskpaper", @"md", @"markdown", @"rtf", @"html", @"htm", nil];
     for (NSString *filename in exportedFilenames) {
         NSURL *exportedURL = [workingCopyURL URLByAppendingPathComponent:filename];
         NSNumber *isRegularFile = nil;
-        if (![[[filename pathExtension] lowercaseString] isEqualToString:[extension lowercaseString]] ||
+        NSString *pathExtension = [[filename pathExtension] lowercaseString];
+        BOOL hasExpectedExtension = convertedSingleDatabase
+            ? [pathExtension isEqualToString:[extension lowercaseString]]
+            : [cleanExtensions containsObject:pathExtension];
+        if (!hasExpectedExtension ||
             ![exportedURL getResourceValue:&isRegularFile forKey:NSURLIsRegularFileKey error:nil] ||
             ![isRegularFile boolValue]) {
             verifiedEveryNote = NO;
@@ -292,23 +318,6 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 - (NSColor *)backgroundTextColor { return [self.globalPrefs backgroundTextColor]; }
 - (NSColor *)searchHighlightColor { return [self.globalPrefs searchTermHighlightColorRaw:YES]; }
 - (NSString *)appShortcutDescription { return [[self.globalPrefs appActivationKeyCombo] description] ?: @""; }
-- (NSString *)notesFolderPath { return [self.globalPrefs humanViewablePathForDefaultDirectory] ?: NSLocalizedString(@"Default notes folder", nil); }
-- (NSURL *)notesFolderURL {
-    NSData *aliasData = [self.globalPrefs aliasDataForDefaultDirectory];
-    NSString *path = [[NSFileManager defaultManager] pathCopiedFromAliasData:aliasData];
-    if (path.length > 0)
-        return [NSURL fileURLWithPath:path isDirectory:YES];
-
-    FSRef defaultRef;
-    if ([NotationController getDefaultNotesDirectoryRef:&defaultRef] != noErr)
-        return nil;
-    return [(NSURL *)CFURLCreateFromFSRef(kCFAllocatorDefault, &defaultRef) autorelease];
-}
-- (BOOL)notesFolderIsInICloud {
-    NSURL *url = [self notesFolderURL];
-    return url ? [SpiralStorageLocationController isURLInICloud:url] : NO;
-}
-
 - (void)setAutoCompleteSearches:(BOOL)value { [self.globalPrefs setAutoCompleteSearches:value sender:self]; [self changed]; }
 - (void)setConfirmNoteDeletion:(BOOL)value { [self.globalPrefs setConfirmNoteDeletion:value sender:self]; [self changed]; }
 - (void)setQuitWhenClosingWindow:(BOOL)value { [self.globalPrefs setQuitWhenClosingWindow:value sender:self]; [self changed]; }
@@ -361,66 +370,9 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     [self changed];
 }
 
-- (void)chooseNotesFolderForWindow:(NSWindow *)window {
-    NSOpenPanel *panel = [NSOpenPanel openPanel];
-    panel.canCreateDirectories = YES;
-    panel.canChooseFiles = NO;
-    panel.canChooseDirectories = YES;
-    panel.resolvesAliases = YES;
-    panel.allowsMultipleSelection = NO;
-    panel.treatsFilePackagesAsDirectories = NO;
-    panel.title = NSLocalizedString(@"Select a folder", nil);
-    panel.prompt = NSLocalizedString(@"Select", nil);
-    panel.message = NSLocalizedString(@"Select the folder Spiral should use for reading and storing notes.", nil);
-
-    panel.directoryURL = [self notesFolderURL];
-
-    [panel beginSheetModalForWindow:window completionHandler:^(NSModalResponse result) {
-        if (result != NSModalResponseOK || panel.URL == nil)
-            return;
-
-        NSURL *currentURL = [self notesFolderURL];
-        NSURL *resolvedCurrentURL = [[currentURL URLByResolvingSymlinksInPath] standardizedURL];
-        NSURL *resolvedSelectedURL = [[panel.URL URLByResolvingSymlinksInPath] standardizedURL];
-        if (resolvedCurrentURL && [resolvedCurrentURL isEqual:resolvedSelectedURL])
-            return;
-
-        SpiralFolderChangeDecision decision = [SpiralStorageLocationController decisionForTargetFolderAtURL:panel.URL];
-        if (decision != SpiralFolderChangeDecisionUseEmptyFolder &&
-            decision != SpiralFolderChangeDecisionMergeCollection)
-            return;
-
-        AppController *appController = (AppController *)[NSApp delegate];
-        if ([appController switchToNotesDirectoryURL:panel.URL mergeCurrentNotes:YES])
-            [self changed];
-    }];
-}
-
-- (void)switchToICloudForWindow:(NSWindow *)window {
-    NSURL *currentURL = [self notesFolderURL];
-    if (!currentURL)
-        return;
-
-    [SpiralFirstRunMigrationController prepareICloudSwitchFromURL:currentURL
-                                                        forWindow:window
-                                                        completion:^(SpiralPreparedNotesDirectory *prepared) {
-        if ([[[prepared directoryURL] standardizedURL] isEqual:[currentURL standardizedURL]])
-            return;
-
-        AppController *appController = (AppController *)[NSApp delegate];
-        BOOL switched = [appController switchToNotesDirectoryURL:[prepared directoryURL]
-                                                mergeCurrentNotes:[prepared requiresMerge]];
-        if (switched) {
-            [SpiralFirstRunMigrationController finalizePreparedNotesDirectory:prepared];
-            [self changed];
-        } else {
-            [SpiralFirstRunMigrationController cancelPreparedNotesDirectory:prepared];
-        }
-    }];
-}
-
 - (NSInteger)storageFormat { return [[self notationPrefs] notesStorageFormat]; }
 - (BOOL)confirmFileDeletion { return [[self notationPrefs] confirmFileDeletion]; }
+- (BOOL)appendFileExtensionToNewNotes { return [[self notationPrefs] appendFileExtensionToNewNotes]; }
 - (BOOL)encryptionEnabled { return [[self notationPrefs] doesEncryption]; }
 - (BOOL)storesPasswordInKeychain { return [[self notationPrefs] storesPasswordInKeychain]; }
 - (BOOL)secureTextEntry { return [[self notationPrefs] secureTextEntry]; }
@@ -445,8 +397,14 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 - (NSUInteger)defaultExtensionIndex { return [[self notationPrefs] indexOfChosenPathExtension]; }
 - (NSView *)legacyWorkflowView { return [self.workflowController view]; }
 
-- (void)requestStorageFormat:(NSInteger)format { [self.workflowController requestStorageFormatFromModernSettings:format]; [self changed]; }
+- (void)requestStorageFormat:(NSInteger)format {
+    if (format < PlainTextFormat || format > HTMLFormat)
+        return;
+    [self.workflowController requestStorageFormatFromModernSettings:format];
+    [self changed];
+}
 - (void)setConfirmFileDeletion:(BOOL)value { [[self notationPrefs] setConfirmsFileDeletion:value]; [self changed]; }
+- (void)setAppendFileExtensionToNewNotes:(BOOL)value { [[self notationPrefs] setAppendFileExtensionToNewNotes:value]; [self changed]; }
 - (void)requestEncryptionToggle { [self.workflowController requestEncryptionToggleFromModernSettings]; [self changed]; }
 - (void)requestPassphraseChange { [self.workflowController requestPassphraseChangeFromModernSettings]; }
 - (void)setStoresPasswordInKeychain:(BOOL)value { [[self notationPrefs] setStoresPasswordInKeychain:value]; [self changed]; }

@@ -35,6 +35,7 @@ typedef struct _NoteCatalogEntry {
 	UTCDateTime lastAttrModified;
     UInt32 logicalSize;
     OSType fileType;
+    OSType fileCreator;
     UInt32 nodeID;
     unsigned int filenameCharCount;
     UniChar *filenameChars;

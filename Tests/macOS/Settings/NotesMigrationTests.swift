@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import AppKit
 import Foundation
 import XCTest
@@ -17,28 +33,8 @@ final class NotesMigrationTests: XCTestCase {
         }
     }
 
-    func testCopyToICloudIsTheOnlyImportChoice() {
-        XCTAssertEqual(NotesMigrationChoice.defaultChoice, .copyToICloud)
-    }
-
-    func testMigrationChoiceModalResponsesRoundTrip() {
-        let choices: [NotesMigrationChoice] = [
-            .keepCurrentLocation,
-            .copyToICloud
-        ]
-
-        for choice in choices {
-            XCTAssertEqual(
-                MigrationChoiceModalResponse.choice(
-                    for: MigrationChoiceModalResponse.response(for: choice)
-                ),
-                choice
-            )
-        }
-    }
-
     func testCopyProgressPromisesToKeepOriginalFolder() {
-        let message = NotesMigrationProgressText.copyingNotes(for: .copyToICloud)
+        let message = NotesMigrationProgressText.copyingNotes
 
         XCTAssertEqual(
             message,
@@ -82,12 +78,12 @@ final class NotesMigrationTests: XCTestCase {
         )
     }
 
-    func testExistingSpiralPreferencesUseTheirCurrentLocation() {
+    func testExistingSpiralPreferencesMigrateTheirCurrentLocationToICloud() {
         XCTAssertEqual(
             NotesStartupLocationPolicy.decision(
                 preferencesStartupState: .existingSpiralPreferences
             ),
-            .useCurrentLocation
+            .migrateCurrentLocationToICloud
         )
     }
 
@@ -201,25 +197,6 @@ final class NotesMigrationTests: XCTestCase {
             XCTAssertEqual(error as? NotesDefaultLocationError, .destinationContainsUnrelatedData)
         }
         XCTAssertEqual(try Data(contentsOf: unrelatedFile), Data("keep me".utf8))
-    }
-
-    func testConfiguredContainerStatusRequiresExactDocumentsDirectory() {
-        let container = URL(fileURLWithPath: "/Users/example/Library/Mobile Documents/iCloud~farm~poplar~spiral", isDirectory: true)
-        let documents = container.appendingPathComponent("Documents", isDirectory: true)
-        let otherICloudFolder = URL(fileURLWithPath: "/Users/example/Library/Mobile Documents/com~apple~CloudDocs/Notes", isDirectory: true)
-
-        XCTAssertTrue(
-            NotesICloudContainerStatus.usesConfiguredDocumentsDirectory(
-                currentURL: documents,
-                containerURL: container
-            )
-        )
-        XCTAssertFalse(
-            NotesICloudContainerStatus.usesConfiguredDocumentsDirectory(
-                currentURL: otherICloudFolder,
-                containerURL: container
-            )
-        )
     }
 
     func testEmptyCollectionDoesNotTriggerOffer() throws {

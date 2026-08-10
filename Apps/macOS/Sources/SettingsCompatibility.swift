@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import AppKit
 
 enum SettingsPane: String, CaseIterable, Identifiable {
@@ -42,30 +58,10 @@ struct StorageFormat: Identifiable {
     let detail: String
 
     static let supported = [
-        StorageFormat(id: 0, title: String(localized: "Single Database"), detail: String(localized: "Required for encrypted notes")),
-        StorageFormat(id: 1, title: String(localized: "Plain Text Files"), detail: String(localized: "One .txt file per note")),
-        StorageFormat(id: 2, title: String(localized: "Rich Text Files"), detail: String(localized: "One .rtf file per note")),
-        StorageFormat(id: 3, title: String(localized: "HTML Files"), detail: String(localized: "One .html file per note"))
+        StorageFormat(id: 1, title: String(localized: "Plain Text"), detail: String(localized: "New notes use .txt; existing note file types are preserved")),
+        StorageFormat(id: 2, title: String(localized: "Rich Text"), detail: String(localized: "New notes use .rtf; existing note file types are preserved")),
+        StorageFormat(id: 3, title: String(localized: "HTML"), detail: String(localized: "New notes use .html; existing note file types are preserved"))
     ]
-}
-
-enum MigrationChoiceModalResponse {
-    private static let keepCurrentLocation = NSApplication.ModalResponse(rawValue: 2001)
-    private static let copyToICloud = NSApplication.ModalResponse(rawValue: 2002)
-
-    static func response(for choice: NotesMigrationChoice) -> NSApplication.ModalResponse {
-        switch choice {
-        case .keepCurrentLocation: return keepCurrentLocation
-        case .copyToICloud: return copyToICloud
-        }
-    }
-
-    static func choice(for response: NSApplication.ModalResponse) -> NotesMigrationChoice {
-        switch response {
-        case copyToICloud: return .copyToICloud
-        default: return .keepCurrentLocation
-        }
-    }
 }
 
 @objc(SpiralLegacyNoteFormattingDetector)

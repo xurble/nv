@@ -305,6 +305,7 @@ void NotesDirFNSubscriptionProc(FNMessage message, OptionBits flags, void * refc
 						HFSUniStr255 *filename = &HFSUniNameArray[i];
 						
 						entry->fileType = ((FileInfo *)fsCatInfoArray[i].finderInfo)->fileType;
+						entry->fileCreator = ((FileInfo *)fsCatInfoArray[i].finderInfo)->fileCreator;
 						entry->logicalSize = (UInt32)(fsCatInfoArray[i].dataLogicalSize & 0xFFFFFFFF);
 						entry->nodeID = (UInt32)fsCatInfoArray[i].nodeID;
 						entry->lastModified = fsCatInfoArray[i].contentModDate;
@@ -665,5 +666,4 @@ void NotesDirFNSubscriptionProc(FNMessage message, OptionBits flags, void * refc
 }
 
 @end
-
 

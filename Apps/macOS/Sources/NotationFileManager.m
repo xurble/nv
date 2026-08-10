@@ -415,13 +415,23 @@ terminate:
 
 //whenever a note uses this method to change its filename, we will have to re-establish all the links to it
 - (NSString*)uniqueFilenameForTitle:(NSString*)title fromNote:(NoteObject*)note {
-	//use the note's current format if the current default format is for a database; get the "ideal" extension for that format
-	int noteFormat = [notationPrefs notesStorageFormat] || !note ? [notationPrefs notesStorageFormat] : storageFormatOfNote(note);
+	//The collection preference is the default for new notes. Existing notes
+	//retain their own clean file format and extension.
+	int noteFormat = (!note || storageFormatOfNote(note) == SingleDatabaseFormat)
+		? [notationPrefs notesStorageFormat]
+		: storageFormatOfNote(note);
 	NSString *extension = [notationPrefs chosenPathExtensionForFormat:noteFormat];
 	
-	//if the note's current extension is compatible with the storage format above, then use the existing extension instead
-	if (note && filenameOfNote(note) && [notationPrefs pathExtensionAllowed:[filenameOfNote(note) pathExtension] forFormat:noteFormat])
-		extension = [filenameOfNote(note) pathExtension];
+	//Existing filenames keep their extension state. The preference is consulted
+	//only while generating a filename for a note that does not have one yet.
+	if (note && filenameOfNote(note)) {
+		NSString *existingExtension = [filenameOfNote(note) pathExtension];
+		if (![existingExtension length] ||
+			[notationPrefs pathExtensionAllowed:existingExtension forFormat:noteFormat])
+			extension = existingExtension;
+	} else if (![notationPrefs appendFileExtensionToNewNotes]) {
+		extension = @"";
+	}
 
     NSMutableArray *existingFilenames = [NSMutableArray arrayWithCapacity:[allNotes count]];
     for (NoteObject *existingNote in allNotes) {
@@ -429,7 +439,11 @@ terminate:
             [existingFilenames addObject:filenameOfNote(existingNote)];
         }
     }
-    return NVLegacyUniqueFilename(title, extension, existingFilenames);
+	return NVLegacyUniqueFilename(title, extension, existingFilenames);
+}
+
+- (int)storageFormatForCatalogEntry:(NoteCatalogEntry*)catEntry {
+	return [notationPrefs storageFormatForCatalogEntry:catEntry];
 }
 
 - (OSStatus)noteFileRenamed:(FSRef*)childRef fromName:(NSString*)oldName toName:(NSString*)newName {

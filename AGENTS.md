@@ -83,3 +83,23 @@ Report exactly what was tested, what remains untested, and any warnings or compa
 - Avoid speculative abstractions; extract a boundary because a current migration or test needs it.
 - Remove an obsolete path after its replacement is verified instead of maintaining indefinite dual implementations.
 - Update `MIGRATION_STRATEGY.md` when a decision changes the intended architecture, compatibility policy, supported macOS range, or migration order.
+
+## New Files
+
+Include the following copyright header comment:
+
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */

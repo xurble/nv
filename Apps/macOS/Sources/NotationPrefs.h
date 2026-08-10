@@ -28,6 +28,7 @@
 including encryption, file formats, synchronization, passwords management, and others */
 
 #define EPOC_ITERATION 4
+#define SpiralExtensionlessNoteCreator 'SpRl'
 
 enum { SingleDatabaseFormat = 0, PlainTextFormat, RTFTextFormat, HTMLFormat, WordDocFormat, WordXMLFormat };
 
@@ -46,6 +47,7 @@ extern NSString *NotationPrefsDidChangeNotification;
 	NSFont *baseBodyFont;
 	int notesStorageFormat;
 	BOOL confirmFileDeletion;
+	BOOL appendFileExtensionToNewNotes;
 	
 	unsigned int chosenExtIndices[4];
     NSMutableArray *typeStrings[4], *pathExtensions[4];
@@ -79,6 +81,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (BOOL)storesPasswordInKeychain;
 - (int)notesStorageFormat;
 - (BOOL)confirmFileDeletion;
+- (BOOL)appendFileExtensionToNewNotes;
 - (BOOL)doesEncryption;
 - (NSDictionary*)syncServiceAccounts;
 - (NSDictionary*)syncServiceAccountsForArchiving;
@@ -114,6 +117,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (BOOL)shouldDisplaySheetForProposedFormat:(int)proposedFormat;
 - (void)noteFilesCleanupSheetDidEnd:(NSWindow *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 - (void)setConfirmsFileDeletion:(BOOL)value;
+- (void)setAppendFileExtensionToNewNotes:(BOOL)value;
 - (void)setDoesEncryption:(BOOL)value;
 - (void)disableEncryptionForMigrationWithoutRemovingLegacyKeychainItem;
 - (void)setSecureTextEntry:(BOOL)value;
@@ -134,6 +138,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (NSString*)pathExtensionAtIndex:(int)pathIndex;
 - (unsigned int)indexOfChosenPathExtension;
 - (NSString*)chosenPathExtensionForFormat:(int)format;
+- (OSType)preferredFileTypeForFormat:(int)format;
 - (int)typeStringsCount;
 - (int)pathExtensionsCount;
 
@@ -148,6 +153,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 - (BOOL)setType:(NSString*)newType atIndex:(unsigned int)oldIndex;
 
 - (BOOL)pathExtensionAllowed:(NSString*)anExtension forFormat:(int)formatID;
+- (int)storageFormatForCatalogEntry:(NoteCatalogEntry*)catEntry;
 
 //actually used while searching for files
 - (void)updateOSTypesArray;

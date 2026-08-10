@@ -67,10 +67,13 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		}
 		
 		confirmFileDeletion = YES;
+		appendFileExtensionToNewNotes = YES;
 		storesPasswordInKeychain = secureTextEntry = doesEncryption = NO;
 		syncServiceAccounts = [[NSMutableDictionary alloc] init];
 		seenDiskUUIDEntries = [[NSMutableArray alloc] init];
-		notesStorageFormat = SingleDatabaseFormat;
+		// SingleDatabaseFormat remains readable for legacy migration only. New
+		// collections keep one ordinary file per note.
+		notesStorageFormat = PlainTextFormat;
 		hashIterationCount = DEFAULT_HASH_ITERATIONS;
 		keyLengthInBits = DEFAULT_KEY_LENGTH;
 		baseBodyFont = [[[GlobalPrefs defaultPrefs] noteBodyFont] retain];
@@ -128,6 +131,8 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		}
 		
 		confirmFileDeletion = [decoder decodeBoolForKey:VAR_STR(confirmFileDeletion)];
+		appendFileExtensionToNewNotes = ![decoder containsValueForKey:VAR_STR(appendFileExtensionToNewNotes)] ||
+			[decoder decodeBoolForKey:VAR_STR(appendFileExtensionToNewNotes)];
 		
 		unsigned int i;
 		for (i=0; i<4; i++) {
@@ -177,6 +182,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	[coder encodeBool:secureTextEntry forKey:VAR_STR(secureTextEntry)];
 	
 	[coder encodeBool:confirmFileDeletion forKey:VAR_STR(confirmFileDeletion)];
+	[coder encodeBool:appendFileExtensionToNewNotes forKey:VAR_STR(appendFileExtensionToNewNotes)];
 	[coder encodeObject:baseBodyFont forKey:VAR_STR(baseBodyFont)];
 	[coder encodeObject:foregroundColor forKey:VAR_STR(foregroundColor)];
 	
@@ -243,7 +249,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	case SingleDatabaseFormat:
 	    return [NSMutableArray arrayWithCapacity:0];
 	case PlainTextFormat: 
-	    return [NSMutableArray arrayWithObjects:@"txt", @"text", @"utf8", @"taskpaper", nil];
+	    return [NSMutableArray arrayWithObjects:@"txt", @"text", @"utf8", @"taskpaper", @"md", @"markdown", nil];
 	case RTFTextFormat: 
 	    return [NSMutableArray arrayWithObjects:@"rtf", nil];
 	case HTMLFormat:
@@ -272,6 +278,10 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 }
 - (BOOL)confirmFileDeletion {
     return confirmFileDeletion;
+}
+
+- (BOOL)appendFileExtensionToNewNotes {
+	return appendFileExtensionToNewNotes;
 }
 
 - (BOOL)doesEncryption {
@@ -655,6 +665,11 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
     preferencesChanged = YES;
 }
 
+- (void)setAppendFileExtensionToNewNotes:(BOOL)value {
+	appendFileExtensionToNewNotes = value;
+	preferencesChanged = YES;
+}
+
 - (void)setDoesEncryption:(BOOL)value {
 	BOOL oldValue = doesEncryption;
 	doesEncryption = value;
@@ -920,6 +935,15 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 	return [pathExtensions[format] objectAtIndex:chosenExtIndices[format]];
 }
 
+- (OSType)preferredFileTypeForFormat:(int)format {
+	NSArray *preferredTypes = [typeStrings[format] count]
+		? typeStrings[format]
+		: [NotationPrefs defaultTypeStringsForFormat:format];
+	return [preferredTypes count]
+		? UTGetOSTypeFromString((CFStringRef)[preferredTypes objectAtIndex:0])
+		: 0;
+}
+
 - (void)updateOSTypesArray {
     if (!typeStrings[notesStorageFormat])
 	return;
@@ -1037,7 +1061,47 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 			return YES;
 		}
     }
+	//Standard extensions added by newer Spiral versions remain readable even
+	//when an older archived preferences object predates them.
+	for (NSString *defaultExtension in [NotationPrefs defaultPathExtensionsForFormat:formatID]) {
+		if ([anExtension compare:defaultExtension options:NSCaseInsensitiveSearch] == NSOrderedSame)
+			return YES;
+	}
 	return NO;
+}
+
+- (int)storageFormatForCatalogEntry:(NoteCatalogEntry*)catEntry {
+	NSString *extension = [(NSString*)catEntry->filename pathExtension];
+	int formatID;
+	if (catEntry->fileCreator == SpiralExtensionlessNoteCreator) {
+		for (formatID = PlainTextFormat; formatID <= HTMLFormat; formatID++) {
+			NSMutableArray *recognizedTypes = [NSMutableArray arrayWithArray:typeStrings[formatID]];
+			[recognizedTypes addObjectsFromArray:[NotationPrefs defaultTypeStringsForFormat:formatID]];
+			for (NSString *typeString in recognizedTypes) {
+				if (catEntry->fileType == UTGetOSTypeFromString((CFStringRef)typeString))
+					return formatID;
+			}
+		}
+	}
+	for (formatID = PlainTextFormat; formatID <= HTMLFormat; formatID++) {
+		if ([self pathExtensionAllowed:extension forFormat:formatID])
+			return formatID;
+	}
+
+	// Preserve extensionless files identified by their classic Finder type,
+	// while allowing those types from every clean format.
+	for (formatID = PlainTextFormat; formatID <= HTMLFormat; formatID++) {
+		for (NSString *typeString in typeStrings[formatID]) {
+			if (catEntry->fileType == UTGetOSTypeFromString((CFStringRef)typeString))
+				return formatID;
+		}
+	}
+	//Extensionless note files cannot identify their representation by name.
+	//Their archived per-note format wins when available; this default is used
+	//when rebuilding metadata from files alone.
+	if ([extension length] == 0)
+		return notesStorageFormat;
+	return -1;
 }
 
 - (BOOL)catalogEntryAllowed:(NoteCatalogEntry*)catEntry {
@@ -1057,17 +1121,7 @@ NSMutableDictionary *ServiceAccountDictInit(NotationPrefs *prefs, NSString* serv
 		return NO;
 	}
 	
-	if ([self pathExtensionAllowed:[filename pathExtension] forFormat:notesStorageFormat])
-		return YES;
-    
-	NSUInteger i;
-    for (i=0; i<[typeStrings[notesStorageFormat] count]; i++) {
-		if (catEntry->fileType == allowedTypes[i]) {
-			return YES;
-		}
-    }
-    
-    return NO;
+	return [self storageFormatForCatalogEntry:catEntry] != -1;
     
 }
 

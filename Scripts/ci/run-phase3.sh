@@ -58,7 +58,7 @@ xcodebuild build-for-testing \
 
 xcodebuild build-for-testing \
     -project Notation.xcodeproj \
-    -scheme SpiralPhase3Mac \
+    -scheme SpiralMacTestHarness \
     -configuration "$configuration" \
     -destination "platform=macOS,arch=$architecture" \
     -derivedDataPath "$derived_data/mac-tests" \

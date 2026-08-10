@@ -65,6 +65,7 @@ UInt32 diskUUIDIndexForNotation(NotationController *controller);
 - (NSMutableData*)dataFromFileInNotesDirectory:(FSRef*)childRef forFilename:(NSString*)filename fileSize:(UInt64)givenFileSize;
 - (OSStatus)noteFileRenamed:(FSRef*)childRef fromName:(NSString*)oldName toName:(NSString*)newName;
 - (NSString*)uniqueFilenameForTitle:(NSString*)title fromNote:(NoteObject*)note;
+- (int)storageFormatForCatalogEntry:(NoteCatalogEntry*)catEntry;
 - (OSStatus)fileInNotesDirectory:(FSRef*)childRef isOwnedByUs:(BOOL*)owned hasCatalogInfo:(FSCatalogInfo *)info;
 - (OSStatus)deleteFileInNotesDirectory:(FSRef*)childRef forFilename:(NSString*)filename;
 - (OSStatus)createFileIfNotPresentInNotesDirectory:(FSRef*)childRef forFilename:(NSString*)filename fileWasCreated:(BOOL*)created;

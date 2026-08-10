@@ -13,8 +13,5 @@
 }
 
 - (void)showWindow:(id)sender;
-- (BOOL)getNewNotesRefFromOpenPanel:(FSRef *)notesDirectoryRef
-                       returnedPath:(NSString **)path
-            mergeExistingCollection:(BOOL *)mergeExistingCollection;
 
 @end

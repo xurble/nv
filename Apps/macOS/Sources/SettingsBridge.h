@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 #import <Cocoa/Cocoa.h>
 #import "LegacyCompatibility/NVLegacyCompatibility.h"
 
@@ -25,12 +41,9 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 @property(nonatomic, readonly, retain) NSColor *backgroundTextColor;
 @property(nonatomic, readonly, retain) NSColor *searchHighlightColor;
 @property(nonatomic, readonly, copy) NSString *appShortcutDescription;
-@property(nonatomic, readonly, copy) NSString *notesFolderPath;
-@property(nonatomic, readonly, retain, nullable) NSURL *notesFolderURL;
-@property(nonatomic, readonly) BOOL notesFolderIsInICloud;
-
 @property(nonatomic, readonly) NSInteger storageFormat;
 @property(nonatomic, readonly) BOOL confirmFileDeletion;
+@property(nonatomic, readonly) BOOL appendFileExtensionToNewNotes;
 @property(nonatomic, readonly) BOOL encryptionEnabled;
 @property(nonatomic, readonly) BOOL storesPasswordInKeychain;
 @property(nonatomic, readonly) BOOL secureTextEntry;
@@ -60,11 +73,9 @@ extern NSNotificationName const NVSettingsBridgeDidChangeNotification;
 
 - (void)chooseApplicationShortcutForWindow:(NSWindow *)window;
 - (void)chooseNoteBodyFont;
-- (void)chooseNotesFolderForWindow:(NSWindow *)window;
-- (void)switchToICloudForWindow:(NSWindow *)window;
-
 - (void)requestStorageFormat:(NSInteger)format;
 - (void)setConfirmFileDeletion:(BOOL)value;
+- (void)setAppendFileExtensionToNewNotes:(BOOL)value;
 - (void)requestEncryptionToggle;
 - (void)requestPassphraseChange;
 - (void)setStoresPasswordInKeychain:(BOOL)value;

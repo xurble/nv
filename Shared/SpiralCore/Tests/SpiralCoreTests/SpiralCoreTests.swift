@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import Foundation
 import Testing
 @testable import SpiralCore
@@ -249,7 +265,7 @@ struct LegacyMigrationTests {
         }
     }
 
-    @Test("Separate files infer one family and reject mixed formats")
+    @Test("Separate-file collections preserve mixed note formats")
     func separateFileInference() throws {
         let dirs = try TestDirectories()
         defer { dirs.remove() }
@@ -260,9 +276,15 @@ struct LegacyMigrationTests {
         let snapshot = try source.loadSnapshot(from: dirs.documents)
         #expect(snapshot.notes.map(\.title) == ["One", "Two"])
         try Data("{\\rtf1 mixed}".utf8).write(to: dirs.documents.appendingPathComponent("Mixed.rtf"))
-        #expect(throws: LegacyCompatibilityError.mixedSeparateFileFormats) {
-            try source.loadSnapshot(from: dirs.documents)
-        }
+        try Data("markdown".utf8).write(to: dirs.documents.appendingPathComponent("Markdown.md"))
+        let mixedSnapshot = try source.loadSnapshot(from: dirs.documents)
+        let formatsByTitle = Dictionary(uniqueKeysWithValues: mixedSnapshot.notes.map { ($0.title, $0.content.format) })
+        #expect(formatsByTitle == [
+            "Markdown": .plainText,
+            "Mixed": .richText,
+            "One": .plainText,
+            "Two": .plainText
+        ])
     }
 
     @Test("Copy-only migration preserves source, backup, values, clean files, and private identity")

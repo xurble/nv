@@ -1,3 +1,19 @@
+/*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+    This file is part of Spiral, a fork of Notational Velocity.
+
+    Spiral is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Spiral is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+
 import AppKit
 import SwiftUI
 
@@ -22,11 +38,9 @@ private final class SettingsModel: ObservableObject {
     @Published var backgroundColor = NSColor.textBackgroundColor
     @Published var highlightColor = NSColor.systemYellow
     @Published var shortcutDescription = ""
-    @Published var notesFolderURL: URL?
-    @Published var notesFolderUsesICloudContainer = false
-
     @Published var storageFormat = 0
     @Published var confirmFileDeletion = false
+    @Published var appendFileExtensionToNewNotes = true
     @Published var encryptionEnabled = false
     @Published var storesPasswordInKeychain = false
     @Published var secureTextEntry = false
@@ -37,8 +51,6 @@ private final class SettingsModel: ObservableObject {
     @Published var defaultExtensionIndex = 0
 
     private var observers: [NSObjectProtocol] = []
-    private var iCloudContainerStatusTask: Task<Void, Never>?
-
     init() {
         selectedPane = SettingsPane(legacyValue: UserDefaults.standard.string(forKey: "LastSelectedPrefsPane"))
         refresh()
@@ -56,7 +68,6 @@ private final class SettingsModel: ObservableObject {
     }
 
     deinit {
-        iCloudContainerStatusTask?.cancel()
         observers.forEach(NotificationCenter.default.removeObserver)
     }
 
@@ -82,13 +93,9 @@ private final class SettingsModel: ObservableObject {
         backgroundColor = bridge.backgroundTextColor
         highlightColor = bridge.searchHighlightColor
         shortcutDescription = bridge.appShortcutDescription
-        let currentNotesFolderURL = bridge.notesFolderURL
-        notesFolderURL = currentNotesFolderURL
-        notesFolderUsesICloudContainer = bridge.notesFolderIsInICloud
-        refreshICloudContainerStatus(for: currentNotesFolderURL)
-
         storageFormat = bridge.storageFormat
         confirmFileDeletion = bridge.confirmFileDeletion
+        appendFileExtensionToNewNotes = bridge.appendFileExtensionToNewNotes
         encryptionEnabled = bridge.encryptionEnabled
         storesPasswordInKeychain = bridge.storesPasswordInKeychain
         secureTextEntry = bridge.secureTextEntry
@@ -98,28 +105,6 @@ private final class SettingsModel: ObservableObject {
         allowedTypes = bridge.allowedTypes
         defaultExtensionIndex = Int(bridge.defaultExtensionIndex)
 
-    }
-
-    private func refreshICloudContainerStatus(for currentURL: URL?) {
-        iCloudContainerStatusTask?.cancel()
-        guard let currentURL,
-              let identifier = SpiralFirstRunMigrationController.configuredContainerIdentifier else {
-            notesFolderUsesICloudContainer = false
-            return
-        }
-
-        iCloudContainerStatusTask = Task { [weak self] in
-            let containerURL = await Task.detached(priority: .utility) {
-                FileManager.default.url(forUbiquityContainerIdentifier: identifier)
-            }.value
-            guard !Task.isCancelled else { return }
-            self?.notesFolderUsesICloudContainer = containerURL.map {
-                NotesICloudContainerStatus.usesConfiguredDocumentsDirectory(
-                    currentURL: currentURL,
-                    containerURL: $0
-                )
-            } ?? false
-        }
     }
 }
 
@@ -232,88 +217,74 @@ private struct NotesSettingsView: View {
     var body: some View {
         SettingsForm {
             Section("Storage") {
-                LabeledContent("Notes folder") {
-                    HStack(spacing: 8) {
-                        NotesFolderPathControl(url: model.notesFolderURL)
-                            .frame(minWidth: 180, idealWidth: 280, maxWidth: .infinity, minHeight: 22)
-                        Button("Choose…") {
-                            if let window = NSApp.keyWindow { model.bridge.chooseNotesFolder(for: window) }
-                        }
-                    }
-                }
-
-                if !model.notesFolderUsesICloudContainer {
-                    LabeledContent("iCloud Drive") {
-                        Button("Use iCloud…") {
-                            if let window = NSApp.keyWindow {
-                                model.bridge.switchToICloud(for: window)
-                                model.refresh()
-                            }
-                        }
-                        .accessibilityIdentifier("settings.notes.useICloud")
-                    }
-                    Text("Move or copy the current collection into Spiral Notes in iCloud Drive.")
+                if model.storageFormat == 0 {
+                    LabeledContent("Storage", value: "Legacy encrypted database")
+                    Text("Turn off legacy encryption below to convert the collection to ordinary per-note files.")
                         .settingsHelpText()
-                }
+                } else {
+                    Picker("New note format", selection: Binding(
+                        get: { model.storageFormat },
+                        set: { model.bridge.requestStorageFormat($0); model.refresh() }
+                    )) {
+                        ForEach(StorageFormat.supported) { format in
+                            Text(format.title).tag(format.id)
+                        }
+                    }
+                    .accessibilityIdentifier("settings.notes.storageFormat")
 
-                Picker("Format", selection: Binding(
-                    get: { model.storageFormat },
-                    set: { model.bridge.requestStorageFormat($0); model.refresh() }
-                )) {
-                    ForEach(StorageFormat.supported) { format in
-                        Text(format.title).tag(format.id)
+                    if let format = StorageFormat.supported.first(where: { $0.id == model.storageFormat }) {
+                        Text(format.detail).settingsHelpText()
                     }
                 }
-                .accessibilityIdentifier("settings.notes.storageFormat")
 
-                if let format = StorageFormat.supported.first(where: { $0.id == model.storageFormat }) {
-                    Text(format.detail).settingsHelpText()
-                }
-
-                if model.storageFormat != 0 {
-                    SettingsToggle("Confirm before deleting note files", isOn: Binding(
-                        get: { model.confirmFileDeletion },
-                        set: { model.confirmFileDeletion = $0; model.bridge.setConfirmFileDeletion($0) }
-                    ))
-                }
-            }
-
-            if model.storageFormat != 0 {
-                Section("Recognized Files") {
-                    EditableValueList(
-                        title: "Extensions",
-                        values: model.allowedExtensions,
-                        defaultIndex: model.defaultExtensionIndex,
-                        onReplace: model.bridge.replaceAllowedExtension,
-                        onAdd: model.bridge.addAllowedExtension,
-                        onRemove: model.bridge.removeAllowedExtension,
-                        onMakeDefault: model.bridge.makeDefaultExtension,
-                        refresh: model.refresh
-                    )
-                    EditableValueList(
-                        title: "File types",
-                        values: model.allowedTypes,
-                        defaultIndex: nil,
-                        onReplace: model.bridge.replaceAllowedType,
-                        onAdd: model.bridge.addAllowedType,
-                        onRemove: { model.bridge.removeAllowedType(at: $0); return true },
-                        onMakeDefault: nil,
-                        refresh: model.refresh
-                    )
-                }
-            }
-
-            Section("Security") {
-                LabeledContent("Note encryption") {
-                    Button(model.encryptionEnabled ? "Turn Off…" : "Turn On…") {
-                        model.bridge.requestEncryptionToggle()
-                        model.refresh()
+                SettingsToggle("Confirm before deleting note files", isOn: Binding(
+                    get: { model.confirmFileDeletion },
+                    set: { model.confirmFileDeletion = $0; model.bridge.setConfirmFileDeletion($0) }
+                ))
+                SettingsToggle("Append a file extension to new notes", isOn: Binding(
+                    get: { model.appendFileExtensionToNewNotes },
+                    set: {
+                        model.appendFileExtensionToNewNotes = $0
+                        model.bridge.setAppendFileExtensionToNewNotes($0)
                     }
-                }
-                Text(model.encryptionEnabled ? "Enabled · \(model.encryptionKeyLength)-bit key" : "Off")
-                    .settingsHelpText()
+                ))
+                .accessibilityIdentifier("settings.notes.appendFileExtension")
+            }
 
-                if model.encryptionEnabled {
+            Section("Recognized Files") {
+                EditableValueList(
+                    title: "Extensions",
+                    values: model.allowedExtensions,
+                    defaultIndex: model.defaultExtensionIndex,
+                    onReplace: model.bridge.replaceAllowedExtension,
+                    onAdd: model.bridge.addAllowedExtension,
+                    onRemove: model.bridge.removeAllowedExtension,
+                    onMakeDefault: model.bridge.makeDefaultExtension,
+                    refresh: model.refresh
+                )
+                EditableValueList(
+                    title: "File types",
+                    values: model.allowedTypes,
+                    defaultIndex: nil,
+                    onReplace: model.bridge.replaceAllowedType,
+                    onAdd: model.bridge.addAllowedType,
+                    onRemove: { model.bridge.removeAllowedType(at: $0); return true },
+                    onMakeDefault: nil,
+                    refresh: model.refresh
+                )
+            }
+
+            if model.encryptionEnabled {
+                Section("Legacy Security") {
+                    LabeledContent("Legacy note encryption") {
+                        Button("Turn Off…") {
+                            model.bridge.requestEncryptionToggle()
+                            model.refresh()
+                        }
+                    }
+                    Text("Enabled · \(model.encryptionKeyLength)-bit key. Turning it off converts the collection to ordinary per-note files.")
+                        .settingsHelpText()
+
                     SettingsToggle("Remember password in Keychain", isOn: Binding(
                         get: { model.storesPasswordInKeychain },
                         set: { model.storesPasswordInKeychain = $0; model.bridge.setStoresPasswordInKeychain($0) }

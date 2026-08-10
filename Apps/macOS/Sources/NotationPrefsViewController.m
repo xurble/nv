@@ -423,6 +423,8 @@
 - (void)_disableEncryption {
 	[self setEncryptionControlsState:NO];
 	[notationPrefs setDoesEncryption:NO];
+	if ([notationPrefs notesStorageFormat] == SingleDatabaseFormat)
+		[notationPrefs setNotesStorageFormat:PlainTextFormat];
 	[self updateRemoveKeychainItemStatus];
 	
 	[passphrasePicker release]; passphrasePicker = nil;

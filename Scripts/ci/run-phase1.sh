@@ -48,11 +48,7 @@ fi
 
 "$script_directory/verify-warning-baseline.sh" "$configuration" "$build_log"
 
-if [ "$configuration" = Debug ]; then
-    app_path="$derived_data/Build/Products/Debug/SpiralDebug.app"
-else
-    app_path="$derived_data/Build/Products/Release/Spiral.app"
-fi
+app_path="$derived_data/Build/Products/$configuration/Spiral.app"
 "$repository_root/Tests/macOS/Characterization/run-disposable-launch-test.sh" "$app_path"
 
 xcodebuild test \

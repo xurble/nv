@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "F30000000000000000000040"
-               BuildableName = "SpiralMobile.app"
+               BuildableName = "Spiral.app"
                BlueprintName = "SpiralMobile"
                ReferencedContainer = "container:Notation.xcodeproj">
             </BuildableReference>
@@ -68,7 +68,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "F30000000000000000000040"
-            BuildableName = "SpiralMobile.app"
+            BuildableName = "Spiral.app"
             BlueprintName = "SpiralMobile"
             ReferencedContainer = "container:Notation.xcodeproj">
          </BuildableReference>
@@ -84,7 +84,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "F30000000000000000000040"
-            BuildableName = "SpiralMobile.app"
+            BuildableName = "Spiral.app"
             BlueprintName = "SpiralMobile"
             ReferencedContainer = "container:Notation.xcodeproj">
          </BuildableReference>

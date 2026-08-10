@@ -239,13 +239,6 @@ void outletObjectAwoke(id sender) {
 	NotationController *newNotation = nil;
 	NSData *aliasData = [prefsController aliasDataForDefaultDirectory];
 	SpiralPreparedNotesDirectory *pendingCollectionMerge = nil;
-	
-	NSString *subMessage = @"";
-	
-	//if the option key is depressed, go straight to picking a new notes folder location
-	if (kCGEventFlagMaskAlternate == (CGEventSourceFlagsState(kCGEventSourceStateCombinedSessionState) & NSDeviceIndependentModifierFlagsMask)) {
-		goto showOpenPanel;
-	}
 
 	//Resolve the new-install default or offer migration before NotationController
 	//opens the database, journal, or file watchers. This keeps an existing source
@@ -259,6 +252,10 @@ void outletObjectAwoke(id sender) {
 		SpiralPreparedNotesDirectory *preparedNotesDirectory =
 			[SpiralFirstRunMigrationController prepareNotesDirectoryAtURL:currentNotesDirectoryURL
 									 preferencesStartupState:[SpiralPreferencesMigrationController startupState]];
+		if (![preparedNotesDirectory isUsable]) {
+			[NSApp terminate:self];
+			return;
+		}
 		NSURL *preparedNotesDirectoryURL = [preparedNotesDirectory directoryURL];
 		if ([preparedNotesDirectory requiresMerge]) {
 			pendingCollectionMerge = [preparedNotesDirectory retain];
@@ -290,14 +287,9 @@ void outletObjectAwoke(id sender) {
 	
 	if (aliasData) {
 	    newNotation = [[NotationController alloc] initWithAliasData:aliasData error:&err];
-	    subMessage = NSLocalizedString(@"Please choose a different folder in which to store your notes.",nil);
 	} else {
 	    newNotation = [[NotationController alloc] initWithDefaultDirectoryReturningError:&err];
-	    subMessage = NSLocalizedString(@"Please choose a folder in which your notes will be stored.",nil);
 	}
-	//no need to display an alert if the error wasn't real
-	if (err == kPassCanceledErr)
-		goto showOpenPanel;
 	
 	NSString *location = (aliasData ? [[NSFileManager defaultManager] pathCopiedFromAliasData:aliasData] : NSLocalizedString(@"your default notes directory",nil));
 	if (!location) { //fscopyaliasinfo sucks
@@ -309,46 +301,14 @@ void outletObjectAwoke(id sender) {
 		}
 	}
 	
-	while (!newNotation) {
+	if (!newNotation) {
 	    location = [location stringByAbbreviatingWithTildeInPath];
 	    NSString *reason = [NSString reasonStringFromCarbonFSError:err];
-		
-	    if (NSRunAlertPanel([NSString stringWithFormat:NSLocalizedString(@"Unable to initialize notes database in \n%@ because %@.",nil), location, reason], 
-							subMessage, NSLocalizedString(@"Choose another folder",nil),NSLocalizedString(@"Quit",nil),NULL) == NSAlertDefaultReturn) {
-			//show nsopenpanel, defaulting to current default notes dir
-			FSRef notesDirectoryRef;
-			BOOL mergeExistingCollection = NO;
-		showOpenPanel:
-			if (![prefsWindowController getNewNotesRefFromOpenPanel:&notesDirectoryRef
-										 returnedPath:&location
-								  mergeExistingCollection:&mergeExistingCollection]) {
-				//they cancelled the open panel, or it was unable to get the path/FSRef of the file
-				goto terminateApp;
-			} else if ((newNotation = [[NotationController alloc] initWithDirectoryRef:&notesDirectoryRef error:&err])) {
-				if (mergeExistingCollection && aliasData) {
-					OSStatus sourceError = noErr;
-					NotationController *sourceNotation = [[NotationController alloc] initWithAliasData:aliasData error:&sourceError];
-					if (sourceNotation) {
-						BOOL merged = [newNotation mergeNotesFromNotationController:sourceNotation];
-						[sourceNotation closeAllResources];
-						[sourceNotation release];
-						[prefsController setNotationPrefs:[newNotation notationPrefs] sender:self];
-						if (!merged) {
-							[newNotation closeAllResources];
-							[newNotation release];
-							newNotation = nil;
-							err = ioErr;
-							continue;
-						}
-					}
-				}
-				//have to make sure alias data is saved from setNotationController
-				[newNotation setAliasNeedsUpdating:YES];
-				break;
-			}
-	    } else {
-			goto terminateApp;
-	    }
+		NSRunAlertPanel(
+			[NSString stringWithFormat:NSLocalizedString(@"Unable to initialize notes database in \n%@ because %@.",nil), location, reason],
+			NSLocalizedString(@"Spiral requires its iCloud Drive notes folder. Check that iCloud Drive is available, then reopen Spiral.", nil),
+			NSLocalizedString(@"Quit",nil), NULL, NULL);
+		goto terminateApp;
 	}
 	
 	[self setNotationController:newNotation];
