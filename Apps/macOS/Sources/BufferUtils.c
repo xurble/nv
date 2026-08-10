@@ -396,7 +396,7 @@ void CopyPerDiskInfoGroupsToOrder(PerDiskInfo **flippedGroups, unsigned int *exi
 	}
 }
 
-CFStringRef CreateRandomizedFileName() {
+CFStringRef CreateRandomizedFileName(void) {
     static int sequence = 0;
     
     sequence++;
