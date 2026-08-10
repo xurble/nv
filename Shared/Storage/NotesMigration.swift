@@ -16,6 +16,229 @@
 
 import Foundation
 
+enum LegacyCollectionMergeCheckpoint: Equatable {
+    case backupCreated
+    case restoreStaged
+    case targetMovedAside
+}
+
+enum LegacyCollectionMergeTransactionError: LocalizedError {
+    case invalidDestination
+    case backupVerificationFailed
+    case inactiveTransaction
+    case injectedFailure(LegacyCollectionMergeCheckpoint)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidDestination:
+            return "The target notes folder is not a regular directory."
+        case .backupVerificationFailed:
+            return "The target notes folder safety copy could not be verified."
+        case .inactiveTransaction:
+            return "The collection merge transaction is no longer active."
+        case let .injectedFailure(checkpoint):
+            return "The collection merge was interrupted at \(checkpoint)."
+        }
+    }
+}
+
+/// Owns the target-folder safety copy used by the live legacy-controller
+/// collection merge. Commit removes the verified backup. Rollback stages and
+/// verifies a restore before moving the changed target aside, and retains the
+/// backup whenever restoration cannot be completed.
+@objc(SpiralLegacyCollectionMergeTransaction)
+final class SpiralLegacyCollectionMergeTransaction: NSObject {
+    @objc private(set) var backupURL: URL
+
+    private let destinationURL: URL
+    private let fileManager: FileManager
+    private let checkpointHandler: ((LegacyCollectionMergeCheckpoint) throws -> Void)?
+    private var backupSnapshot: [String: LegacyMergeItem]
+    private var isActive = true
+
+    private init(
+        destinationURL: URL,
+        backupURL: URL,
+        backupSnapshot: [String: LegacyMergeItem],
+        fileManager: FileManager,
+        checkpointHandler: ((LegacyCollectionMergeCheckpoint) throws -> Void)?
+    ) {
+        self.destinationURL = destinationURL
+        self.backupURL = backupURL
+        self.backupSnapshot = backupSnapshot
+        self.fileManager = fileManager
+        self.checkpointHandler = checkpointHandler
+    }
+
+    @objc(beginWithDestinationURL:error:)
+    static func begin(
+        destinationURL: URL,
+        error errorPointer: AutoreleasingUnsafeMutablePointer<NSError?>?
+    ) -> SpiralLegacyCollectionMergeTransaction? {
+        do {
+            return try begin(destinationURL: destinationURL)
+        } catch {
+            errorPointer?.pointee = error as NSError
+            return nil
+        }
+    }
+
+    static func begin(
+        destinationURL: URL,
+        backupRoot: URL = FileManager.default.temporaryDirectory,
+        fileManager: FileManager = .default,
+        checkpointHandler: ((LegacyCollectionMergeCheckpoint) throws -> Void)? = nil
+    ) throws -> SpiralLegacyCollectionMergeTransaction {
+        let destination = destinationURL.standardizedFileURL
+        let values = try destination.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        guard destination.path != "/", values.isDirectory == true, values.isSymbolicLink != true else {
+            throw LegacyCollectionMergeTransactionError.invalidDestination
+        }
+
+        try fileManager.createDirectory(at: backupRoot, withIntermediateDirectories: true)
+        let backup = backupRoot.appendingPathComponent(
+            "SpiralCollectionMergeBackup-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        let backupSnapshot: [String: LegacyMergeItem]
+        do {
+            try fileManager.copyItem(at: destination, to: backup)
+            let destinationSnapshot = try snapshot(at: destination, fileManager: fileManager)
+            backupSnapshot = try snapshot(at: backup, fileManager: fileManager)
+            guard destinationSnapshot == backupSnapshot else {
+                throw LegacyCollectionMergeTransactionError.backupVerificationFailed
+            }
+        } catch {
+            if fileManager.fileExists(atPath: backup.path) {
+                try? fileManager.removeItem(at: backup)
+            }
+            throw error
+        }
+        do {
+            try checkpointHandler?(.backupCreated)
+        } catch {
+            try? fileManager.removeItem(at: backup)
+            throw error
+        }
+        return SpiralLegacyCollectionMergeTransaction(
+            destinationURL: destination,
+            backupURL: backup,
+            backupSnapshot: backupSnapshot,
+            fileManager: fileManager,
+            checkpointHandler: checkpointHandler
+        )
+    }
+
+    @objc(commitWithError:)
+    func commit(error errorPointer: AutoreleasingUnsafeMutablePointer<NSError?>?) -> Bool {
+        perform(errorPointer: errorPointer) {
+            guard isActive else { throw LegacyCollectionMergeTransactionError.inactiveTransaction }
+            try fileManager.removeItem(at: backupURL)
+            isActive = false
+        }
+    }
+
+    @objc(discardBackupWithError:)
+    func discardBackup(error errorPointer: AutoreleasingUnsafeMutablePointer<NSError?>?) -> Bool {
+        commit(error: errorPointer)
+    }
+
+    @objc(rollbackWithError:)
+    func rollback(error errorPointer: AutoreleasingUnsafeMutablePointer<NSError?>?) -> Bool {
+        perform(errorPointer: errorPointer) {
+            guard isActive else { throw LegacyCollectionMergeTransactionError.inactiveTransaction }
+            guard try Self.snapshot(at: backupURL, fileManager: fileManager) == backupSnapshot else {
+                throw LegacyCollectionMergeTransactionError.backupVerificationFailed
+            }
+
+            let parent = destinationURL.deletingLastPathComponent()
+            let token = UUID().uuidString
+            let restoreURL = parent.appendingPathComponent(
+                ".SpiralCollectionMergeRestore-\(token)",
+                isDirectory: true
+            )
+            let failedURL = parent.appendingPathComponent(
+                ".SpiralCollectionMergeFailed-\(token)",
+                isDirectory: true
+            )
+            try fileManager.copyItem(at: backupURL, to: restoreURL)
+            guard try Self.snapshot(at: restoreURL, fileManager: fileManager) == backupSnapshot else {
+                try? fileManager.removeItem(at: restoreURL)
+                throw LegacyCollectionMergeTransactionError.backupVerificationFailed
+            }
+            do {
+                try checkpointHandler?(.restoreStaged)
+                if fileManager.fileExists(atPath: destinationURL.path) {
+                    try fileManager.moveItem(at: destinationURL, to: failedURL)
+                }
+                try checkpointHandler?(.targetMovedAside)
+                try fileManager.moveItem(at: restoreURL, to: destinationURL)
+            } catch {
+                if !fileManager.fileExists(atPath: destinationURL.path),
+                   fileManager.fileExists(atPath: failedURL.path) {
+                    try? fileManager.moveItem(at: failedURL, to: destinationURL)
+                }
+                if fileManager.fileExists(atPath: restoreURL.path) {
+                    try? fileManager.removeItem(at: restoreURL)
+                }
+                throw error
+            }
+
+            if fileManager.fileExists(atPath: failedURL.path) {
+                try fileManager.removeItem(at: failedURL)
+            }
+            try fileManager.removeItem(at: backupURL)
+            isActive = false
+        }
+    }
+
+    private func perform(
+        errorPointer: AutoreleasingUnsafeMutablePointer<NSError?>?,
+        operation: () throws -> Void
+    ) -> Bool {
+        do {
+            try operation()
+            return true
+        } catch {
+            errorPointer?.pointee = error as NSError
+            return false
+        }
+    }
+
+    private static func snapshot(
+        at rootURL: URL,
+        fileManager: FileManager
+    ) throws -> [String: LegacyMergeItem] {
+        let root = rootURL.standardizedFileURL
+        guard let enumerator = fileManager.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey],
+            options: []
+        ) else { return [:] }
+        var result: [String: LegacyMergeItem] = [:]
+        for case let url as URL in enumerator {
+            let relativePath = String(url.standardizedFileURL.path.dropFirst(root.path.count + 1))
+            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            if values.isSymbolicLink == true {
+                result[relativePath] = .symbolicLink(try fileManager.destinationOfSymbolicLink(atPath: url.path))
+            } else if values.isDirectory == true {
+                result[relativePath] = .directory
+            } else if values.isRegularFile == true {
+                result[relativePath] = .file(try Data(contentsOf: url))
+            } else {
+                throw LegacyCollectionMergeTransactionError.invalidDestination
+            }
+        }
+        return result
+    }
+}
+
+private enum LegacyMergeItem: Equatable {
+    case directory
+    case file(Data)
+    case symbolicLink(String)
+}
+
 enum NotesMigrationProgressText {
     static let connectingToICloud =
         "Spiral is waiting for iCloud Drive. Your current notes folder will not be changed."

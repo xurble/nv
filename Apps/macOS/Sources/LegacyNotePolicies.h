@@ -55,4 +55,26 @@ FOUNDATION_EXPORT NSInteger NVLegacyCompareNoteOrder(
     CFUUIDBytes secondIdentifier
 );
 
+typedef NS_ENUM(NSInteger, NVLegacyCollectionMergeAction) {
+    NVLegacyCollectionMergeAdd = 0,
+    NVLegacyCollectionMergeSkipIdentical,
+    NVLegacyCollectionMergePreserveDivergent
+};
+
+/// Characterizes the live collection merge. UUID identity is authoritative;
+/// title, labels, and contents determine whether a matching UUID is identical
+/// or must be preserved as a separate merged copy.
+FOUNDATION_EXPORT NVLegacyCollectionMergeAction NVLegacyCollectionMergeActionForMatch(
+    BOOL UUIDMatches,
+    BOOL titleMatches,
+    BOOL labelsMatch,
+    BOOL contentsMatch
+);
+
+/// Returns a case-insensitively unique title for a divergent incoming note.
+FOUNDATION_EXPORT NSString *NVLegacyMergedCopyTitle(
+    NSString *incomingTitle,
+    NSArray<NSString *> *existingTitles
+);
+
 NS_ASSUME_NONNULL_END

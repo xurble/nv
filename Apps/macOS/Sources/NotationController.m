@@ -40,6 +40,7 @@
 #import "SyncSessionController.h"
 #import "BookmarksController.h"
 #import "DeletionManager.h"
+#import "LegacyNotePolicies.h"
 
 @interface NotationController ()
 - (id)initWithDirectoryRef:(FSRef*)directoryRef
@@ -1043,6 +1044,7 @@ static NSData *NVLegacyPropertyListData(id value) {
 		CFUUIDBytes *incomingUUID = [incomingNote uniqueNoteIDBytes];
 		NSUInteger existingIndex = [allNotes indexOfNoteWithUUIDBytes:incomingUUID];
 		NoteObject *noteToAdd = incomingNote;
+		NVLegacyCollectionMergeAction mergeAction = NVLegacyCollectionMergeAdd;
 
 		if (existingIndex != NSNotFound) {
 			NoteObject *existingNote = [allNotes objectAtIndex:existingIndex];
@@ -1050,10 +1052,16 @@ static NSData *NVLegacyPropertyListData(id value) {
 			BOOL sameLabels = ((labelsOfNote(existingNote) == nil && labelsOfNote(incomingNote) == nil) ||
 				[labelsOfNote(existingNote) isEqualToString:labelsOfNote(incomingNote)]);
 			BOOL sameContents = [[existingNote contentString] isEqual:[incomingNote contentString]];
-			if (sameTitle && sameLabels && sameContents)
+			mergeAction = NVLegacyCollectionMergeActionForMatch(
+				YES, sameTitle, sameLabels, sameContents
+			);
+			if (mergeAction == NVLegacyCollectionMergeSkipIdentical)
 				continue;
 
-			NSString *mergedTitle = [NSString stringWithFormat:NSLocalizedString(@"%@ (Merged Copy)", @"title used when two merged collections contain divergent versions of the same note"), titleOfNote(incomingNote)];
+			NSMutableArray *existingTitles = [NSMutableArray arrayWithCapacity:[allNotes count]];
+			for (NoteObject *existing in allNotes)
+				[existingTitles addObject:titleOfNote(existing)];
+			NSString *mergedTitle = NVLegacyMergedCopyTitle(titleOfNote(incomingNote), existingTitles);
 			noteToAdd = [[[NoteObject alloc] initWithNoteBody:[incomingNote contentString]
 											  title:mergedTitle
 										   delegate:self

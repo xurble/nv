@@ -117,3 +117,34 @@ NSInteger NVLegacyCompareNoteOrder(
     if (dateResult != 0) return dateResult;
     return memcmp(&firstIdentifier, &secondIdentifier, sizeof(CFUUIDBytes));
 }
+
+NVLegacyCollectionMergeAction NVLegacyCollectionMergeActionForMatch(
+    BOOL UUIDMatches,
+    BOOL titleMatches,
+    BOOL labelsMatch,
+    BOOL contentsMatch
+) {
+    if (!UUIDMatches) return NVLegacyCollectionMergeAdd;
+    if (titleMatches && labelsMatch && contentsMatch) return NVLegacyCollectionMergeSkipIdentical;
+    return NVLegacyCollectionMergePreserveDivergent;
+}
+
+NSString *NVLegacyMergedCopyTitle(NSString *incomingTitle, NSArray<NSString *> *existingTitles) {
+    NSString *baseTitle = [NSString stringWithFormat:NSLocalizedString(
+        @"%@ (Merged Copy)",
+        @"title used when two merged collections contain divergent versions of the same note"
+    ), incomingTitle];
+    NSString *candidate = baseTitle;
+    NSUInteger suffix = 2;
+    while (YES) {
+        BOOL collides = NO;
+        for (NSString *existingTitle in existingTitles) {
+            if ([existingTitle caseInsensitiveCompare:candidate] == NSOrderedSame) {
+                collides = YES;
+                break;
+            }
+        }
+        if (!collides) return candidate;
+        candidate = [NSString stringWithFormat:@"%@ %lu", baseTitle, (unsigned long)suffix++];
+    }
+}

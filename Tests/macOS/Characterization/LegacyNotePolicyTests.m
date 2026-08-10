@@ -145,6 +145,36 @@ int main(void)
                                      @"alpha", 1, higherIdentifier) < 0,
             @"stable UUID bytes remain the final title tie breaker"
         );
+
+        AssertTrue(
+            NVLegacyCollectionMergeActionForMatch(NO, NO, NO, NO) == NVLegacyCollectionMergeAdd,
+            @"a distinct UUID adds the incoming note"
+        );
+        AssertTrue(
+            NVLegacyCollectionMergeActionForMatch(YES, YES, YES, YES) == NVLegacyCollectionMergeSkipIdentical,
+            @"an identical UUID match is omitted"
+        );
+        AssertTrue(
+            NVLegacyCollectionMergeActionForMatch(YES, YES, YES, NO) == NVLegacyCollectionMergePreserveDivergent,
+            @"a divergent UUID match is preserved"
+        );
+        AssertTrue(
+            NVLegacyCollectionMergeActionForMatch(YES, NO, YES, YES) == NVLegacyCollectionMergePreserveDivergent,
+            @"a renamed UUID match is preserved"
+        );
+        AssertEqualObjects(
+            NVLegacyMergedCopyTitle(@"Plan", @[@"Plan"]),
+            @"Plan (Merged Copy)",
+            @"the first divergent version receives the established title"
+        );
+        AssertEqualObjects(
+            NVLegacyMergedCopyTitle(
+                @"Plan",
+                @[@"Plan", @"plan (merged copy)", @"Plan (Merged Copy) 2"]
+            ),
+            @"Plan (Merged Copy) 3",
+            @"merged-copy title collisions are case-insensitive and monotonic"
+        );
     }
 
     if (failureCount > 0) {

@@ -498,14 +498,12 @@ terminateApp:
 	if (!aliasData)
 		return NO;
 
-	NSFileManager *fileManager = [NSFileManager defaultManager];
-	NSURL *mergeBackupURL = nil;
+	SpiralLegacyCollectionMergeTransaction *mergeTransaction = nil;
 	if (mergeCurrentNotes && notationController) {
-		mergeBackupURL = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES]
-			URLByAppendingPathComponent:[NSString stringWithFormat:@"SpiralCollectionMergeBackup-%@", [[NSUUID UUID] UUIDString]]
-			isDirectory:YES];
 		NSError *backupError = nil;
-		if (![fileManager copyItemAtURL:directoryURL toURL:mergeBackupURL error:&backupError]) {
+		mergeTransaction = [[SpiralLegacyCollectionMergeTransaction
+			beginWithDestinationURL:directoryURL error:&backupError] retain];
+		if (!mergeTransaction) {
 			NSRunAlertPanel(NSLocalizedString(@"The note collections couldn’t be merged.", nil),
 							[NSString stringWithFormat:NSLocalizedString(@"Spiral could not make a safety copy of the target folder. No notes were changed.\n\n%@", nil), [backupError localizedDescription]],
 							NSLocalizedString(@"OK", nil), NULL, NULL);
@@ -516,8 +514,12 @@ terminateApp:
 	OSStatus err = noErr;
 	NotationController *newNotation = [[NotationController alloc] initWithAliasData:aliasData error:&err];
 	if (!newNotation) {
-		if (mergeBackupURL)
-			[fileManager removeItemAtURL:mergeBackupURL error:nil];
+		if (mergeTransaction) {
+			NSError *cleanupError = nil;
+			if (![mergeTransaction discardBackupWithError:&cleanupError])
+				NSLog(@"Unable to remove unused collection merge backup at %@: %@", mergeTransaction.backupURL.path, cleanupError);
+			[mergeTransaction release];
+		}
 		NSString *reason = [NSString reasonStringFromCarbonFSError:err];
 		NSRunAlertPanel(NSLocalizedString(@"Unable to use the selected notes folder.", nil),
 						[NSString stringWithFormat:NSLocalizedString(@"The folder was not changed because %@.", nil), reason],
@@ -530,18 +532,12 @@ terminateApp:
 		[newNotation closeAllResources];
 		[newNotation release];
 		NSError *restoreError = nil;
-		if (mergeBackupURL) {
-			if (![fileManager removeItemAtURL:directoryURL error:&restoreError] ||
-				![fileManager copyItemAtURL:mergeBackupURL toURL:directoryURL error:&restoreError]) {
-				NSLog(@"Unable to restore collection merge backup at %@: %@", mergeBackupURL.path, restoreError);
-			} else {
-				[fileManager removeItemAtURL:mergeBackupURL error:nil];
-				mergeBackupURL = nil;
-			}
-		}
+		if (mergeTransaction && ![mergeTransaction rollbackWithError:&restoreError])
+			NSLog(@"Unable to restore collection merge backup at %@: %@", mergeTransaction.backupURL.path, restoreError);
 		NSString *failureMessage = restoreError
-			? [NSString stringWithFormat:NSLocalizedString(@"Spiral is still using the original notes folder. The target could not be restored automatically; its safety copy remains at:\n\n%@", nil), mergeBackupURL.path]
+			? [NSString stringWithFormat:NSLocalizedString(@"Spiral is still using the original notes folder. The target could not be restored automatically; its safety copy remains at:\n\n%@", nil), mergeTransaction.backupURL.path]
 			: NSLocalizedString(@"Spiral is still using the original notes folder. The target folder was restored and was not selected.", nil);
+		[mergeTransaction release];
 		NSRunAlertPanel(NSLocalizedString(@"The note collections couldn’t be merged.", nil),
 						failureMessage,
 						NSLocalizedString(@"OK", nil), NULL, NULL);
@@ -554,8 +550,12 @@ terminateApp:
 	isChangingNotesDirectory = YES;
 	[prefsController setAliasDataForDefaultDirectory:aliasData sender:self];
 	isChangingNotesDirectory = NO;
-	if (mergeBackupURL)
-		[fileManager removeItemAtURL:mergeBackupURL error:nil];
+	if (mergeTransaction) {
+		NSError *cleanupError = nil;
+		if (![mergeTransaction commitWithError:&cleanupError])
+			NSLog(@"Merged collection published; verified safety copy retained at %@ because cleanup failed: %@", mergeTransaction.backupURL.path, cleanupError);
+		[mergeTransaction release];
+	}
 	return YES;
 }
 

@@ -296,6 +296,103 @@ final class NotesMigrationTests: XCTestCase {
         XCTAssertEqual(NotesICloudItemPolicy.action(for: .available), .read)
     }
 
+    func testLegacyCollectionMergeCommitPublishesAndRemovesVerifiedBackup() throws {
+        let destination = try makeLegacyMergeTarget(body: "target before merge")
+        let backupRoot = temporaryRoot.appendingPathComponent("Merge Backups", isDirectory: true)
+        let transaction = try SpiralLegacyCollectionMergeTransaction.begin(
+            destinationURL: destination,
+            backupRoot: backupRoot
+        )
+        XCTAssertEqual(
+            try String(contentsOf: transaction.backupURL.appendingPathComponent("Welcome.txt"), encoding: .utf8),
+            "target before merge"
+        )
+
+        try Data("successfully merged".utf8).write(
+            to: destination.appendingPathComponent("Welcome.txt"),
+            options: .atomic
+        )
+        XCTAssertTrue(transaction.commit(error: nil))
+
+        XCTAssertEqual(
+            try String(contentsOf: destination.appendingPathComponent("Welcome.txt"), encoding: .utf8),
+            "successfully merged"
+        )
+        XCTAssertFalse(FileManager.default.fileExists(atPath: transaction.backupURL.path))
+    }
+
+    func testLegacyCollectionMergeRollbackRestoresTargetAndRemovesBackup() throws {
+        let destination = try makeLegacyMergeTarget(body: "target before merge")
+        let transaction = try SpiralLegacyCollectionMergeTransaction.begin(
+            destinationURL: destination,
+            backupRoot: temporaryRoot.appendingPathComponent("Merge Backups", isDirectory: true)
+        )
+        try Data("partial merge".utf8).write(
+            to: destination.appendingPathComponent("Welcome.txt"),
+            options: .atomic
+        )
+        try Data("partial extra".utf8).write(to: destination.appendingPathComponent("Partial.txt"))
+
+        XCTAssertTrue(transaction.rollback(error: nil))
+
+        XCTAssertEqual(
+            try String(contentsOf: destination.appendingPathComponent("Welcome.txt"), encoding: .utf8),
+            "target before merge"
+        )
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.appendingPathComponent("Partial.txt").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: transaction.backupURL.path))
+    }
+
+    func testLegacyCollectionMergeFailureBeforeMutationLeavesNoBackup() throws {
+        let destination = try makeLegacyMergeTarget(body: "untouched")
+        let backupRoot = temporaryRoot.appendingPathComponent("Merge Backups", isDirectory: true)
+
+        XCTAssertThrowsError(
+            try SpiralLegacyCollectionMergeTransaction.begin(
+                destinationURL: destination,
+                backupRoot: backupRoot,
+                checkpointHandler: { checkpoint in
+                    throw LegacyCollectionMergeTransactionError.injectedFailure(checkpoint)
+                }
+            )
+        )
+
+        XCTAssertEqual(
+            try String(contentsOf: destination.appendingPathComponent("Welcome.txt"), encoding: .utf8),
+            "untouched"
+        )
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: backupRoot.path), [])
+    }
+
+    func testLegacyCollectionMergeRestoreFailureRetainsBackupAndCurrentTarget() throws {
+        let destination = try makeLegacyMergeTarget(body: "original")
+        let transaction = try SpiralLegacyCollectionMergeTransaction.begin(
+            destinationURL: destination,
+            backupRoot: temporaryRoot.appendingPathComponent("Merge Backups", isDirectory: true),
+            checkpointHandler: { checkpoint in
+                if checkpoint == .targetMovedAside {
+                    throw LegacyCollectionMergeTransactionError.injectedFailure(checkpoint)
+                }
+            }
+        )
+        try Data("partial merge".utf8).write(
+            to: destination.appendingPathComponent("Welcome.txt"),
+            options: .atomic
+        )
+        var rollbackError: NSError?
+
+        XCTAssertFalse(transaction.rollback(error: &rollbackError))
+        XCTAssertNotNil(rollbackError)
+        XCTAssertEqual(
+            try String(contentsOf: destination.appendingPathComponent("Welcome.txt"), encoding: .utf8),
+            "partial merge"
+        )
+        XCTAssertEqual(
+            try String(contentsOf: transaction.backupURL.appendingPathComponent("Welcome.txt"), encoding: .utf8),
+            "original"
+        )
+    }
+
     func testInterruptedMigrationAfterStagingResumesWithoutChangingSource() throws {
         enum SimulatedInterruption: Error { case stopped }
 
@@ -389,6 +486,16 @@ final class NotesMigrationTests: XCTestCase {
         try Data("Welcome to Spiral".utf8).write(to: notes.appendingPathComponent("Welcome.txt"))
         try Data("ignored Finder metadata".utf8).write(to: source.appendingPathComponent(".DS_Store"))
         return source
+    }
+
+    private func makeLegacyMergeTarget(body: String) throws -> URL {
+        let destination = temporaryRoot.appendingPathComponent(
+            "Legacy Merge Target-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
+        try Data(body.utf8).write(to: destination.appendingPathComponent("Welcome.txt"))
+        return destination
     }
 
     private func collectionSnapshot(at root: URL) throws -> [String: Data] {
