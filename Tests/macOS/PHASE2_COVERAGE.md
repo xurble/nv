@@ -19,6 +19,7 @@ preferences, Keychain data, or live iCloud data.
 | Encrypted-source warning | core refuses encrypted migration before explicit plaintext confirmation; Mac adapter presents the warning before creating clean files |
 | Shared domain and store contract | `Note`, permanent `NoteID`, revisions, conflicts, index events, and async `NoteStore` protocol |
 | Deterministic clean codecs | metadata-free UTF-8 TXT, RTF, and HTML serialization; authored external RTF/HTML bytes remain unchanged until edited; legacy text decoding coverage |
+| Format-preserving rich editing | lossless RTF/HTML token model, UTF-16 edit ranges shared with AppKit/UIKit, source-preserving serializers, and fixtures that insert, delete, and format text before codec and local-store save/reopen verification |
 | Private reconciliation | independently replaceable, schema-versioned JSON record per UUID; current/recent paths, raw hash, bounded merge base, metadata, privacy, and tombstone state |
 | Local store | disposable-directory create/update/rename/move/delete/reopen tests with filename collisions and stable UUIDs |
 | Separate-file import | TXT-family inference and mixed-family refusal through `LegacySeparateFileSource` |

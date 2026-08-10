@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
+     This file is part of Spiral, a GPL-3.0-or-later fork of Notational Velocity,
+     distributed without warranty; see COPYING.txt for the full license. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    <dict>
+        <key>format</key><string>rtf</string>
+        <key>source</key><string>rich-note.rtf</string>
+        <key>insertAfter</key><string>Rich</string>
+        <key>insertText</key><string> durable</string>
+        <key>deleteText</key><string>Formatted </string>
+        <key>styleText</key><string>durable</string>
+        <key>style</key><string>italic</string>
+        <key>expectedText</key><string>Rich durable title
+body</string>
+        <key>preservedSource</key>
+        <array><string>{\fonttbl</string><string>{\colortbl</string><string>\b\fs24 Rich</string></array>
+    </dict>
+    <dict>
+        <key>format</key><string>html</string>
+        <key>source</key><string>html-note.html</string>
+        <key>insertAfter</key><string>HTML</string>
+        <key>insertText</key><string> durable</string>
+        <key>deleteText</key><string>Text </string>
+        <key>styleText</key><string>durable</string>
+        <key>style</key><string>italic</string>
+        <key>expectedText</key><string>HTML durable title
+with formatting.</string>
+        <key>preservedSource</key>
+        <array><string>&lt;h1&gt;</string><string>&lt;p&gt;</string><string>&lt;strong&gt;formatting&lt;/strong&gt;</string></array>
+    </dict>
+</array>
+</plist>

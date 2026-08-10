@@ -112,24 +112,25 @@ struct SpiralFeatureTests {
         #expect(model.visibleNotes.first?.id == oldPinned.id)
     }
 
-    @Test("Loaded RTF and HTML bodies remain read-only")
-    func richBodiesRemainReadOnly() async throws {
+    @Test("Loaded RTF and HTML bodies edit through the format-preserving model")
+    func richBodiesRemainFormatted() async throws {
+        let codec = NoteFileCodec()
         for format in [NoteFormat.richText, .html] {
-            let content = NoteContent(
-                format: format,
-                text: "formatted",
-                originalData: Data("representation".utf8),
-                originalText: "formatted"
+            var content = try codec.decode(
+                codec.encode(NoteContent(format: format, text: "formatted body")),
+                as: format
             )
+            let styleRange = (content.text as NSString).range(of: "formatted")
+            try content.apply(.bold, toUTF16: styleRange.location..<NSMaxRange(styleRange))
             let note = Note(title: format.rawValue, content: content)
             let store = MemoryNoteStore(notes: [note])
             let model = SpiralFeatureModel(store: store)
 
             await model.load()
-            #expect(!model.selectedNoteSupportsTextEditing)
-            await model.updateSelectedContent("destructive edit")
-            #expect(await store.note(id: note.id)?.content == content)
-            #expect(model.selectedNote?.content == content)
+            #expect(model.selectedNoteSupportsTextEditing)
+            await model.updateSelectedContent("formatted edited body")
+            let edited = try #require(await store.note(id: note.id)?.content)
+            #expect(try codec.decode(codec.encode(edited), as: format).text == "formatted edited body")
 
             await model.renameSelected(to: "Renamed")
             await model.setSelectedTags(from: "safe-metadata")
@@ -138,7 +139,7 @@ struct SpiralFeatureTests {
             #expect(safelyUpdated.title == "Renamed")
             #expect(safelyUpdated.tags == ["safe-metadata"])
             #expect(safelyUpdated.isPinned)
-            #expect(safelyUpdated.content == content)
+            #expect(safelyUpdated.content.text == "formatted edited body")
         }
     }
 }

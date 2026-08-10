@@ -215,12 +215,12 @@ public struct SpiralCollectionView: View {
         .accessibilityIdentifier("settings.view")
     }
 
-    private func scheduleContentSave(_ text: String) {
+    private func scheduleContentSave(_ content: NoteContent) {
         saveTask?.cancel()
         saveTask = Task {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
-            await model.updateSelectedContent(text)
+            await model.updateSelectedContent(content)
         }
     }
 
@@ -260,31 +260,19 @@ private struct NoteEditor: View {
     let macEditorFactory: MacTextViewFactory
     #endif
     let onRename: (String) -> Void
-    let onContentChange: (String) -> Void
+    let onContentChange: (NoteContent) -> Void
     let onTagsChange: (String) -> Void
 
     @State private var title: String
-    @State private var text: String
+    @State private var content: NoteContent
     @State private var tags: String
-
-    private var supportsTextEditing: Bool {
-        note.content.format == .plainText
-    }
-
-    private var formatName: String {
-        switch note.content.format {
-        case .plainText: "plain-text"
-        case .richText: "RTF"
-        case .html: "HTML"
-        }
-    }
 
     #if os(macOS)
     init(
         note: Note,
         macEditorFactory: @escaping MacTextViewFactory,
         onRename: @escaping (String) -> Void,
-        onContentChange: @escaping (String) -> Void,
+        onContentChange: @escaping (NoteContent) -> Void,
         onTagsChange: @escaping (String) -> Void
     ) {
         self.note = note
@@ -293,14 +281,14 @@ private struct NoteEditor: View {
         self.onContentChange = onContentChange
         self.onTagsChange = onTagsChange
         _title = State(initialValue: note.title)
-        _text = State(initialValue: note.content.text)
+        _content = State(initialValue: note.content)
         _tags = State(initialValue: note.tags.joined(separator: ", "))
     }
     #else
     init(
         note: Note,
         onRename: @escaping (String) -> Void,
-        onContentChange: @escaping (String) -> Void,
+        onContentChange: @escaping (NoteContent) -> Void,
         onTagsChange: @escaping (String) -> Void
     ) {
         self.note = note
@@ -308,7 +296,7 @@ private struct NoteEditor: View {
         self.onContentChange = onContentChange
         self.onTagsChange = onTagsChange
         _title = State(initialValue: note.title)
-        _text = State(initialValue: note.content.text)
+        _content = State(initialValue: note.content)
         _tags = State(initialValue: note.tags.joined(separator: ", "))
     }
     #endif
@@ -322,25 +310,13 @@ private struct NoteEditor: View {
                 .onSubmit { onRename(title) }
                 .accessibilityIdentifier("note.title")
             Divider()
-            if !supportsTextEditing {
-                Label(
-                    "This \(formatName) body is read-only until format-preserving editing is available. You can still rename, tag, pin, or delete the note.",
-                    systemImage: "lock.doc"
-                )
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .padding()
-                .accessibilityIdentifier("note.richTextReadOnly")
-                Divider()
-            }
             #if os(macOS)
             PlatformTextEditor(
-                text: $text,
-                isEditable: supportsTextEditing,
+                content: $content,
                 makeTextView: macEditorFactory
             )
             #else
-            PlatformTextEditor(text: $text, isEditable: supportsTextEditing)
+            PlatformTextEditor(content: $content)
             #endif
             Divider()
             TextField("Tags, separated by commas", text: $tags)
@@ -350,8 +326,8 @@ private struct NoteEditor: View {
                 .accessibilityIdentifier("note.tags")
         }
         .navigationTitle(note.title)
-        .onChange(of: text) { _, value in
-            if supportsTextEditing { onContentChange(value) }
+        .onChange(of: content) { _, value in
+            onContentChange(value)
         }
         .onDisappear {
             if title != note.title { onRename(title) }

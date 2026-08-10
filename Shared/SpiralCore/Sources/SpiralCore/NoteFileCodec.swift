@@ -43,14 +43,44 @@ public struct NoteFileCodec: Sendable {
             }
             text = decoded
         case .richText:
-            text = try decodeRTF(data)
+            let document: FormattedTextDocument
+            do {
+                document = try FormattedTextDocument(data: data, format: format)
+            } catch {
+                throw NoteFileCodecError.malformedRichText
+            }
+            return NoteContent(
+                format: format,
+                text: document.text,
+                originalData: data,
+                originalText: document.text,
+                formattedDocument: document
+            )
         case .html:
-            text = try decodeHTML(data)
+            let document: FormattedTextDocument
+            do {
+                document = try FormattedTextDocument(data: data, format: format)
+            } catch {
+                throw NoteFileCodecError.malformedHTML
+            }
+            return NoteContent(
+                format: format,
+                text: document.text,
+                originalData: data,
+                originalText: document.text,
+                formattedDocument: document
+            )
         }
         return NoteContent(format: format, text: text, originalData: data, originalText: text)
     }
 
     public func encode(_ content: NoteContent) throws -> Data {
+        if let document = content.formattedDocument {
+            guard document.format == content.format, document.text == content.text else {
+                throw NoteFileCodecError.formatPreservingEditRequired(content.format)
+            }
+            return try document.encodedData()
+        }
         if content.text == content.originalText, let originalData = content.originalData {
             return originalData
         }
@@ -92,142 +122,6 @@ public struct NoteFileCodec: Sendable {
         }
         if let string = String(data: data, encoding: .isoLatin1) { return string }
         return nil
-    }
-
-    /// A deliberately small, platform-neutral RTF text reader. It retains the
-    /// source bytes for lossless reopening; this parser extracts searchable and
-    /// editable text without importing AppKit into the shared package.
-    private func decodeRTF(_ data: Data) throws -> String {
-        guard let source = String(data: data, encoding: .isoLatin1),
-              source.hasPrefix("{\\rtf") else {
-            throw NoteFileCodecError.malformedRichText
-        }
-        var output = ""
-        var index = source.startIndex
-        var skippedDestinationDepth: Int?
-        var pendingHighSurrogate: UInt32?
-        var depth = 0
-
-        while index < source.endIndex {
-            let character = source[index]
-            if character == "{" {
-                depth += 1
-                index = source.index(after: index)
-                continue
-            }
-            if character == "}" {
-                if skippedDestinationDepth == depth { skippedDestinationDepth = nil }
-                depth -= 1
-                index = source.index(after: index)
-                continue
-            }
-            if character != "\\" {
-                if skippedDestinationDepth == nil, character != "\n", character != "\r" {
-                    output.append(character)
-                }
-                index = source.index(after: index)
-                continue
-            }
-
-            let slash = index
-            index = source.index(after: index)
-            guard index < source.endIndex else { break }
-            let escaped = source[index]
-            if escaped == "\\" || escaped == "{" || escaped == "}" {
-                if skippedDestinationDepth == nil { output.append(escaped) }
-                index = source.index(after: index)
-                continue
-            }
-            if escaped == "\n" || escaped == "\r" {
-                if skippedDestinationDepth == nil { output.append("\n") }
-                index = source.index(after: index)
-                continue
-            }
-            if escaped == "'" {
-                let start = source.index(after: index)
-                let end = source.index(start, offsetBy: 2, limitedBy: source.endIndex) ?? source.endIndex
-                if end <= source.endIndex, let byte = UInt8(source[start..<end], radix: 16), skippedDestinationDepth == nil {
-                    output.append(String(data: Data([byte]), encoding: .windowsCP1252) ?? "�")
-                }
-                index = end
-                continue
-            }
-            if escaped == "*" {
-                skippedDestinationDepth = depth
-                index = source.index(after: index)
-                continue
-            }
-
-            let wordStart = index
-            while index < source.endIndex, source[index].isLetter {
-                index = source.index(after: index)
-            }
-            let word = String(source[wordStart..<index])
-            var sign = 1
-            if index < source.endIndex, source[index] == "-" {
-                sign = -1
-                index = source.index(after: index)
-            }
-            let numberStart = index
-            while index < source.endIndex, source[index].isNumber {
-                index = source.index(after: index)
-            }
-            let number = Int(source[numberStart..<index]).map { $0 * sign }
-            if index < source.endIndex, source[index] == " " { index = source.index(after: index) }
-
-            guard skippedDestinationDepth == nil else { continue }
-            switch word {
-            case "par", "line": output.append("\n")
-            case "tab": output.append("\t")
-            case "u":
-                if let number {
-                    let codeUnit = UInt32(number >= 0 ? number : number + 65_536)
-                    if (0xD800...0xDBFF).contains(codeUnit) {
-                        pendingHighSurrogate = codeUnit
-                    } else if (0xDC00...0xDFFF).contains(codeUnit), let high = pendingHighSurrogate {
-                        let scalarValue = 0x10000 + ((high - 0xD800) << 10) + (codeUnit - 0xDC00)
-                        if let scalar = UnicodeScalar(scalarValue) { output.unicodeScalars.append(scalar) }
-                        pendingHighSurrogate = nil
-                    } else if let scalar = UnicodeScalar(codeUnit) {
-                        pendingHighSurrogate = nil
-                        output.unicodeScalars.append(scalar)
-                    }
-                    if index < source.endIndex { index = source.index(after: index) }
-                }
-            case "fonttbl", "colortbl", "stylesheet", "info", "pict", "object":
-                skippedDestinationDepth = depth
-            default:
-                if word.isEmpty { index = source.index(after: slash) }
-            }
-        }
-        return output.trimmingCharacters(in: .newlines)
-    }
-
-    private func decodeHTML(_ data: Data) throws -> String {
-        guard let source = String(data: data, encoding: .utf8)
-                ?? String(data: data, encoding: .windowsCP1252) else {
-            throw NoteFileCodecError.malformedHTML
-        }
-        var result = source
-        result = result.replacingOccurrences(
-            of: "(?is)<(script|style)[^>]*>.*?</\\1>",
-            with: "",
-            options: .regularExpression
-        )
-        result = result.replacingOccurrences(
-            of: ">\\s+<",
-            with: "><",
-            options: .regularExpression
-        )
-        result = result.replacingOccurrences(
-            of: "(?i)<(br\\s*/?|/p|/div|/li|/h[1-6])>",
-            with: "\n",
-            options: .regularExpression
-        )
-        result = result.replacingOccurrences(of: "(?s)<[^>]+>", with: "", options: .regularExpression)
-        let entities = ["&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'"]
-        for (entity, value) in entities { result = result.replacingOccurrences(of: entity, with: value) }
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func deterministicRTF(_ text: String) -> String {

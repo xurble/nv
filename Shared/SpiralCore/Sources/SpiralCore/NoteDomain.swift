@@ -43,24 +43,76 @@ public enum NoteFormat: String, CaseIterable, Codable, Sendable {
     }
 }
 
-/// Platform-neutral note content. `originalData` preserves an externally
-/// produced valid representation until the user actually changes its text.
+/// Platform-neutral note content. Loaded RTF and HTML use a lossless token
+/// document so text edits and inline formatting retain untouched source
+/// controls, attributes, and markup.
 public struct NoteContent: Equatable, Codable, Sendable {
     public var format: NoteFormat
     public var text: String
     public var originalData: Data?
     public var originalText: String?
+    public var formattedDocument: FormattedTextDocument?
 
     public init(
         format: NoteFormat,
         text: String,
         originalData: Data? = nil,
-        originalText: String? = nil
+        originalText: String? = nil,
+        formattedDocument: FormattedTextDocument? = nil
     ) {
         self.format = format
         self.text = text
         self.originalData = originalData
         self.originalText = originalText
+        self.formattedDocument = formattedDocument
+    }
+
+    public var supportsFormatPreservingEditing: Bool {
+        format == .plainText || formattedDocument != nil || originalData == nil
+    }
+
+    public mutating func replaceTextPreservingFormat(with replacement: String) throws {
+        guard var document = formattedDocument else {
+            if format != .plainText, originalData != nil {
+                throw NoteFileCodecError.formatPreservingEditRequired(format)
+            }
+            text = replacement
+            return
+        }
+        let oldUnits = Array(document.text.utf16)
+        let newUnits = Array(replacement.utf16)
+        var prefix = 0
+        while prefix < oldUnits.count,
+              prefix < newUnits.count,
+              oldUnits[prefix] == newUnits[prefix] {
+            prefix += 1
+        }
+        var suffix = 0
+        while suffix < oldUnits.count - prefix,
+              suffix < newUnits.count - prefix,
+              oldUnits[oldUnits.count - suffix - 1] == newUnits[newUnits.count - suffix - 1] {
+            suffix += 1
+        }
+        let changedNewUnits = newUnits[prefix..<(newUnits.count - suffix)]
+        let changedText = String(decoding: changedNewUnits, as: UTF16.self)
+        try document.replaceText(
+            inUTF16: prefix..<(oldUnits.count - suffix),
+            with: changedText
+        )
+        formattedDocument = document
+        text = document.text
+    }
+
+    public mutating func apply(
+        _ attribute: InlineTextAttribute,
+        toUTF16 range: Range<Int>
+    ) throws {
+        guard var document = formattedDocument else {
+            throw NoteFileCodecError.formatPreservingEditRequired(format)
+        }
+        try document.apply(attribute, toUTF16: range)
+        formattedDocument = document
+        text = document.text
     }
 }
 

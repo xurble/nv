@@ -93,6 +93,63 @@ struct NoteFileCodecTests {
         }
     }
 
+    @Test("Fixture edits insert, delete, and format text without flattening RTF or HTML")
+    func formatPreservingRichEdits() throws {
+        let fixtureURL = repositoryFixtures.appendingPathComponent("rich-edit-operations.plist")
+        let fixtureData = try Data(contentsOf: fixtureURL)
+        let operations = try #require(
+            PropertyListSerialization.propertyList(from: fixtureData, format: nil) as? [[String: Any]]
+        )
+        let codec = NoteFileCodec()
+
+        for operation in operations {
+            let formatName = try #require(operation["format"] as? String)
+            let format = try #require(NoteFormat(rawValue: formatName))
+            let sourceName = try #require(operation["source"] as? String)
+            var content = try codec.decode(
+                Data(contentsOf: repositoryFixtures.appendingPathComponent(sourceName)),
+                as: format
+            )
+
+            let insertAfter = try #require(operation["insertAfter"] as? String)
+            let insertion = (content.text as NSString).range(of: insertAfter)
+            #expect(insertion.location != NSNotFound)
+            let insertedText = (content.text as NSString).replacingCharacters(
+                in: NSRange(location: NSMaxRange(insertion), length: 0),
+                with: try #require(operation["insertText"] as? String)
+            )
+            try content.replaceTextPreservingFormat(with: insertedText)
+
+            let deletion = (content.text as NSString).range(
+                of: try #require(operation["deleteText"] as? String)
+            )
+            #expect(deletion.location != NSNotFound)
+            let deletedText = (content.text as NSString).replacingCharacters(in: deletion, with: "")
+            try content.replaceTextPreservingFormat(with: deletedText)
+
+            let styleText = try #require(operation["styleText"] as? String)
+            let styleRange = (content.text as NSString).range(of: styleText)
+            let styleName = try #require(operation["style"] as? String)
+            let attribute = try #require(InlineTextAttribute(rawValue: styleName))
+            try content.apply(attribute, toUTF16: styleRange.location..<NSMaxRange(styleRange))
+
+            let encoded = try codec.encode(content)
+            let reopened = try codec.decode(encoded, as: format)
+            #expect(reopened.text == operation["expectedText"] as? String)
+            let reopenedStyleRange = (reopened.text as NSString).range(of: styleText)
+            #expect(reopened.formattedDocument?.runs.contains { run in
+                run.range.lowerBound <= reopenedStyleRange.location
+                    && run.range.upperBound >= NSMaxRange(reopenedStyleRange)
+                    && run.style[attribute]
+            } == true)
+
+            let encodedSource = String(data: encoded, encoding: format == .html ? .utf8 : .isoLatin1)
+            for token in operation["preservedSource"] as? [String] ?? [] {
+                #expect(encodedSource?.contains(token) == true, "Missing preserved source token: \(token)")
+            }
+        }
+    }
+
     @Test("Legacy plain-text encodings decode")
     func legacyEncodings() throws {
         let latin1 = Data([0x63, 0x61, 0x66, 0xE9])
@@ -272,6 +329,58 @@ struct LocalNoteStoreTests {
         #expect(try Data(contentsOf: sourceURL) == sourceData)
         #expect(await store.note(id: note.id)?.content.text == originalText)
         #expect(await store.record(for: note.id)?.currentRelativePath == "Rich.rtf")
+    }
+
+    @Test("Format-preserving rich edits survive store save and reopen")
+    func formatPreservingStoreRoundTrip() async throws {
+        for (sourceName, title, format) in [
+            ("rich-note.rtf", "Rich", NoteFormat.richText),
+            ("html-note.html", "Markup", NoteFormat.html)
+        ] {
+            let dirs = try TestDirectories(name: sourceName)
+            defer { dirs.remove() }
+            try FileManager.default.createDirectory(at: dirs.documents, withIntermediateDirectories: true)
+            let sourceData = try Data(contentsOf: repositoryFixtures.appendingPathComponent(sourceName))
+            try sourceData.write(
+                to: dirs.documents.appendingPathComponent("\(title).\(format.preferredPathExtension)")
+            )
+
+            let store = try await LocalNoteStore.open(
+                documentsURL: dirs.documents,
+                reconciliationURL: dirs.reconciliation,
+                indexURL: dirs.index
+            )
+            var note = try #require(await store.allNotes().first)
+            let titleRange = (note.content.text as NSString).range(of: "title")
+            let inserted = (note.content.text as NSString).replacingCharacters(
+                in: NSRange(location: titleRange.location, length: 0),
+                with: "durable "
+            )
+            try note.content.replaceTextPreservingFormat(with: inserted)
+            let durableRange = (note.content.text as NSString).range(of: "durable")
+            try note.content.apply(
+                .italic,
+                toUTF16: durableRange.location..<NSMaxRange(durableRange)
+            )
+            try await store.update(note)
+
+            let reopened = try await LocalNoteStore.open(
+                documentsURL: dirs.documents,
+                reconciliationURL: dirs.reconciliation,
+                indexURL: dirs.index
+            )
+            let saved = try #require(await reopened.note(id: note.id))
+            #expect(saved.content.text.contains("durable title"))
+            #expect(saved.content.formattedDocument?.runs.contains { run in
+                run.range.lowerBound <= durableRange.location
+                    && run.range.upperBound >= NSMaxRange(durableRange)
+                    && run.style.italic
+            } == true)
+            let record = try #require(await reopened.record(for: note.id))
+            let bytes = try Data(contentsOf: dirs.documents.appendingPathComponent(record.currentRelativePath))
+            let source = String(data: bytes, encoding: format == .html ? .utf8 : .isoLatin1)
+            #expect(source?.contains(format == .html ? "<em>durable</em>" : "{\\i durable}") == true)
+        }
     }
 
     @Test("Hidden titles remain visible and folder symlinks cannot redirect writes")

@@ -80,7 +80,7 @@ public final class SpiralFeatureModel: ObservableObject {
     }
 
     public var selectedNoteSupportsTextEditing: Bool {
-        selectedNote?.content.format == .plainText
+        selectedNote?.content.supportsFormatPreservingEditing == true
     }
 
     public var visibleNotes: [Note] {
@@ -142,11 +142,27 @@ public final class SpiralFeatureModel: ObservableObject {
     }
 
     public func updateSelectedContent(_ text: String) async {
-        guard selectedNoteSupportsTextEditing else { return }
-        await mutateSelected { note in
-            note.content.text = text
-            note.modifiedAt = Date()
+        guard let selectedNoteID,
+              let index = notes.firstIndex(where: { $0.id == selectedNoteID }) else { return }
+        var changed = notes[index]
+        do {
+            try changed.content.replaceTextPreservingFormat(with: text)
+            changed.modifiedAt = Date()
+            await persist(changed, at: index)
+        } catch {
+            phase = .failure(Self.message(for: error))
         }
+    }
+
+    public func updateSelectedContent(_ content: NoteContent) async {
+        guard let selectedNoteID,
+              let index = notes.firstIndex(where: { $0.id == selectedNoteID }),
+              notes[index].content.format == content.format,
+              content.supportsFormatPreservingEditing else { return }
+        var changed = notes[index]
+        changed.content = content
+        changed.modifiedAt = Date()
+        await persist(changed, at: index)
     }
 
     public func setSelectedTags(from text: String) async {
@@ -194,6 +210,10 @@ public final class SpiralFeatureModel: ObservableObject {
               let index = notes.firstIndex(where: { $0.id == selectedNoteID }) else { return }
         var changed = notes[index]
         mutation(&changed)
+        await persist(changed, at: index)
+    }
+
+    private func persist(_ changed: Note, at index: Int) async {
         do {
             try await store.update(changed)
             notes[index] = changed
