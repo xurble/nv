@@ -35,6 +35,7 @@ final class SpiralMobileUITests: XCTestCase {
         title.tap()
         app.typeKey("a", modifierFlags: .command)
         title.typeText("Compact Workflow\n")
+        XCTAssertTrue(app.navigationBars["Compact Workflow"].waitForExistence(timeout: 5))
 
         app.terminate()
         let restored = launch()

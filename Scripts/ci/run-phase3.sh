@@ -18,6 +18,8 @@ script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repository_root=$(CDPATH= cd -- "$script_directory/../.." && pwd)
 architecture=$(uname -m)
 derived_data=$(mktemp -d "${TMPDIR:-/tmp}/SpiralPhase3-${configuration}.XXXXXX")
+iphone_destination="${SPIRAL_UI_IPHONE_DESTINATION:-platform=iOS Simulator,name=iPhone 17 Pro,OS=latest}"
+ipad_destination="${SPIRAL_UI_IPAD_DESTINATION:-platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=latest}"
 
 cleanup() {
     case "${derived_data:?}" in
@@ -48,18 +50,34 @@ xcodebuild build \
     -derivedDataPath "$derived_data/mobile-device" \
     CODE_SIGNING_ALLOWED=NO
 
-xcodebuild build-for-testing \
-    -project Notation.xcodeproj \
-    -scheme SpiralMobile \
-    -configuration "$configuration" \
-    -destination "generic/platform=iOS Simulator" \
-    -derivedDataPath "$derived_data/mobile-tests" \
-    CODE_SIGNING_ALLOWED=NO
-
-xcodebuild build-for-testing \
+xcodebuild test \
     -project Notation.xcodeproj \
     -scheme SpiralMacTestHarness \
     -configuration "$configuration" \
     -destination "platform=macOS,arch=$architecture" \
     -derivedDataPath "$derived_data/mac-tests" \
+    -parallel-testing-enabled NO \
+    CODE_SIGNING_ALLOWED=YES \
+    CODE_SIGN_STYLE=Manual \
+    CODE_SIGN_IDENTITY=- \
+    DEVELOPMENT_TEAM= \
+    CODE_SIGN_ENTITLEMENTS= \
+    PROVISIONING_PROFILE_SPECIFIER=
+
+xcodebuild test \
+    -project Notation.xcodeproj \
+    -scheme SpiralMobile \
+    -configuration "$configuration" \
+    -destination "$iphone_destination" \
+    -derivedDataPath "$derived_data/iphone-tests" \
+    -parallel-testing-enabled NO \
+    CODE_SIGNING_ALLOWED=NO
+
+xcodebuild test \
+    -project Notation.xcodeproj \
+    -scheme SpiralMobile \
+    -configuration "$configuration" \
+    -destination "$ipad_destination" \
+    -derivedDataPath "$derived_data/ipad-tests" \
+    -parallel-testing-enabled NO \
     CODE_SIGNING_ALLOWED=NO

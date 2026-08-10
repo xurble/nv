@@ -18,14 +18,19 @@ import XCTest
 
 final class SpiralPhase3MacUITests: XCTestCase {
     private var rootURL: URL!
+    private var testToken: String!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
+        // XCTest provides a dedicated writable container; the app validates
+        // this exact test-runner temp subtree before opening the fixtures.
         rootURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
             .appendingPathComponent("SpiralPhase3MacUITests-\(UUID().uuidString)", isDirectory: true)
+        testToken = UUID().uuidString
         let documents = rootURL.appendingPathComponent("Documents", isDirectory: true)
         try FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
+        try Data(testToken.utf8).write(to: rootURL.appendingPathComponent(".spiral-phase3-ui-test"))
         try Data("Spiral mobile fixture collection".utf8).write(to: documents.appendingPathComponent("Welcome.txt"))
         for index in 1...120 {
             try Data("Body for fixture note \(index)".utf8)
@@ -33,9 +38,18 @@ final class SpiralPhase3MacUITests: XCTestCase {
         }
     }
 
+    override func tearDownWithError() throws {
+        if let rootURL {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+        rootURL = nil
+        testToken = nil
+        try super.tearDownWithError()
+    }
+
     func testKeyboardFirstCreateSearchAndEditWithLegacyEditor() {
         let app = launch()
-        XCTAssertTrue(app.staticTexts["Welcome"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["note.list"].waitForExistence(timeout: 8))
 
         app.typeKey("n", modifierFlags: .command)
         XCTAssertTrue(app.textFields["note.title"].waitForExistence(timeout: 3))
@@ -52,8 +66,9 @@ final class SpiralPhase3MacUITests: XCTestCase {
         app.typeKey("f", modifierFlags: .command)
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 3))
+        search.click()
         search.typeText("Welcome")
-        XCTAssertTrue(app.staticTexts["Welcome"].exists)
+        XCTAssertTrue(noteTitled("Welcome", in: app).waitForExistence(timeout: 3))
     }
 
     func testLargeCollectionResizesAndExposesAccessibleCommands() {
@@ -63,13 +78,30 @@ final class SpiralPhase3MacUITests: XCTestCase {
         XCTAssertTrue(app.buttons["command.delete"].exists)
         XCTAssertTrue(app.buttons["command.settings"].exists)
 
-        app.windows.firstMatch.buttons[XCUIIdentifierZoomWindow].click()
-        XCTAssertTrue(app.staticTexts["Fixture Note 120"].exists || app.staticTexts["Fixture Note 1"].exists)
+        let window = app.windows.firstMatch
+        let originalFrame = window.frame
+        let fullScreen = window.buttons[XCUIIdentifierFullScreenWindow]
+        XCTAssertTrue(fullScreen.waitForExistence(timeout: 3))
+        fullScreen.click()
+        let resized = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in window.frame != originalFrame },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [resized], timeout: 5), .completed)
+        XCTAssertTrue(noteTitled("Fixture Note 120", in: app).exists || noteTitled("Fixture Note 1", in: app).exists)
+    }
+
+    private func noteTitled(_ title: String, in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(
+            NSPredicate(format: "label == %@ OR value BEGINSWITH %@", title, "\(title),")
+        ).firstMatch
     }
 
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["SPIRAL_PHASE3_UI_TEST_MODE"] = "1"
+        app.launchEnvironment["SPIRAL_PHASE3_TEST_ROOT"] = rootURL.path
+        app.launchEnvironment["SPIRAL_PHASE3_TEST_TOKEN"] = testToken
         app.launchEnvironment["SPIRAL_PHASE3_DOCUMENTS"] = rootURL.appendingPathComponent("Documents").path
         app.launchEnvironment["SPIRAL_PHASE3_RECONCILIATION"] = rootURL.appendingPathComponent("Reconciliation").path
         app.launchEnvironment["SPIRAL_PHASE3_INDEX"] = rootURL.appendingPathComponent("Index/notes.json").path

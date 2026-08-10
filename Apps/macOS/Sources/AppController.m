@@ -56,6 +56,70 @@ static NSString *SpiralMainWindowTitle(void) {
 
 static NSWindowController *SpiralPhase3TestShellController = nil;
 
+static BOOL SpiralPathIsStrictDescendantOfPath(NSString *path, NSString *rootPath) {
+	if (![path length] || ![rootPath length]) return NO;
+	NSString *rootPrefix = [rootPath hasSuffix:@"/"] ? rootPath : [rootPath stringByAppendingString:@"/"];
+	return [path hasPrefix:rootPrefix];
+}
+
+static BOOL SpiralPhase3TestPathsAreValid(NSDictionary *environment,
+											 NSString **documentsPath,
+											 NSString **reconciliationPath,
+											 NSString **indexPath) {
+	NSString *testRoot = [[[environment objectForKey:@"SPIRAL_PHASE3_TEST_ROOT"]
+		stringByStandardizingPath] stringByResolvingSymlinksInPath];
+	NSString *token = [environment objectForKey:@"SPIRAL_PHASE3_TEST_TOKEN"];
+	NSString *documents = [[[environment objectForKey:@"SPIRAL_PHASE3_DOCUMENTS"]
+		stringByStandardizingPath] stringByResolvingSymlinksInPath];
+	NSString *reconciliation = [[[environment objectForKey:@"SPIRAL_PHASE3_RECONCILIATION"]
+		stringByStandardizingPath] stringByResolvingSymlinksInPath];
+	NSString *index = [[[environment objectForKey:@"SPIRAL_PHASE3_INDEX"]
+		stringByStandardizingPath] stringByResolvingSymlinksInPath];
+	NSString *testRunnerTemp = [[[[NSHomeDirectory()
+		stringByAppendingPathComponent:@"Library/Containers/farm.poplar.spiral.phase3-mac-ui-tests.xctrunner/Data/tmp"]
+		stringByStandardizingPath] stringByResolvingSymlinksInPath] copy];
+
+	BOOL rootIsTemporary = [testRoot hasPrefix:@"/private/tmp/"] ||
+		[testRoot hasPrefix:@"/private/var/folders/"] ||
+		[testRoot hasPrefix:@"/var/folders/"] ||
+		SpiralPathIsStrictDescendantOfPath(testRoot, testRunnerTemp);
+	[testRunnerTemp release];
+	BOOL rootHasExpectedName = [[testRoot lastPathComponent] hasPrefix:@"SpiralPhase3MacUITests-"];
+	BOOL tokenIsUUID = [token length] && [[[NSUUID alloc] initWithUUIDString:token] autorelease] != nil;
+	BOOL pathsAreDescendants = SpiralPathIsStrictDescendantOfPath(documents, testRoot) &&
+		SpiralPathIsStrictDescendantOfPath(reconciliation, testRoot) &&
+		SpiralPathIsStrictDescendantOfPath(index, testRoot);
+	if (!rootIsTemporary || !rootHasExpectedName || !tokenIsUUID || !pathsAreDescendants) {
+		NSLog(@"Phase 3 shell validation failed (temporary=%d name=%d token=%d descendants=%d)",
+			rootIsTemporary, rootHasExpectedName, tokenIsUUID, pathsAreDescendants);
+		return NO;
+	}
+
+	NSString *sentinelPath = [testRoot stringByAppendingPathComponent:@".spiral-phase3-ui-test"];
+	NSDictionary *sentinelAttributes = [[NSFileManager defaultManager] attributesOfItemAtPath:sentinelPath error:NULL];
+	if (![[sentinelAttributes objectForKey:NSFileType] isEqualToString:NSFileTypeRegular]) {
+		NSLog(@"Phase 3 shell validation failed (sentinel is not a regular file)");
+		return NO;
+	}
+	NSString *sentinelToken = [NSString stringWithContentsOfFile:sentinelPath encoding:NSUTF8StringEncoding error:NULL];
+	if (![sentinelToken isEqualToString:token]) {
+		NSLog(@"Phase 3 shell validation failed (sentinel token mismatch)");
+		return NO;
+	}
+
+	BOOL documentsIsDirectory = NO;
+	if (![[NSFileManager defaultManager] fileExistsAtPath:documents isDirectory:&documentsIsDirectory] ||
+		!documentsIsDirectory) {
+		NSLog(@"Phase 3 shell validation failed (documents directory missing)");
+		return NO;
+	}
+
+	*documentsPath = documents;
+	*reconciliationPath = reconciliation;
+	*indexPath = index;
+	return YES;
+}
+
 
 @implementation AppController
 
@@ -208,14 +272,10 @@ void outletObjectAwoke(id sender) {
 - (void)applicationDidFinishLaunching:(NSNotification*)aNote {
 	NSDictionary *environment = [[NSProcessInfo processInfo] environment];
 	if ([[environment objectForKey:@"SPIRAL_PHASE3_UI_TEST_MODE"] isEqualToString:@"1"]) {
-		NSString *documentsPath = [[environment objectForKey:@"SPIRAL_PHASE3_DOCUMENTS"] stringByStandardizingPath];
-		NSString *reconciliationPath = [[environment objectForKey:@"SPIRAL_PHASE3_RECONCILIATION"] stringByStandardizingPath];
-		NSString *indexPath = [[environment objectForKey:@"SPIRAL_PHASE3_INDEX"] stringByStandardizingPath];
-		NSString *temporaryRoot = [NSTemporaryDirectory() stringByStandardizingPath];
-		NSString *requiredPrefix = [temporaryRoot hasSuffix:@"/"] ? temporaryRoot : [temporaryRoot stringByAppendingString:@"/"];
-		if ([documentsPath hasPrefix:requiredPrefix] &&
-			[reconciliationPath hasPrefix:requiredPrefix] &&
-			[indexPath hasPrefix:requiredPrefix]) {
+		NSString *documentsPath = nil;
+		NSString *reconciliationPath = nil;
+		NSString *indexPath = nil;
+		if (SpiralPhase3TestPathsAreValid(environment, &documentsPath, &reconciliationPath, &indexPath)) {
 			SpiralPhase3TestShellController = [[SpiralPhase3MacShellController alloc]
 				initWithDocumentsPath:documentsPath
 				reconciliationPath:reconciliationPath
@@ -224,7 +284,7 @@ void outletObjectAwoke(id sender) {
 			[window orderOut:nil];
 			return;
 		}
-		NSLog(@"Refusing Phase 3 shell paths outside the temporary directory");
+		NSLog(@"Refusing unverified Phase 3 shell paths");
 		[NSApp terminate:self];
 		return;
 	}
