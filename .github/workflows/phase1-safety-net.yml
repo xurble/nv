@@ -3,7 +3,7 @@ name: Migration Safety Net
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   build-and-test:

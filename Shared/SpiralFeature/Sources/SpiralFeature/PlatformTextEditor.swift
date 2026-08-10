@@ -21,9 +21,11 @@ import UIKit
 
 public struct PlatformTextEditor: UIViewRepresentable {
     @Binding private var text: String
+    private let isEditable: Bool
 
-    public init(text: Binding<String>) {
+    public init(text: Binding<String>, isEditable: Bool = true) {
         _text = text
+        self.isEditable = isEditable
     }
 
     public func makeCoordinator() -> Coordinator { Coordinator(text: $text) }
@@ -38,11 +40,13 @@ public struct PlatformTextEditor: UIViewRepresentable {
         view.keyboardDismissMode = .interactive
         view.accessibilityIdentifier = "note.editor"
         view.accessibilityLabel = "Note body"
+        view.isEditable = isEditable
         view.text = text
         return view
     }
 
     public func updateUIView(_ view: UITextView, context: Context) {
+        view.isEditable = isEditable
         guard view.text != text else { return }
         let selection = view.selectedRange
         view.text = text
@@ -70,13 +74,16 @@ public typealias MacTextViewFactory = @MainActor () -> NSTextView
 /// use the default `NSTextView` without linking the legacy controller graph.
 public struct PlatformTextEditor: NSViewRepresentable {
     @Binding private var text: String
+    private let isEditable: Bool
     private let makeTextView: MacTextViewFactory
 
     public init(
         text: Binding<String>,
+        isEditable: Bool = true,
         makeTextView: @escaping MacTextViewFactory = { NSTextView() }
     ) {
         _text = text
+        self.isEditable = isEditable
         self.makeTextView = makeTextView
     }
 
@@ -86,6 +93,7 @@ public struct PlatformTextEditor: NSViewRepresentable {
         let scrollView = NSScrollView()
         let editor = makeTextView()
         editor.delegate = context.coordinator
+        editor.isEditable = isEditable
         editor.isRichText = true
         editor.isVerticallyResizable = true
         editor.isHorizontallyResizable = false
@@ -100,7 +108,9 @@ public struct PlatformTextEditor: NSViewRepresentable {
     }
 
     public func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let editor = scrollView.documentView as? NSTextView, editor.string != text else { return }
+        guard let editor = scrollView.documentView as? NSTextView else { return }
+        editor.isEditable = isEditable
+        guard editor.string != text else { return }
         let selection = editor.selectedRange()
         editor.string = text
         editor.setSelectedRange(NSIntersectionRange(selection, NSRange(location: 0, length: editor.string.utf16.count)))

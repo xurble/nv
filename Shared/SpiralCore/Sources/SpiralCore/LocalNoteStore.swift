@@ -162,7 +162,11 @@ public actor LocalNoteStore: NoteStore {
             throw LocalNoteStoreError.noteNotFound(note.id)
         }
         let oldRelativePath = record.currentRelativePath
-        let newRelativePath = try availableRelativePath(for: note, excluding: note.id)
+        let newRelativePath = try availableRelativePath(
+            for: note,
+            excluding: note.id,
+            pathExtension: pathExtension(for: note, currentRelativePath: oldRelativePath)
+        )
         let data = try codec.encode(note.content)
         try write(data, toRelativePath: newRelativePath)
         if oldRelativePath != newRelativePath {
@@ -293,10 +297,22 @@ public actor LocalNoteStore: NoteStore {
         return folder == "." || folder.isEmpty ? nil : folder
     }
 
-    private func availableRelativePath(for note: Note, excluding noteID: NoteID?) throws -> String {
+    private func pathExtension(for note: Note, currentRelativePath: String) -> String {
+        let currentExtension = (currentRelativePath as NSString).pathExtension
+        if NoteFormat.format(forPathExtension: currentExtension) == note.content.format {
+            return currentExtension
+        }
+        return note.content.format.preferredPathExtension
+    }
+
+    private func availableRelativePath(
+        for note: Note,
+        excluding noteID: NoteID?,
+        pathExtension: String? = nil
+    ) throws -> String {
         let folder = try sanitizedFolder(note.folder)
         let base = sanitizedFilename(note.title)
-        let ext = note.content.format.preferredPathExtension
+        let ext = pathExtension ?? note.content.format.preferredPathExtension
         let existing = Set(recordsByID.compactMap { id, record in
             id == noteID || record.isTombstone ? nil : record.currentRelativePath.lowercased()
         })

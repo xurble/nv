@@ -111,6 +111,36 @@ struct SpiralFeatureTests {
         model.settings.sort = .title
         #expect(model.visibleNotes.first?.id == oldPinned.id)
     }
+
+    @Test("Loaded RTF and HTML bodies remain read-only")
+    func richBodiesRemainReadOnly() async throws {
+        for format in [NoteFormat.richText, .html] {
+            let content = NoteContent(
+                format: format,
+                text: "formatted",
+                originalData: Data("representation".utf8),
+                originalText: "formatted"
+            )
+            let note = Note(title: format.rawValue, content: content)
+            let store = MemoryNoteStore(notes: [note])
+            let model = SpiralFeatureModel(store: store)
+
+            await model.load()
+            #expect(!model.selectedNoteSupportsTextEditing)
+            await model.updateSelectedContent("destructive edit")
+            #expect(await store.note(id: note.id)?.content == content)
+            #expect(model.selectedNote?.content == content)
+
+            await model.renameSelected(to: "Renamed")
+            await model.setSelectedTags(from: "safe-metadata")
+            await model.toggleSelectedPin()
+            let safelyUpdated = try #require(await store.note(id: note.id))
+            #expect(safelyUpdated.title == "Renamed")
+            #expect(safelyUpdated.tags == ["safe-metadata"])
+            #expect(safelyUpdated.isPinned)
+            #expect(safelyUpdated.content == content)
+        }
+    }
 }
 
 private actor MemoryNoteStore: NoteStore {

@@ -21,6 +21,7 @@ public enum NoteFileCodecError: Error, Equatable, Sendable {
     case undecodableText
     case malformedRichText
     case malformedHTML
+    case formatPreservingEditRequired(NoteFormat)
 }
 
 public struct NoteFileCodec: Sendable {
@@ -52,6 +53,11 @@ public struct NoteFileCodec: Sendable {
     public func encode(_ content: NoteContent) throws -> Data {
         if content.text == content.originalText, let originalData = content.originalData {
             return originalData
+        }
+        if content.originalData != nil,
+           content.originalText != nil,
+           content.format != .plainText {
+            throw NoteFileCodecError.formatPreservingEditRequired(content.format)
         }
         switch content.format {
         case .plainText:

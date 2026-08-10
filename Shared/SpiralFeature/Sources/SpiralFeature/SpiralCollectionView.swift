@@ -267,6 +267,18 @@ private struct NoteEditor: View {
     @State private var text: String
     @State private var tags: String
 
+    private var supportsTextEditing: Bool {
+        note.content.format == .plainText
+    }
+
+    private var formatName: String {
+        switch note.content.format {
+        case .plainText: "plain-text"
+        case .richText: "RTF"
+        case .html: "HTML"
+        }
+    }
+
     #if os(macOS)
     init(
         note: Note,
@@ -310,10 +322,25 @@ private struct NoteEditor: View {
                 .onSubmit { onRename(title) }
                 .accessibilityIdentifier("note.title")
             Divider()
+            if !supportsTextEditing {
+                Label(
+                    "This \(formatName) body is read-only until format-preserving editing is available. You can still rename, tag, pin, or delete the note.",
+                    systemImage: "lock.doc"
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .padding()
+                .accessibilityIdentifier("note.richTextReadOnly")
+                Divider()
+            }
             #if os(macOS)
-            PlatformTextEditor(text: $text, makeTextView: macEditorFactory)
+            PlatformTextEditor(
+                text: $text,
+                isEditable: supportsTextEditing,
+                makeTextView: macEditorFactory
+            )
             #else
-            PlatformTextEditor(text: $text)
+            PlatformTextEditor(text: $text, isEditable: supportsTextEditing)
             #endif
             Divider()
             TextField("Tags, separated by commas", text: $tags)
@@ -323,7 +350,9 @@ private struct NoteEditor: View {
                 .accessibilityIdentifier("note.tags")
         }
         .navigationTitle(note.title)
-        .onChange(of: text) { _, value in onContentChange(value) }
+        .onChange(of: text) { _, value in
+            if supportsTextEditing { onContentChange(value) }
+        }
         .onDisappear {
             if title != note.title { onRename(title) }
             if tags != note.tags.joined(separator: ", ") { onTagsChange(tags) }

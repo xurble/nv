@@ -79,6 +79,10 @@ public final class SpiralFeatureModel: ObservableObject {
         return notes.first { $0.id == selectedNoteID }
     }
 
+    public var selectedNoteSupportsTextEditing: Bool {
+        selectedNote?.content.format == .plainText
+    }
+
     public var visibleNotes: [Note] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered: [Note]
@@ -138,6 +142,7 @@ public final class SpiralFeatureModel: ObservableObject {
     }
 
     public func updateSelectedContent(_ text: String) async {
+        guard selectedNoteSupportsTextEditing else { return }
         await mutateSelected { note in
             note.content.text = text
             note.modifiedAt = Date()

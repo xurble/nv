@@ -13,6 +13,7 @@ fixtures contain the same `Welcome.txt` plus 120 `Fixture Note N.txt` files.
 | Multitasking/resizing | Mobile rotation coverage and Mac window zoom coverage |
 | Mac keyboard-first workflow | `SpiralPhase3MacUITests.testKeyboardFirstCreateSearchAndEditWithLegacyEditor` |
 | Mac `LinkingEditor` hosting | The Mac workflow types through the injected editor view |
+| Rich-file edit safety | Existing RTF and HTML bodies are read-only in the shared editor; model and codec tests reject text-only mutations while leaving source bytes unchanged |
 
 Run the full build and compatibility safety net for each configuration with
 `Scripts/ci/run-phase3.sh Debug` and `Scripts/ci/run-phase3.sh Release`. The Mac

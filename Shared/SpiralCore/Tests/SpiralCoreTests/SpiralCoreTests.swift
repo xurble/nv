@@ -64,7 +64,7 @@ struct NoteFileCodecTests {
         }
     }
 
-    @Test("Externally produced rich files remain byte-for-byte unchanged until edited")
+    @Test("Unchanged externally produced rich files remain byte-for-byte identical")
     func externalRepresentationsArePreserved() throws {
         let codec = NoteFileCodec()
         for (name, format) in [("rich-note.rtf", NoteFormat.richText), ("html-note.html", .html)] {
@@ -73,6 +73,23 @@ struct NoteFileCodecTests {
             let content = try codec.decode(bytes, as: format)
             #expect(content.text.contains(format == .richText ? "Rich title" : "HTML title"))
             #expect(try codec.encode(content) == bytes)
+        }
+    }
+
+    @Test("Loaded rich representations reject text-only edits")
+    func loadedRichRepresentationsRequireFormatPreservingEdits() throws {
+        let codec = NoteFileCodec()
+        for (name, format) in [("rich-note.rtf", NoteFormat.richText), ("html-note.html", .html)] {
+            let source = repositoryFixtures.appendingPathComponent(name)
+            var content = try codec.decode(Data(contentsOf: source), as: format)
+            content.text += " edited"
+
+            do {
+                _ = try codec.encode(content)
+                Issue.record("Expected a text-only \(format.rawValue) edit to be refused")
+            } catch let error as NoteFileCodecError {
+                #expect(error == .formatPreservingEditRequired(format))
+            }
         }
     }
 
@@ -185,6 +202,76 @@ struct LocalNoteStoreTests {
         #expect(first.id != second.id)
         #expect(await store.record(for: first.id)?.currentRelativePath == "Same.txt")
         #expect(await store.record(for: second.id)?.currentRelativePath == "Same 2.txt")
+    }
+
+    @Test("Updates preserve a valid source extension until the content format changes")
+    func sourceExtensionPreservation() async throws {
+        let dirs = try TestDirectories()
+        defer { dirs.remove() }
+        try FileManager.default.createDirectory(at: dirs.documents, withIntermediateDirectories: true)
+        let fixtures: [(title: String, pathExtension: String, data: Data)] = [
+            ("Markdown", "MD", Data("markdown".utf8)),
+            ("Task", "taskpaper", Data("task".utf8)),
+            ("Markup", "htm", Data("<html><body>markup</body></html>".utf8))
+        ]
+        for fixture in fixtures {
+            try fixture.data.write(
+                to: dirs.documents.appendingPathComponent("\(fixture.title).\(fixture.pathExtension)")
+            )
+        }
+
+        let store = try await LocalNoteStore.open(
+            documentsURL: dirs.documents,
+            reconciliationURL: dirs.reconciliation,
+            indexURL: dirs.index
+        )
+        for fixture in fixtures {
+            var note = try #require(await store.allNotes().first { $0.title == fixture.title })
+            let originalPath = "\(fixture.title).\(fixture.pathExtension)"
+            note.title = "Renamed \(fixture.title)"
+            note.folder = "Moved"
+            if note.content.format == .plainText {
+                note.content.text += " updated"
+            }
+            try await store.update(note)
+
+            let updatedPath = "Moved/Renamed \(fixture.title).\(fixture.pathExtension)"
+            #expect(await store.record(for: note.id)?.currentRelativePath == updatedPath)
+            #expect(FileManager.default.fileExists(atPath: dirs.documents.appendingPathComponent(updatedPath).path))
+            #expect(!FileManager.default.fileExists(atPath: dirs.documents.appendingPathComponent(originalPath).path))
+        }
+
+        var markdown = try #require(await store.allNotes().first { $0.title == "Renamed Markdown" })
+        let markdownPath = try #require(await store.record(for: markdown.id)?.currentRelativePath)
+        markdown.content = NoteContent(format: .html, text: "converted")
+        try await store.update(markdown)
+        #expect(await store.record(for: markdown.id)?.currentRelativePath == "Moved/Renamed Markdown.html")
+        #expect(!FileManager.default.fileExists(atPath: dirs.documents.appendingPathComponent(markdownPath).path))
+    }
+
+    @Test("The store refuses destructive text-only edits to loaded rich files")
+    func loadedRichFileEditSafety() async throws {
+        let dirs = try TestDirectories()
+        defer { dirs.remove() }
+        try FileManager.default.createDirectory(at: dirs.documents, withIntermediateDirectories: true)
+        let sourceData = try Data(contentsOf: repositoryFixtures.appendingPathComponent("rich-note.rtf"))
+        let sourceURL = dirs.documents.appendingPathComponent("Rich.rtf")
+        try sourceData.write(to: sourceURL)
+        let store = try await LocalNoteStore.open(
+            documentsURL: dirs.documents,
+            reconciliationURL: dirs.reconciliation,
+            indexURL: dirs.index
+        )
+        var note = try #require(await store.allNotes().first)
+        let originalText = note.content.text
+        note.content.text += " destructive edit"
+
+        await #expect(throws: NoteFileCodecError.self) {
+            try await store.update(note)
+        }
+        #expect(try Data(contentsOf: sourceURL) == sourceData)
+        #expect(await store.note(id: note.id)?.content.text == originalText)
+        #expect(await store.record(for: note.id)?.currentRelativePath == "Rich.rtf")
     }
 
     @Test("Hidden titles remain visible and folder symlinks cannot redirect writes")
