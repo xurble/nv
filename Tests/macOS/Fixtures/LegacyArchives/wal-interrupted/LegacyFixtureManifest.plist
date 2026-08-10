@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>encrypted</key>
+	<false/>
+	<key>expectedNotes</key>
+	<array>
+		<dict>
+			<key>format</key>
+			<string>txt</string>
+			<key>tags</key>
+			<array>
+				<string>journal</string>
+			</array>
+			<key>text</key>
+			<string>after crash</string>
+			<key>title</key>
+			<string>WAL note</string>
+		</dict>
+	</array>
+	<key>hashIterationCount</key>
+	<integer>8000</integer>
+	<key>recoveredWAL</key>
+	<true/>
+	<key>sourceApplication</key>
+	<string>nvAlt</string>
+	<key>sourceVersion</key>
+	<string>2.2 interrupted WAL</string>
+</dict>
+</plist>

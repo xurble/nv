@@ -107,6 +107,7 @@ typedef struct _NoteCatalogEntry {
 	NSTimer *changeWritingTimer;
 	NSUndoManager *undoManager;
 	BOOL suppressGlobalPreferenceAdoption;
+	NSData *legacyMigrationPassphraseData;
 }
 
 - (id)init;
@@ -114,6 +115,9 @@ typedef struct _NoteCatalogEntry {
 - (id)initWithDefaultDirectoryReturningError:(OSStatus*)err;
 - (id)initWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err;
 - (id)initLegacyMigrationWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err;
+- (id)initLegacyMigrationWithDirectoryRef:(FSRef*)directoryRef
+                                    error:(OSStatus*)err
+                           passphraseData:(NSData*)passphraseData;
 - (void)setAliasNeedsUpdating:(BOOL)needsUpdate;
 - (BOOL)aliasNeedsUpdating;
 - (NSData*)aliasDataForNoteDirectory;
@@ -137,6 +141,7 @@ typedef struct _NoteCatalogEntry {
 - (int)currentNoteStorageFormat;
 - (NSArray*)noteContentsForMigration;
 - (NSArray*)noteFileNamesForMigration;
+- (NSArray*)noteValueSnapshotsForMigrationUsingFormat:(int)format;
 - (void)synchronizeNoteChanges:(NSTimer*)timer;
 
 - (void)updateDateStringsIfNecessary;

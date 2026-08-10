@@ -213,6 +213,7 @@
 		D10000000000000000000002 /* NotesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60000000000000000000012 /* NotesMigration.swift */; };
 		D10000000000000000000003 /* LegacyPreferencesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80000000000000000000011 /* LegacyPreferencesMigration.swift */; };
 		D10000000000000000000004 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* XCTest.framework */; };
+		E20000000000000000000001 /* LegacyArchiveMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E20000000000000000000002 /* LegacyArchiveMigration.swift */; };
 		D3EECA00106F66C70023D7F8 /* NVPasswordGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */; };
 		F30000000000000000000001 /* Phase3MacShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* Phase3MacShell.swift */; };
 		F30000000000000000000003 /* SpiralFeature in Frameworks */ = {isa = PBXBuildFile; productRef = F30000000000000000000063 /* SpiralFeature */; };
@@ -628,6 +629,7 @@
 		C20000000000000000000002 /* Phase1FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1FormatTests.swift; sourceTree = "<group>"; };
 		D10000000000000000000011 /* TemporaryCollectionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryCollectionIntegrationTests.swift; sourceTree = "<group>"; };
 		D10000000000000000000012 /* NotationIntegrationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotationIntegrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E20000000000000000000002 /* LegacyArchiveMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyCompatibility/LegacyArchiveMigration.swift; sourceTree = "<group>"; };
 		D3EEC9FE106F66C70023D7F8 /* NVPasswordGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NVPasswordGenerator.m; sourceTree = "<group>"; };
 		D3EEC9FF106F66C70023D7F8 /* NVPasswordGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NVPasswordGenerator.h; sourceTree = "<group>"; };
 		F30000000000000000000002 /* Phase3MacShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase3MacShell.swift; sourceTree = "<group>"; };
@@ -707,6 +709,7 @@
 			isa = PBXGroup;
 			children = (
 				F30000000000000000000002 /* Phase3MacShell.swift */,
+				E20000000000000000000002 /* LegacyArchiveMigration.swift */,
 				C10000000000000000000002 /* LegacyNotePolicies.h */,
 				C10000000000000000000003 /* LegacyNotePolicies.m */,
 				A60000000000000000000011 /* FirstRunICloudMigration.swift */,
@@ -1521,6 +1524,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F30000000000000000000001 /* Phase3MacShell.swift in Sources */,
+				E20000000000000000000001 /* LegacyArchiveMigration.swift in Sources */,
 				C10000000000000000000001 /* LegacyNotePolicies.m in Sources */,
 				A60000000000000000000001 /* FirstRunICloudMigration.swift in Sources */,
 				A60000000000000000000002 /* NotesMigration.swift in Sources */,

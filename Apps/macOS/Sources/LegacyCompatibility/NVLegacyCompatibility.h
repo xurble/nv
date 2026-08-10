@@ -27,6 +27,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSUInteger noteCount;
 @property(nonatomic, readonly) BOOL detectedSignificantFormatting;
 @property(nonatomic, readonly) BOOL sourceWasEncrypted;
+@property(nonatomic, readonly) BOOL recoveredWAL;
+@property(nonatomic, readonly, copy) NSString *sourceApplication;
+@property(nonatomic, readonly, copy, nullable) NSString *sourceVersion;
+@property(nonatomic, readonly, copy) NSArray<NSDictionary<NSString *, id> *> *noteSnapshots;
+@property(nonatomic, readonly, copy) NSDictionary<NSString *, NSData *> *collectionMetadata;
 
 @end
 
@@ -37,6 +42,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (nullable NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
                                                               error:(NSError **)error;
+
+/// Noninteractive variant for a caller that has already obtained the legacy
+/// passphrase. Passing nil retains the established Keychain/prompt behavior.
++ (nullable NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
+                                                      passphraseData:(nullable NSData *)passphraseData
+                                                               error:(NSError **)error;
 
 @end
 

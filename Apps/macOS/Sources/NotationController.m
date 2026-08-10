@@ -134,18 +134,29 @@
 - (id)initWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err {
     return [self initWithDirectoryRef:directoryRef
                                 error:err
-             suppressGlobalPreferences:NO];
+             suppressGlobalPreferences:NO
+                       passphraseData:nil];
 }
 
 - (id)initLegacyMigrationWithDirectoryRef:(FSRef*)directoryRef error:(OSStatus*)err {
+    return [self initLegacyMigrationWithDirectoryRef:directoryRef
+                                               error:err
+                                      passphraseData:nil];
+}
+
+- (id)initLegacyMigrationWithDirectoryRef:(FSRef*)directoryRef
+                                    error:(OSStatus*)err
+                           passphraseData:(NSData*)passphraseData {
     return [self initWithDirectoryRef:directoryRef
                                 error:err
-             suppressGlobalPreferences:YES];
+             suppressGlobalPreferences:YES
+                       passphraseData:passphraseData];
 }
 
 - (id)initWithDirectoryRef:(FSRef*)directoryRef
                      error:(OSStatus*)err
-  suppressGlobalPreferences:(BOOL)suppressGlobalPreferences {
+  suppressGlobalPreferences:(BOOL)suppressGlobalPreferences
+             passphraseData:(NSData*)passphraseData {
     
     *err = noErr;
     
@@ -154,6 +165,7 @@
 		
 		noteDirectoryRef = *directoryRef;
 		suppressGlobalPreferenceAdoption = suppressGlobalPreferences;
+		legacyMigrationPassphraseData = [passphraseData copy];
 		
 		//check writable and readable perms, warning user if necessary
 		
@@ -348,7 +360,17 @@ returnResult:
 	syncSessionController = [[SyncSessionController alloc] initWithSyncDelegate:self notationPrefs:notationPrefs];
 	
 	//frozennotation will work out passwords, keychains, decryption, etc...
-	if (!(allNotes = [[frozenNotation unpackedNotesReturningError:&err] retain])) {
+	NSMutableArray *unpackedNotes = nil;
+	if (suppressGlobalPreferenceAdoption && legacyMigrationPassphraseData && [notationPrefs doesEncryption]) {
+		if (![notationPrefs canLoadPassphraseData:legacyMigrationPassphraseData]) {
+			err = kNoAuthErr;
+		} else {
+			unpackedNotes = [frozenNotation unpackedNotesWithPrefs:notationPrefs returningError:&err];
+		}
+	} else {
+		unpackedNotes = [frozenNotation unpackedNotesReturningError:&err];
+	}
+	if (!(allNotes = [unpackedNotes retain])) {
 		//notes could be nil because the user cancelled password authentication
 		//or because they were corrupted, or for some other reason
 		if (err != noErr)
@@ -451,7 +473,7 @@ bail:
 
 //stick the newest unique recovered notes into allNotes
 - (void)processRecoveredNotes:(NSDictionary*)dict {
-    const unsigned int vListBufCount = 16;
+    enum { vListBufCount = 16 };
     void* keysBuffer[vListBufCount], *valuesBuffer[vListBufCount];
     unsigned int i, count = [dict count];
     
@@ -683,6 +705,61 @@ bail:
             [filenames addObject:[[filename copy] autorelease]];
     }
     return filenames;
+}
+
+static NSData *NVLegacyPropertyListData(id value) {
+    if (!value)
+        return nil;
+    return [NSPropertyListSerialization dataWithPropertyList:value
+                                                      format:NSPropertyListBinaryFormat_v1_0
+                                                     options:0
+                                                       error:nil];
+}
+
+- (NSArray*)noteValueSnapshotsForMigrationUsingFormat:(int)format {
+    NSMutableArray *snapshots = [NSMutableArray arrayWithCapacity:[allNotes count]];
+    for (NoteObject *note in allNotes) {
+        NSAttributedString *attributedContent = [note contentString];
+        NSData *representation = nil;
+        if (format == PlainTextFormat) {
+            representation = [[[attributedContent string] dataUsingEncoding:NSUTF8StringEncoding] retain];
+        } else {
+            NSString *documentType = format == RTFTextFormat ? NSRTFTextDocumentType : NSHTMLTextDocumentType;
+            representation = [[attributedContent dataFromRange:NSMakeRange(0, [attributedContent length])
+                                             documentAttributes:@{NSDocumentTypeDocumentAttribute: documentType}
+                                                          error:nil] retain];
+        }
+        if (!representation)
+            continue;
+
+        NSMutableDictionary *metadata = [NSMutableDictionary dictionary];
+        CFUUIDBytes *uuidBytes = [note uniqueNoteIDBytes];
+        if (uuidBytes)
+            [metadata setObject:[NSData dataWithBytes:uuidBytes length:sizeof(CFUUIDBytes)]
+                         forKey:@"legacy.uniqueNoteIDBytes"];
+        NSData *syncMetadata = NVLegacyPropertyListData([note syncServicesMD]);
+        if (syncMetadata)
+            [metadata setObject:syncMetadata forKey:@"legacy.syncServicesMD"];
+        NSString *filename = filenameOfNote(note);
+        NSData *filenameData = NVLegacyPropertyListData(filename);
+        if (filenameData)
+            [metadata setObject:filenameData forKey:@"legacy.filename"];
+        NSData *encodingData = NVLegacyPropertyListData(@(fileEncodingOfNote(note)));
+        if (encodingData)
+            [metadata setObject:encodingData forKey:@"legacy.fileEncoding"];
+
+        [snapshots addObject:@{
+            @"title": titleOfNote(note) ?: @"Untitled Note",
+            @"representation": representation,
+            @"format": @(format),
+            @"tags": [note orderedLabelTitles] ?: @[],
+            @"legacyMetadata": metadata,
+            @"createdAt": [NSDate dateWithTimeIntervalSinceReferenceDate:createdDateOfNote(note)],
+            @"modifiedAt": [NSDate dateWithTimeIntervalSinceReferenceDate:modifiedDateOfNote(note)]
+        }];
+        [representation release];
+    }
+    return snapshots;
 }
 
 - (void)noteDidNotWrite:(NoteObject*)note errorCode:(OSStatus)error {
@@ -1682,6 +1759,7 @@ bail:
 	[deletedNotes release];
 	[notationPrefs release];
 	[unwrittenNotes release];
+	[legacyMigrationPassphraseData release];
     
     [super dealloc];
 }

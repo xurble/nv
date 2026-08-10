@@ -23,6 +23,7 @@ public enum LegacyMigrationError: Error, Equatable, Sendable {
     case sourceChangedDuringMigration
     case destinationContainsData
     case unsafeDestination
+    case injectedFailure
 }
 
 public struct LegacyMigrationResult: Sendable {
@@ -60,7 +61,8 @@ public struct LegacyMigrationService: Sendable {
     public func migrate(
         source: some LegacyCompatibilitySource,
         to destination: LegacyMigrationDestination,
-        confirmsPlaintextDestination: Bool
+        confirmsPlaintextDestination: Bool,
+        failureAfterImportedNoteCount: Int? = nil
     ) async throws -> LegacyMigrationResult {
         if source.protection == .legacyApplicationEncryption, !confirmsPlaintextDestination {
             throw LegacyMigrationError.plaintextConfirmationRequired
@@ -102,7 +104,7 @@ public struct LegacyMigrationService: Sendable {
             indexURL: destination.indexURL
         )
         do {
-            for legacy in snapshot.notes {
+            for (index, legacy) in snapshot.notes.enumerated() {
                 let note = Note(
                     title: legacy.title,
                     content: legacy.content,
@@ -115,6 +117,9 @@ public struct LegacyMigrationService: Sendable {
                     isPrivate: legacy.isPrivate
                 )
                 _ = try await store.create(note)
+                if failureAfterImportedNoteCount == index + 1 {
+                    throw LegacyMigrationError.injectedFailure
+                }
             }
             let after = try LegacyCollectionVerifier.fingerprint(at: source.collectionURL)
             guard before == after else {

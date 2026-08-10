@@ -29,6 +29,7 @@ xcrun clang \
     "$source_directory/pbkdf2.c" \
     "$source_directory/hmacsha1.c" \
     "$source_directory/broken_md5.c" \
+    "$source_directory/idea_ossl.c" \
     "$script_directory/LegacyCryptoCompatibilityTests.m" \
     -o "$test_binary"
 

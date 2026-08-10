@@ -17,6 +17,7 @@
 #import <Foundation/Foundation.h>
 
 #import "NSData_transformations.h"
+#import "idea_ossl.h"
 
 static NSUInteger failureCount = 0;
 
@@ -114,6 +115,34 @@ int main(int argc, const char *argv[])
             : nil;
         AssertTrue(![wrongUncompressedPayload isEqualToData:expectedDatabasePayload],
                    @"an old encrypted database payload should reject the wrong passphrase");
+
+        NSMutableData *ideaPayload = [NSMutableData dataWithData:
+            [[fixture objectForKey:@"ideaBlorPlaintextUTF8"] dataUsingEncoding:NSUTF8StringEncoding]];
+        NSMutableData *ideaIV = [NSMutableData dataWithData:
+            DataFromHexString([fixture objectForKey:@"ideaBlorIVHex"])];
+        NSData *ideaKey = DataFromHexString([fixture objectForKey:@"ideaBlorKeyHex"]);
+        IDEA_KEY_SCHEDULE ideaSchedule;
+        int ideaStreamOffset = 0;
+        idea_set_encrypt_key([ideaKey bytes], &ideaSchedule);
+        idea_cfb64_encrypt([ideaPayload mutableBytes], [ideaPayload mutableBytes],
+                           (long)[ideaPayload length], &ideaSchedule,
+                           [ideaIV mutableBytes], &ideaStreamOffset, IDEA_ENCRYPT);
+        AssertEqualObjects(ideaPayload,
+                           DataFromHexString([fixture objectForKey:@"ideaBlorCiphertextHex"]),
+                           @"the alternate legacy IDEA-CFB input must remain byte-compatible");
+
+        ideaPayload = [NSMutableData dataWithData:
+            DataFromHexString([fixture objectForKey:@"ideaBlorCiphertextHex"])];
+        ideaIV = [NSMutableData dataWithData:
+            DataFromHexString([fixture objectForKey:@"ideaBlorIVHex"])];
+        ideaStreamOffset = 0;
+        idea_set_encrypt_key([ideaKey bytes], &ideaSchedule);
+        idea_cfb64_encrypt([ideaPayload mutableBytes], [ideaPayload mutableBytes],
+                           (long)[ideaPayload length], &ideaSchedule,
+                           [ideaIV mutableBytes], &ideaStreamOffset, IDEA_DECRYPT);
+        AssertEqualObjects(ideaPayload,
+                           [[fixture objectForKey:@"ideaBlorPlaintextUTF8"] dataUsingEncoding:NSUTF8StringEncoding],
+                           @"the alternate legacy IDEA-CFB input should decrypt");
 
         NSData *identifier = DataFromHexString(@"00112233445566778899aabbccddeeff");
         NSString *encodedIdentifier = [identifier encodeBase64WithNewlines:NO];

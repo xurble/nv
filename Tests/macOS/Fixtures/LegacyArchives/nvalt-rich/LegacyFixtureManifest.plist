@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>encrypted</key>
+	<false/>
+	<key>expectedNotes</key>
+	<array>
+		<dict>
+			<key>format</key>
+			<string>rtf</string>
+			<key>tags</key>
+			<array>
+				<string>nvAlt</string>
+				<string>markdown</string>
+			</array>
+			<key>text</key>
+			<string>Bold survives around edits</string>
+			<key>title</key>
+			<string>Rich nvAlt note</string>
+		</dict>
+	</array>
+	<key>hashIterationCount</key>
+	<integer>8000</integer>
+	<key>recoveredWAL</key>
+	<false/>
+	<key>sourceApplication</key>
+	<string>nvAlt</string>
+	<key>sourceVersion</key>
+	<string>2.2</string>
+</dict>
+</plist>

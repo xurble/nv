@@ -455,6 +455,38 @@ struct LegacyMigrationTests {
         #expect(FileManager.default.fileExists(atPath: dirs.root.appendingPathComponent("Backup").path))
     }
 
+    @Test("A failure injected after the first imported note rolls back every modern artifact")
+    func injectedFailureRollback() async throws {
+        let dirs = try TestDirectories()
+        defer { dirs.remove() }
+        let sourceURL = dirs.root.appendingPathComponent("Archive", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceURL, withIntermediateDirectories: true)
+        try Data("archive".utf8).write(to: sourceURL.appendingPathComponent("Notes & Settings"))
+        let sourceBefore = try LegacyCollectionVerifier.fingerprint(at: sourceURL)
+        let date = Date(timeIntervalSince1970: 1)
+        let source = LegacySnapshotSource(collectionURL: sourceURL, protection: .plaintext) { _ in
+            LegacyCollectionSnapshot(sourceApplication: "fixture", notes: [
+                LegacyNoteSnapshot(title: "first", content: .init(format: .plainText, text: "one"), createdAt: date, modifiedAt: date),
+                LegacyNoteSnapshot(title: "second", content: .init(format: .plainText, text: "two"), createdAt: date, modifiedAt: date)
+            ])
+        }
+
+        await #expect(throws: LegacyMigrationError.injectedFailure) {
+            try await LegacyMigrationService().migrate(
+                source: source,
+                to: destination(for: dirs),
+                confirmsPlaintextDestination: false,
+                failureAfterImportedNoteCount: 1
+            )
+        }
+
+        #expect(try LegacyCollectionVerifier.fingerprint(at: sourceURL) == sourceBefore)
+        #expect(try LegacyCollectionVerifier.fingerprint(at: dirs.root.appendingPathComponent("Backup")) == sourceBefore)
+        #expect(!FileManager.default.fileExists(atPath: dirs.documents.path))
+        #expect(!FileManager.default.fileExists(atPath: dirs.reconciliation.path))
+        #expect(!FileManager.default.fileExists(atPath: dirs.index.path))
+    }
+
     private func destination(for dirs: TestDirectories) -> LegacyMigrationDestination {
         .init(
             documentsURL: dirs.documents,

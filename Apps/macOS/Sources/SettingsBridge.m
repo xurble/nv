@@ -18,7 +18,9 @@
 #import "LegacyCompatibility/NVLegacyCompatibility.h"
 #import "Spiral-Swift.h"
 
+#import "AppController.h"
 #import "ExternalEditorListController.h"
+#import "FrozenNotation.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstrict-prototypes"
 #import "GlobalPrefs.h"
@@ -41,7 +43,9 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     NVLegacyCollectionImportErrorUnrecognizedFormat,
     NVLegacyCollectionImportErrorOpenFailed,
     NVLegacyCollectionImportErrorNoNotes,
-    NVLegacyCollectionImportErrorConversionFailed
+    NVLegacyCollectionImportErrorConversionFailed,
+    NVLegacyCollectionImportErrorWrongPassphrase,
+    NVLegacyCollectionImportErrorDamagedArchive
 };
 
 @interface NVLegacyCollectionPreparation ()
@@ -49,9 +53,23 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 @property(nonatomic, readwrite) NSUInteger noteCount;
 @property(nonatomic, readwrite) BOOL detectedSignificantFormatting;
 @property(nonatomic, readwrite) BOOL sourceWasEncrypted;
+@property(nonatomic, readwrite) BOOL recoveredWAL;
+@property(nonatomic, readwrite, copy) NSString *sourceApplication;
+@property(nonatomic, readwrite, copy, nullable) NSString *sourceVersion;
+@property(nonatomic, readwrite, copy) NSArray<NSDictionary<NSString *, id> *> *noteSnapshots;
+@property(nonatomic, readwrite, copy) NSDictionary<NSString *, NSData *> *collectionMetadata;
 @end
 
 @implementation NVLegacyCollectionPreparation
+
+- (void)dealloc {
+    [_sourceApplication release];
+    [_sourceVersion release];
+    [_noteSnapshots release];
+    [_collectionMetadata release];
+    [super dealloc];
+}
+
 @end
 
 @implementation NVLegacyCollectionImporter
@@ -118,6 +136,21 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 
 + (NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
                                                       error:(NSError **)error {
+    return [self prepareWorkingCopyAtURL:workingCopyURL passphraseData:nil error:error];
+}
+
++ (NSData *)propertyListData:(id)value {
+    if (!value)
+        return nil;
+    return [NSPropertyListSerialization dataWithPropertyList:value
+                                                      format:NSPropertyListBinaryFormat_v1_0
+                                                     options:0
+                                                       error:nil];
+}
+
++ (NVLegacyCollectionPreparation *)prepareWorkingCopyAtURL:(NSURL *)workingCopyURL
+                                            passphraseData:(NSData *)passphraseData
+                                                     error:(NSError **)error {
     NSNumber *isDirectory = nil;
     if (![workingCopyURL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:error] ||
         ![isDirectory boolValue]) {
@@ -129,6 +162,32 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
 
     BOOL hadDatabase = [[NSFileManager defaultManager]
         fileExistsAtPath:[[workingCopyURL URLByAppendingPathComponent:NotesDatabaseFileName] path]];
+    BOOL hadWAL = [[NSFileManager defaultManager]
+        fileExistsAtPath:[[workingCopyURL URLByAppendingPathComponent:@"Interim Note-Changes"] path]];
+    if (hadDatabase) {
+        NSData *archiveData = [NSData dataWithContentsOfURL:
+            [workingCopyURL URLByAppendingPathComponent:NotesDatabaseFileName]
+                                               options:NSDataReadingMappedIfSafe
+                                                 error:error];
+        id archiveRoot = nil;
+        if (archiveData) {
+            @try {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                archiveRoot = [NSKeyedUnarchiver unarchiveObjectWithData:archiveData];
+#pragma clang diagnostic pop
+            } @catch (NSException *exception) {
+                (void)exception;
+            }
+        }
+        if (![archiveRoot isKindOfClass:[FrozenNotation class]]) {
+            if (error) {
+                *error = [self errorWithCode:NVLegacyCollectionImportErrorDamagedArchive
+                                 description:@"The legacy notes archive is damaged or unreadable."];
+            }
+            return nil;
+        }
+    }
     int inferredFileFormat = SingleDatabaseFormat;
     if (!hadDatabase) {
         inferredFileFormat = [self inferredSeparateFileFormatAtURL:workingCopyURL error:error];
@@ -151,13 +210,24 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     OSStatus openError = noErr;
     NotationController *controller = [[NotationController alloc]
         initLegacyMigrationWithDirectoryRef:&workingCopyRef
-        error:&openError];
+        error:&openError
+        passphraseData:passphraseData];
     if (!controller) {
         if (error) {
-            NSString *description = openError == kPassCanceledErr
-                ? @"The encrypted notes import was cancelled."
-                : [NSString stringWithFormat:@"The legacy notes collection could not be opened (%d).", (int)openError];
-            *error = [self errorWithCode:NVLegacyCollectionImportErrorOpenFailed description:description];
+            NVLegacyCollectionImportError code = NVLegacyCollectionImportErrorOpenFailed;
+            NSString *description = nil;
+            if (openError == kPassCanceledErr) {
+                description = @"The encrypted notes import was cancelled.";
+            } else if (openError == kNoAuthErr) {
+                code = NVLegacyCollectionImportErrorWrongPassphrase;
+                description = @"The passphrase did not unlock the legacy notes collection.";
+            } else if (openError == kCoderErr || openError == kCompressionErr) {
+                code = NVLegacyCollectionImportErrorDamagedArchive;
+                description = @"The legacy notes archive is damaged or unreadable.";
+            } else {
+                description = [NSString stringWithFormat:@"The legacy notes collection could not be opened (%d).", (int)openError];
+            }
+            *error = [self errorWithCode:code description:description];
         }
         return nil;
     }
@@ -200,8 +270,21 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
         return nil;
     }
 
+    NSArray *noteSnapshots = [[controller noteValueSnapshotsForMigrationUsingFormat:targetFormat] copy];
+    if ([noteSnapshots count] != [contents count]) {
+        [noteSnapshots release];
+        [controller closeAllResources];
+        [controller release];
+        if (error)
+            *error = [self errorWithCode:NVLegacyCollectionImportErrorConversionFailed
+                             description:@"Spiral could not extract every legacy note and its metadata."];
+        return nil;
+    }
+
     BOOL sourceWasEncrypted = [prefs doesEncryption];
-    if (sourceWasEncrypted) {
+    NSUInteger hashIterationCount = [prefs hashIterationCount];
+    NSString *keychainDatabaseIdentifier = [[prefs valueForKey:@"keychainDatabaseIdentifier"] copy];
+    if (sourceWasEncrypted && !passphraseData) {
         NSAlert *plaintextWarning = [[[NSAlert alloc] init] autorelease];
         [plaintextWarning setAlertStyle:NSAlertStyleWarning];
         [plaintextWarning setMessageText:@"The imported notes will no longer use legacy encryption"];
@@ -233,10 +316,14 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     [controller release];
 
     BOOL verifiedEveryNote = [exportedFilenames count] == noteCount;
+    NSString *verificationFailure = nil;
     NSSet *cleanExtensions = [NSSet setWithObjects:
         @"txt", @"text", @"utf8", @"taskpaper", @"md", @"markdown", @"rtf", @"html", @"htm", nil];
     for (NSString *filename in exportedFilenames) {
-        NSURL *exportedURL = [workingCopyURL URLByAppendingPathComponent:filename];
+        // Carbon's HFS path representation uses '/' for the character that
+        // appears as ':' in a POSIX filename. Convert before URL-based checks.
+        NSString *fileSystemName = [filename stringByReplacingOccurrencesOfString:@"/" withString:@":"];
+        NSURL *exportedURL = [workingCopyURL URLByAppendingPathComponent:fileSystemName];
         NSNumber *isRegularFile = nil;
         NSString *pathExtension = [[filename pathExtension] lowercaseString];
         BOOL hasExpectedExtension = convertedSingleDatabase
@@ -246,15 +333,20 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
             ![exportedURL getResourceValue:&isRegularFile forKey:NSURLIsRegularFileKey error:nil] ||
             ![isRegularFile boolValue]) {
             verifiedEveryNote = NO;
+            verificationFailure = [NSString stringWithFormat:@"%@ (expected extension %@; regular file %@)",
+                filename, extension, isRegularFile];
             break;
         }
     }
     [exportedFilenames release];
     [extension release];
     if (!verifiedEveryNote) {
+        [noteSnapshots release];
         if (error)
             *error = [self errorWithCode:NVLegacyCollectionImportErrorConversionFailed
-                             description:@"Spiral could not verify that every legacy note was converted to a clean file."];
+                             description:[NSString stringWithFormat:
+                                 @"Spiral could not verify that every legacy note was converted to a clean file%@.",
+                                 verificationFailure ? [@": " stringByAppendingString:verificationFailure] : @""]];
         return nil;
     }
 
@@ -263,6 +355,32 @@ typedef NS_ENUM(NSInteger, NVLegacyCollectionImportError) {
     result.noteCount = noteCount;
     result.detectedSignificantFormatting = significantFormatting;
     result.sourceWasEncrypted = sourceWasEncrypted;
+    result.recoveredWAL = hadWAL;
+    NSData *fixtureManifestData = [NSData dataWithContentsOfURL:
+        [workingCopyURL URLByAppendingPathComponent:@"LegacyFixtureManifest.plist"]];
+    NSDictionary *fixtureManifest = fixtureManifestData
+        ? [NSPropertyListSerialization propertyListWithData:fixtureManifestData
+                                                    options:NSPropertyListImmutable
+                                                     format:NULL
+                                                      error:NULL]
+        : nil;
+    result.sourceApplication = [fixtureManifest objectForKey:@"sourceApplication"]
+        ?: @"Notational Velocity/nvAlt";
+    result.sourceVersion = [fixtureManifest objectForKey:@"sourceVersion"];
+    result.noteSnapshots = noteSnapshots;
+    NSMutableDictionary *collectionMetadata = [NSMutableDictionary dictionary];
+    NSData *storageFormatData = [self propertyListData:@(sourceFormat)];
+    NSData *iterationData = [self propertyListData:@(hashIterationCount)];
+    if (storageFormatData)
+        [collectionMetadata setObject:storageFormatData forKey:@"legacy.storageFormat"];
+    if (iterationData)
+        [collectionMetadata setObject:iterationData forKey:@"legacy.hashIterationCount"];
+    NSData *keychainIdentifierData = [self propertyListData:keychainDatabaseIdentifier];
+    if (keychainIdentifierData)
+        [collectionMetadata setObject:keychainIdentifierData forKey:@"legacy.keychainDatabaseIdentifier"];
+    result.collectionMetadata = collectionMetadata;
+    [keychainDatabaseIdentifier release];
+    [noteSnapshots release];
     return result;
 }
 

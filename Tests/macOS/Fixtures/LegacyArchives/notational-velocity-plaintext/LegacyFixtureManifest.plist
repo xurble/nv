@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>encrypted</key>
+	<false/>
+	<key>expectedNotes</key>
+	<array>
+		<dict>
+			<key>format</key>
+			<string>txt</string>
+			<key>tags</key>
+			<array>
+				<string>archive</string>
+				<string>legacy</string>
+			</array>
+			<key>text</key>
+			<string>Legacy MacRoman café body</string>
+			<key>title</key>
+			<string>Café / filename</string>
+		</dict>
+		<dict>
+			<key>format</key>
+			<string>txt</string>
+			<key>tags</key>
+			<array>
+				<string>sync</string>
+			</array>
+			<key>text</key>
+			<string>Metadata survives migration</string>
+			<key>title</key>
+			<string>Historical sync</string>
+		</dict>
+	</array>
+	<key>hashIterationCount</key>
+	<integer>8000</integer>
+	<key>recoveredWAL</key>
+	<false/>
+	<key>sourceApplication</key>
+	<string>Notational Velocity</string>
+	<key>sourceVersion</key>
+	<string>2.0b5</string>
+</dict>
+</plist>
