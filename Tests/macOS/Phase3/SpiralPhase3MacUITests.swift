@@ -104,7 +104,7 @@ final class SpiralPhase3MacUITests: XCTestCase {
         app.launchEnvironment["SPIRAL_PHASE3_TEST_TOKEN"] = testToken
         app.launchEnvironment["SPIRAL_PHASE3_DOCUMENTS"] = rootURL.appendingPathComponent("Documents").path
         app.launchEnvironment["SPIRAL_PHASE3_RECONCILIATION"] = rootURL.appendingPathComponent("Reconciliation").path
-        app.launchEnvironment["SPIRAL_PHASE3_INDEX"] = rootURL.appendingPathComponent("Index/notes.json").path
+        app.launchEnvironment["SPIRAL_PHASE3_INDEX"] = rootURL.appendingPathComponent("Index/Catalog.sqlite").path
         app.launch()
         return app
     }

@@ -27,7 +27,10 @@ let package = Package(
         .library(name: "SpiralCore", targets: ["SpiralCore"])
     ],
     targets: [
-        .target(name: "SpiralCore"),
+        .target(
+            name: "SpiralCore",
+            linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
         .testTarget(
             name: "SpiralCoreTests",
             dependencies: ["SpiralCore"],

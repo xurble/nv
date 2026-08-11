@@ -31,7 +31,7 @@ private struct TestDirectories {
         )
         documents = root.appendingPathComponent("Documents", isDirectory: true)
         reconciliation = root.appendingPathComponent("Private/Reconciliation", isDirectory: true)
-        index = root.appendingPathComponent("Cache/index.json")
+        index = root.appendingPathComponent("Cache/Catalog.sqlite")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
 
@@ -594,6 +594,8 @@ struct LegacyMigrationTests {
         #expect(!FileManager.default.fileExists(atPath: dirs.documents.path))
         #expect(!FileManager.default.fileExists(atPath: dirs.reconciliation.path))
         #expect(!FileManager.default.fileExists(atPath: dirs.index.path))
+        #expect(!FileManager.default.fileExists(atPath: dirs.index.path + "-wal"))
+        #expect(!FileManager.default.fileExists(atPath: dirs.index.path + "-shm"))
     }
 
     private func destination(for dirs: TestDirectories) -> LegacyMigrationDestination {

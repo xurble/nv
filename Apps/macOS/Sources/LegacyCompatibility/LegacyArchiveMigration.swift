@@ -162,7 +162,7 @@ final class SpiralLegacyMigrationProbe: NSObject {
                 let destination = LegacyMigrationDestination(
                     documentsURL: destinationRootURL.appendingPathComponent("Documents", isDirectory: true),
                     reconciliationURL: destinationRootURL.appendingPathComponent("Private/Reconciliation", isDirectory: true),
-                    indexURL: destinationRootURL.appendingPathComponent("Cache/index.json"),
+            indexURL: destinationRootURL.appendingPathComponent("Cache/Catalog.sqlite"),
                     retainedBackupURL: destinationRootURL.appendingPathComponent("Retained Legacy Backup", isDirectory: true)
                 )
                 let result = try await LegacyMigrationService().migrate(

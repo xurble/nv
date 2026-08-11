@@ -183,23 +183,12 @@ public enum CloudNoteStoreError: Error, Equatable, Sendable {
     case unsupportedPublicData([String])
 }
 
-private struct CloudIndexEntry: Codable, Sendable {
-    let id: NoteID
-    let relativePath: String
-    let title: String
-    let contentHash: String
-}
-
-private struct CloudIndexFile: Codable, Sendable {
-    let version: Int
-    let entries: [CloudIndexEntry]
-}
-
 /// Production NoteStore for the one shared iCloud collection. Every public
 /// document mutation uses CloudDocumentAccess/NSFileCoordinator and every UUID
 /// record is stored in the private synchronized reconciliation directory.
 public actor CloudNoteStore: NoteStore {
     public let indexURL: URL
+    public let catalogScope: NoteCatalogScope
 
     private let documents: any CloudDocumentAccess
     private let reconciliationRecords: any CloudDocumentAccess
@@ -208,16 +197,22 @@ public actor CloudNoteStore: NoteStore {
     private var notesByID: [NoteID: Note] = [:]
     private var recordsByID: [NoteID: ReconciliationRecord] = [:]
     private var storedConflicts: [NoteConflict] = []
+    private var catalogStorage: NoteCatalog?
 
     public init(
         documents: any CloudDocumentAccess,
         reconciliationRecords: any CloudDocumentAccess,
         indexURL: URL,
+        catalogScope: NoteCatalogScope? = nil,
         codec: NoteFileCodec = NoteFileCodec()
     ) {
         self.documents = documents
         self.reconciliationRecords = reconciliationRecords
         self.indexURL = indexURL
+        self.catalogScope = catalogScope ?? NoteCatalogScope(
+            accountIdentifier: "catalog-at:\(indexURL.standardizedFileURL.path)",
+            collectionIdentifier: SharedICloudStoreConfiguration.containerIdentifier
+        )
         self.codec = codec
         reconciler = CloudCollectionReconciler(
             documents: documents,
@@ -282,7 +277,7 @@ public actor CloudNoteStore: NoteStore {
         }
         notesByID[note.id] = note
         recordsByID[note.id] = record
-        try rebuildIndex()
+        try catalog().upsert(catalogEntry(note: note, record: record))
         return note
     }
 
@@ -323,7 +318,7 @@ public actor CloudNoteStore: NoteStore {
         persisted.content = try codec.decode(finalData, as: format(for: record.currentRelativePath))
         notesByID[note.id] = persisted
         storedConflicts = report.conflicts
-        try rebuildIndex()
+        try catalog().upsert(catalogEntry(note: persisted, record: record))
     }
 
     public func delete(id: NoteID) throws {
@@ -337,29 +332,43 @@ public actor CloudNoteStore: NoteStore {
         recordsByID[id] = record
         notesByID.removeValue(forKey: id)
         storedConflicts.removeAll { $0.noteID == id }
-        try rebuildIndex()
+        try catalog().remove(noteID: id)
     }
 
     public func conflicts() -> [NoteConflict] { storedConflicts }
 
     public func rebuildIndex() throws {
-        let entries = notesByID.values.compactMap { note -> CloudIndexEntry? in
-            guard let record = recordsByID[note.id], !record.isTombstone else { return nil }
-            return CloudIndexEntry(
-                id: note.id,
-                relativePath: record.currentRelativePath,
-                title: note.title,
-                contentHash: record.rawContentHash
-            )
-        }.sorted { $0.id.description < $1.id.description }
-        try FileManager.default.createDirectory(
-            at: indexURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        try encoder.encode(CloudIndexFile(version: 1, entries: entries))
-            .write(to: indexURL, options: .atomic)
+        let snapshots = try documents.listDocuments()
+        let availability = Dictionary(uniqueKeysWithValues: snapshots.map {
+            ($0.relativePath, $0.availability)
+        })
+        for record in recordsByID.values {
+            if record.isTombstone {
+                try catalog().remove(noteID: record.noteID)
+            } else if let note = notesByID[record.noteID] {
+                try catalog().upsert(catalogEntry(note: note, record: record))
+            } else {
+                let isMissing = availability[record.currentRelativePath] == nil
+                try catalog().upsert(NoteCatalogEntry(
+                    summary: catalogSummary(
+                        record: record,
+                        bodyAvailability: isMissing
+                            ? .deletedOrMissingPendingConfirmation
+                            : .notDownloaded,
+                        pairingState: isMissing ? .missingPendingConfirmation : .awaitingBody
+                    ),
+                    textUpdate: .preserveAsStale
+                ))
+            }
+        }
+    }
+
+    public func summaries(limit: Int, offset: Int) async throws -> NoteSummaryPage {
+        try catalog().summaries(limit: limit, offset: offset)
+    }
+
+    public func search(_ request: NoteSearchRequest) async throws -> NoteSearchPage {
+        try catalog().search(request)
     }
 
     public func record(for id: NoteID) -> ReconciliationRecord? { recordsByID[id] }
@@ -373,9 +382,10 @@ public actor CloudNoteStore: NoteStore {
             throw CloudNoteStoreError.ambiguousDocument(ambiguous)
         }
 
-        var nextNotes = notesByID
+        var nextNotes: [NoteID: Note] = [:]
         for record in loadedRecords.values where record.isTombstone {
             nextNotes.removeValue(forKey: record.noteID)
+            try catalog().remove(noteID: record.noteID)
         }
         var recordsByPath: [String: ReconciliationRecord] = [:]
         for record in loadedRecords.values where !record.isTombstone {
@@ -384,13 +394,21 @@ public actor CloudNoteStore: NoteStore {
             }
         }
 
-        var unavailablePaths: [String] = []
+        var observedPaths = Set<String>()
         for snapshot in try documents.listDocuments() where isCanonical(snapshot.relativePath) {
-            guard snapshot.availability == .available else {
-                unavailablePaths.append(snapshot.relativePath)
+            observedPaths.insert(snapshot.relativePath)
+            guard let record = recordsByPath[snapshot.relativePath] else {
                 continue
             }
-            guard let record = recordsByPath[snapshot.relativePath] else {
+            guard snapshot.availability == .available else {
+                try catalog().upsert(NoteCatalogEntry(
+                    summary: catalogSummary(
+                        record: record,
+                        bodyAvailability: .notDownloaded,
+                        pairingState: .awaitingBody
+                    ),
+                    textUpdate: .preserveAsStale
+                ))
                 continue
             }
             let data = try documents.read(relativePath: snapshot.relativePath)
@@ -408,15 +426,70 @@ public actor CloudNoteStore: NoteStore {
                 isPinned: record.isPinned,
                 isPrivate: record.isPrivate
             )
+            if let note = nextNotes[record.noteID] {
+                try catalog().upsert(catalogEntry(note: note, record: record))
+            }
+        }
+
+        for record in loadedRecords.values where !record.isTombstone
+            && !observedPaths.contains(record.currentRelativePath) {
+            try catalog().upsert(NoteCatalogEntry(
+                summary: catalogSummary(
+                    record: record,
+                    bodyAvailability: .deletedOrMissingPendingConfirmation,
+                    pairingState: .missingPendingConfirmation
+                ),
+                textUpdate: .preserveAsStale
+            ))
         }
 
         recordsByID = loadedRecords
         notesByID = nextNotes
         storedConflicts = report.conflicts
-        try rebuildIndex()
-        if !unavailablePaths.isEmpty, notesByID.isEmpty {
-            throw CloudNoteStoreError.unavailableDocuments(unavailablePaths.sorted())
-        }
+    }
+
+    private func catalog() throws -> NoteCatalog {
+        if let catalogStorage { return catalogStorage }
+        let opened = try NoteCatalog(databaseURL: indexURL, scope: catalogScope)
+        catalogStorage = opened
+        return opened
+    }
+
+    private func catalogEntry(note: Note, record: ReconciliationRecord) -> NoteCatalogEntry {
+        NoteCatalogEntry(
+            summary: NoteSummary(
+                note: note,
+                relativePath: record.currentRelativePath,
+                contentHash: record.rawContentHash
+            ),
+            textUpdate: .replace(text: note.content.text, revision: record.rawContentHash)
+        )
+    }
+
+    private func catalogSummary(
+        record: ReconciliationRecord,
+        bodyAvailability: NoteBodyAvailability,
+        pairingState: NotePairingState
+    ) -> NoteSummary {
+        NoteSummary(
+            id: record.noteID,
+            title: ((record.currentRelativePath as NSString).lastPathComponent as NSString)
+                .deletingPathExtension,
+            folder: folder(for: record.currentRelativePath),
+            tags: record.tags,
+            createdAt: record.createdAt,
+            modifiedAt: record.modifiedAt,
+            isPinned: record.isPinned,
+            isPrivate: record.isPrivate,
+            relativePath: record.currentRelativePath,
+            contentHash: record.rawContentHash,
+            bodyAvailability: bodyAvailability,
+            metadataAvailability: .available,
+            searchFreshness: .neverIndexed,
+            lastIndexedRevision: nil,
+            pairingState: pairingState,
+            isSearchEligible: !record.isPrivate
+        )
     }
 
     private func loadRecords() throws -> [NoteID: ReconciliationRecord] {

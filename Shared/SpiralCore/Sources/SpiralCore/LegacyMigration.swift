@@ -70,7 +70,9 @@ public struct LegacyMigrationService: Sendable {
         try validate(source: source.collectionURL, destination: destination)
         try requireEmpty(destination.documentsURL)
         try requireEmpty(destination.reconciliationURL)
-        if FileManager.default.fileExists(atPath: destination.indexURL.path) {
+        if catalogArtifactURLs(for: destination.indexURL).contains(where: {
+            FileManager.default.fileExists(atPath: $0.path)
+        }) {
             throw LegacyMigrationError.destinationContainsData
         }
 
@@ -123,7 +125,6 @@ public struct LegacyMigrationService: Sendable {
             }
             let after = try LegacyCollectionVerifier.fingerprint(at: source.collectionURL)
             guard before == after else {
-                try rollbackCreatedDestination(destination)
                 throw LegacyMigrationError.sourceChangedDuringMigration
             }
             return LegacyMigrationResult(
@@ -134,6 +135,7 @@ public struct LegacyMigrationService: Sendable {
                 recoveredWAL: snapshot.recoveredWAL
             )
         } catch {
+            await store.closeCatalog()
             try rollbackCreatedDestination(destination)
             throw error
         }
@@ -162,12 +164,23 @@ public struct LegacyMigrationService: Sendable {
     }
 
     private func rollbackCreatedDestination(_ destination: LegacyMigrationDestination) throws {
-        for url in [destination.documentsURL, destination.reconciliationURL, destination.indexURL] {
+        let targets = [destination.documentsURL, destination.reconciliationURL]
+            + catalogArtifactURLs(for: destination.indexURL)
+        for url in targets {
             let path = url.standardizedFileURL.path
             guard path != "/", !path.isEmpty else { throw LegacyMigrationError.unsafeDestination }
             if FileManager.default.fileExists(atPath: path) {
                 try FileManager.default.removeItem(at: url)
             }
         }
+    }
+
+    private func catalogArtifactURLs(for databaseURL: URL) -> [URL] {
+        let path = databaseURL.standardizedFileURL.path
+        return [
+            URL(fileURLWithPath: path),
+            URL(fileURLWithPath: path + "-wal"),
+            URL(fileURLWithPath: path + "-shm")
+        ]
     }
 }

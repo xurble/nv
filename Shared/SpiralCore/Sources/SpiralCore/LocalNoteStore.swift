@@ -25,22 +25,11 @@ public enum LocalNoteStoreError: Error, Equatable, Sendable {
     case destinationNotEmpty
 }
 
-private struct LocalIndexEntry: Codable, Sendable {
-    let id: NoteID
-    let relativePath: String
-    let title: String
-    let contentHash: String
-}
-
-private struct LocalIndexFile: Codable, Sendable {
-    let version: Int
-    let entries: [LocalIndexEntry]
-}
-
 public actor LocalNoteStore: NoteStore {
     public let documentsURL: URL
     public let reconciliationURL: URL
     public let indexURL: URL
+    public let catalogScope: NoteCatalogScope
 
     private let codec: NoteFileCodec
     private let reconciliationStore: ReconciliationStore
@@ -48,16 +37,22 @@ public actor LocalNoteStore: NoteStore {
     private var recordsByID: [NoteID: ReconciliationRecord] = [:]
     private var storedConflicts: [NoteConflict] = []
     private var pendingEvents: [NoteStoreEvent] = []
+    private var catalogStorage: NoteCatalog?
 
     public init(
         documentsURL: URL,
         reconciliationURL: URL,
         indexURL: URL,
+        catalogScope: NoteCatalogScope? = nil,
         codec: NoteFileCodec = NoteFileCodec()
     ) {
         self.documentsURL = documentsURL
         self.reconciliationURL = reconciliationURL
         self.indexURL = indexURL
+        self.catalogScope = catalogScope ?? NoteCatalogScope(
+            accountIdentifier: "local",
+            collectionIdentifier: documentsURL.standardizedFileURL.path
+        )
         self.codec = codec
         reconciliationStore = ReconciliationStore(rootURL: reconciliationURL)
     }
@@ -153,7 +148,7 @@ public actor LocalNoteStore: NoteStore {
         notesByID[created.id] = created
         recordsByID[created.id] = record
         pendingEvents.append(.inserted(created.id))
-        try rebuildIndex()
+        try catalog().upsert(catalogEntry(note: created, record: record))
         return created
     }
 
@@ -189,7 +184,7 @@ public actor LocalNoteStore: NoteStore {
         try reconciliationStore.save(record)
         recordsByID[note.id] = record
         notesByID[note.id] = note
-        try rebuildIndex()
+        try catalog().upsert(catalogEntry(note: note, record: record))
     }
 
     public func delete(id: NoteID) throws {
@@ -203,7 +198,7 @@ public actor LocalNoteStore: NoteStore {
         try reconciliationStore.save(record)
         recordsByID[id] = record
         pendingEvents.append(.deleted(id))
-        try rebuildIndex()
+        try catalog().remove(noteID: id)
     }
 
     public func conflicts() -> [NoteConflict] { storedConflicts }
@@ -222,27 +217,45 @@ public actor LocalNoteStore: NoteStore {
     }
 
     public func rebuildIndex() throws {
-        let entries = notesByID.values.compactMap { note -> LocalIndexEntry? in
+        let entries = notesByID.values.compactMap { note -> NoteCatalogEntry? in
             guard let record = recordsByID[note.id] else { return nil }
-            return LocalIndexEntry(
-                id: note.id,
-                relativePath: record.currentRelativePath,
-                title: note.title,
-                contentHash: record.rawContentHash
-            )
-        }.sorted { $0.id.description < $1.id.description }
-        try FileManager.default.createDirectory(
-            at: indexURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        try encoder.encode(LocalIndexFile(version: 1, entries: entries))
-            .write(to: indexURL, options: .atomic)
+            return catalogEntry(note: note, record: record)
+        }.sorted { $0.summary.id.description < $1.summary.id.description }
+        try catalog().replaceAll(with: entries)
         pendingEvents.append(.rebuilt)
     }
 
+    public func summaries(limit: Int, offset: Int) async throws -> NoteSummaryPage {
+        try catalog().summaries(limit: limit, offset: offset)
+    }
+
+    public func search(_ request: NoteSearchRequest) async throws -> NoteSearchPage {
+        try catalog().search(request)
+    }
+
     public func record(for id: NoteID) -> ReconciliationRecord? { recordsByID[id] }
+
+    func closeCatalog() {
+        catalogStorage = nil
+    }
+
+    private func catalog() throws -> NoteCatalog {
+        if let catalogStorage { return catalogStorage }
+        let opened = try NoteCatalog(databaseURL: indexURL, scope: catalogScope)
+        catalogStorage = opened
+        return opened
+    }
+
+    private func catalogEntry(note: Note, record: ReconciliationRecord) -> NoteCatalogEntry {
+        NoteCatalogEntry(
+            summary: NoteSummary(
+                note: note,
+                relativePath: record.currentRelativePath,
+                contentHash: record.rawContentHash
+            ),
+            textUpdate: .replace(text: note.content.text, revision: record.rawContentHash)
+        )
+    }
 
     private func newRecord(for fileURL: URL, relativePath: String, hash: String) -> ReconciliationRecord {
         let values = try? fileURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])

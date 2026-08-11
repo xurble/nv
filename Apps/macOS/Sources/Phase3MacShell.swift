@@ -124,11 +124,14 @@ final class Phase3MacShellController: NSWindowController {
                 identifier: identifier + "/Data/Reconciliation"
             )
             let indexURL = try applicationSupportRoot()
-                .appendingPathComponent("Spiral/SharedCloudStore/Index/notes.json")
+                .appendingPathComponent("Spiral/SharedCloudStore/Catalog.sqlite")
             let cloudStore = CloudNoteStore(
                 documents: documents,
                 reconciliationRecords: records,
-                indexURL: indexURL
+                indexURL: indexURL,
+                catalogScope: try NoteCatalogScope.currentICloud(
+                    collectionIdentifier: identifier
+                )
             )
             return Phase3MacShellController(
                 cloudStore: cloudStore,

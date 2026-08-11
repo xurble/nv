@@ -488,12 +488,12 @@ struct SharedCloudNoteStoreTests {
         let mac = CloudNoteStore(
             documents: documents,
             reconciliationRecords: records,
-            indexURL: root.appendingPathComponent("Mac/index.json")
+            indexURL: root.appendingPathComponent("Mac/Catalog.sqlite")
         )
         let mobile = CloudNoteStore(
             documents: documents,
             reconciliationRecords: records,
-            indexURL: root.appendingPathComponent("Mobile/index.json")
+            indexURL: root.appendingPathComponent("Mobile/Catalog.sqlite")
         )
         try await mac.reloadFromCloud()
         let created = try await mac.create(
@@ -511,6 +511,46 @@ struct SharedCloudNoteStoreTests {
         #expect(await mac.note(id: created.id)?.content.text == "edited on iPhone")
         #expect(try records.listDocuments().count == 1)
         #expect(try documents.listDocuments().map(\.relativePath) == ["Shared.txt"])
+    }
+
+    @Test("Previously indexed offloaded notes retain summaries and searchable text")
+    func offloadedNoteRetainsCatalogProjection() async throws {
+        let documents = FaultCloudAdapter(identifier: "offload-documents")
+        let records = FaultCloudAdapter(identifier: "offload-records")
+        let root = temporaryRoot("OffloadedCatalog")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = CloudNoteStore(
+            documents: documents,
+            reconciliationRecords: records,
+            indexURL: root.appendingPathComponent("Catalog.sqlite")
+        )
+        try await store.reloadFromCloud()
+        let created = try await store.create(Note(
+            title: "Offline",
+            content: .init(format: .plainText, text: "previously verified searchable body")
+        ))
+        #expect(try await store.search(.init(text: "verified searchable")).hits.map(\.id) == [created.id])
+        let directCatalog = try NoteCatalog(
+            databaseURL: root.appendingPathComponent("Catalog.sqlite"),
+            scope: await store.catalogScope
+        )
+        #expect(try directCatalog.summaries().summaries.map(\.id) == [created.id])
+
+        documents.setAvailability(.unavailable, at: "Offline.txt")
+        try await store.reloadFromCloud()
+
+        #expect(await store.note(id: created.id) == nil)
+        #expect(await store.record(for: created.id)?.isTombstone == false)
+        #expect(try directCatalog.summaries().summaries.map(\.id) == [created.id])
+        let summaries = try await store.summaries(limit: 10, offset: 0).summaries
+        #expect(summaries.map(\.id) == [created.id])
+        let summary = try #require(summaries.first)
+        #expect(summary.bodyAvailability == .notDownloaded)
+        #expect(summary.searchFreshness == .stale)
+        let results = try await store.search(.init(text: "verified searchable"))
+        #expect(results.hits.map(\.id) == [created.id])
+        #expect(results.hits[0].summary.searchFreshness == .stale)
+        #expect(documents.requestedDownloads == ["Offline.txt"])
     }
 
     @Test("Mobile preflight blocks legacy or unrelated public data")
@@ -597,6 +637,10 @@ private final class FaultCloudAdapter: CloudDocumentAccess, @unchecked Sendable 
     }
 
     func data(at path: String) -> Data? { lock.withLock { entries[path]?.data } }
+
+    func setAvailability(_ availability: CloudItemAvailability, at path: String) {
+        lock.withLock { entries[path]?.availability = availability }
+    }
 
     func listDocuments() throws -> [CloudDocumentSnapshot] {
         lock.withLock {

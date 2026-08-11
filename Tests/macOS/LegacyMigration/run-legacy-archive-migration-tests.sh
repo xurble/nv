@@ -104,7 +104,7 @@ run_expected_failure() {
     diff -qr "$case_root/source" "$case_root/destination/Retained Legacy Backup"
     test ! -e "$case_root/destination/Documents"
     test ! -e "$case_root/destination/Private/Reconciliation"
-    test ! -e "$case_root/destination/Cache/index.json"
+test ! -e "$case_root/destination/Cache/Catalog.sqlite"
 }
 
 run_success notational-velocity-plaintext 0

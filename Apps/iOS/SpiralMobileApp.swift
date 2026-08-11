@@ -37,7 +37,7 @@ struct SpiralMobileApp: App {
             let localStore = LocalNoteStore(
                 documentsURL: documentsURL,
                 reconciliationURL: root.appendingPathComponent("Reconciliation", isDirectory: true),
-                indexURL: root.appendingPathComponent("Index/notes.json", isDirectory: false)
+                indexURL: root.appendingPathComponent("Index/Catalog.sqlite", isDirectory: false)
             )
             store = localStore
             self.documentsURL = documentsURL
@@ -70,11 +70,14 @@ struct SpiralMobileApp: App {
                 identifier: identifier + "/Data/Reconciliation"
             )
             let indexURL = Self.applicationSupportRoot()
-                .appendingPathComponent("Spiral/SharedCloudStore/Index/notes.json")
+                .appendingPathComponent("Spiral/SharedCloudStore/Catalog.sqlite")
             let cloudStore = CloudNoteStore(
                 documents: documents,
                 reconciliationRecords: records,
-                indexURL: indexURL
+                indexURL: indexURL,
+                catalogScope: try NoteCatalogScope.currentICloud(
+                    collectionIdentifier: identifier
+                )
             )
             let featureModel = SpiralFeatureModel(store: cloudStore)
             store = cloudStore
