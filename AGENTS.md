@@ -86,7 +86,9 @@ Report exactly what was tested, what remains untested, and any warnings or compa
 
 ## New Files
 
-Include the following copyright header comment:
+Do not add copyright header comments to Markdown files.
+
+For other new source files, include the following copyright header comment:
 
 /*Copyright (c) 2026 Gareth Simpson and Zachary Schneirov. All rights reserved.
     This file is part of Spiral, a fork of Notational Velocity.
@@ -102,4 +104,4 @@ Include the following copyright header comment:
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Notational Velocity.  If not, see <http://www.gnu.org/licenses/>. */
+    along with Spiral.  If not, see <http://www.gnu.org/licenses/>. */
