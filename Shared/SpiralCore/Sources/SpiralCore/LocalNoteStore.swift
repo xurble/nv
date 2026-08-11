@@ -229,6 +229,10 @@ public actor LocalNoteStore: NoteStore {
         try catalog().summaries(limit: limit, offset: offset)
     }
 
+    public func summary(id: NoteID) async throws -> NoteSummary? {
+        try catalog().summary(id: id)
+    }
+
     public func search(_ request: NoteSearchRequest) async throws -> NoteSearchPage {
         try catalog().search(request)
     }

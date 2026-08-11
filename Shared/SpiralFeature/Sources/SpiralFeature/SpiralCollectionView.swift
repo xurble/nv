@@ -74,15 +74,39 @@ public struct SpiralCollectionView: View {
     }
 
     private var noteList: some View {
-        List(selection: $model.selectedNoteID) {
+        List(selection: selectedNoteBinding) {
             if case let .conflict(count) = model.phase {
                 Label("\(count) unresolved conflict\(count == 1 ? "" : "s")", systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
                     .accessibilityIdentifier("collection.conflicts")
             }
-            ForEach(model.visibleNotes) { note in
-                NoteRow(note: note, showPreview: model.settings.showPreviews)
-                    .tag(note.id)
+            if let status = model.searchStatusMessage ?? model.indexingStatusMessage {
+                Label(status, systemImage: "clock.arrow.circlepath")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("search.coverage")
+            }
+            if let error = model.searchError {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("search.error")
+            }
+            if let error = model.hydrationError {
+                Label("Indexing paused: \(error)", systemImage: "exclamationmark.icloud")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .accessibilityIdentifier("search.hydrationError")
+            }
+            ForEach(model.visibleSummaries) { summary in
+                NoteRow(
+                    summary: summary,
+                    preview: model.settings.showPreviews ? model.preview(for: summary.id) : nil
+                )
+                .tag(summary.id)
+                .onAppear {
+                    Task { await model.loadMoreIfNeeded(after: summary.id) }
+                }
             }
         }
         .accessibilityIdentifier("note.list")
@@ -91,37 +115,43 @@ public struct SpiralCollectionView: View {
 
     @ViewBuilder
     private var listOverlay: some View {
-        switch model.phase {
-        case .loading:
-            ProgressView("Opening collection…")
-                .accessibilityIdentifier("collection.loading")
-        case .empty where model.searchText.isEmpty:
-            ContentUnavailableView(
-                "No Notes",
-                systemImage: "note.text",
-                description: Text("Create a note to start this collection.")
-            )
-            .accessibilityIdentifier("collection.empty")
-        case .ready where model.visibleNotes.isEmpty,
-             .conflict where model.visibleNotes.isEmpty:
-            ContentUnavailableView.search(text: model.searchText)
-                .accessibilityIdentifier("collection.noResults")
-        case let .downloading(progress):
-            VStack(spacing: 12) {
-                if let progress { ProgressView(value: progress) } else { ProgressView() }
-                Text("Downloading notes…")
+        if model.isSearching && model.visibleSummaries.isEmpty {
+            ProgressView("Searching…")
+                .accessibilityIdentifier("search.loading")
+        } else {
+            switch model.phase {
+            case .loading:
+                ProgressView("Opening collection…")
+                    .accessibilityIdentifier("collection.loading")
+            case .empty where !model.isSearchActive:
+                ContentUnavailableView(
+                    "No Notes",
+                    systemImage: "note.text",
+                    description: Text("Create a note to start this collection.")
+                )
+                .accessibilityIdentifier("collection.empty")
+            case .empty where model.isSearchActive,
+                 .ready where model.visibleSummaries.isEmpty,
+                 .conflict where model.visibleSummaries.isEmpty:
+                ContentUnavailableView.search(text: model.searchText)
+                    .accessibilityIdentifier("collection.noResults")
+            case let .downloading(progress):
+                VStack(spacing: 12) {
+                    if let progress { ProgressView(value: progress) } else { ProgressView() }
+                    Text("Downloading notes…")
+                }
+                .padding()
+                .accessibilityIdentifier("collection.downloading")
+            case let .failure(message):
+                ContentUnavailableView(
+                    "Collection Unavailable",
+                    systemImage: "exclamationmark.icloud",
+                    description: Text(message)
+                )
+                .accessibilityIdentifier("collection.error")
+            default:
+                EmptyView()
             }
-            .padding()
-            .accessibilityIdentifier("collection.downloading")
-        case let .failure(message):
-            ContentUnavailableView(
-                "Collection Unavailable",
-                systemImage: "exclamationmark.icloud",
-                description: Text(message)
-            )
-            .accessibilityIdentifier("collection.error")
-        default:
-            EmptyView()
         }
     }
 
@@ -133,20 +163,25 @@ public struct SpiralCollectionView: View {
             NoteEditor(
                 note: note,
                 macEditorFactory: macEditorFactory,
-                onRename: { title in Task { await model.renameSelected(to: title) } },
-                onContentChange: scheduleContentSave,
-                onTagsChange: { tags in Task { await model.setSelectedTags(from: tags) } }
+                onRename: { title in Task { await model.renameNote(id: note.id, to: title) } },
+                onContentChange: { content in scheduleContentSave(content, for: note.id) },
+                onTagsChange: { tags in Task { await model.setTags(for: note.id, from: tags) } }
             )
             #else
             NoteEditor(
                 note: note,
-                onRename: { title in Task { await model.renameSelected(to: title) } },
-                onContentChange: scheduleContentSave,
-                onTagsChange: { tags in Task { await model.setSelectedTags(from: tags) } }
+                onRename: { title in Task { await model.renameNote(id: note.id, to: title) } },
+                onContentChange: { content in scheduleContentSave(content, for: note.id) },
+                onTagsChange: { tags in Task { await model.setTags(for: note.id, from: tags) } }
             )
             #endif
             }
             .id(note.id)
+        } else if model.isLoadingSelectedNote {
+            ProgressView("Opening note…")
+                .accessibilityIdentifier("note.loading")
+        } else if let summary = model.selectedSummary {
+            UnavailableNoteDetail(summary: summary, error: model.selectedNoteLoadError)
         } else {
             ContentUnavailableView("Select a Note", systemImage: "note.text")
                 .accessibilityIdentifier("note.noSelection")
@@ -201,7 +236,7 @@ public struct SpiralCollectionView: View {
                 Picker("Sort Notes", selection: $model.settings.sort) {
                     ForEach(NoteListSort.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
-                Toggle("Show note previews", isOn: $model.settings.showPreviews)
+                Toggle("Show search snippets", isOn: $model.settings.showPreviews)
             }
             .formStyle(.grouped)
             .navigationTitle("Settings")
@@ -215,42 +250,122 @@ public struct SpiralCollectionView: View {
         .accessibilityIdentifier("settings.view")
     }
 
-    private func scheduleContentSave(_ content: NoteContent) {
+    private func scheduleContentSave(_ content: NoteContent, for noteID: NoteID) {
         saveTask?.cancel()
         saveTask = Task {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
-            await model.updateSelectedContent(content)
+            await model.updateContent(content, for: noteID)
         }
+    }
+
+    private var selectedNoteBinding: Binding<NoteID?> {
+        Binding(
+            get: { model.selectedNoteID },
+            set: { model.selectNote($0) }
+        )
     }
 
 }
 
 private struct NoteRow: View {
-    let note: Note
-    let showPreview: Bool
+    let summary: NoteSummary
+    let preview: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(note.title).font(.headline).lineLimit(1)
-                if note.isPinned { Image(systemName: "pin.fill").accessibilityLabel("Pinned") }
+                Text(summary.title).font(.headline).lineLimit(1)
+                if summary.isPinned { Image(systemName: "pin.fill").accessibilityLabel("Pinned") }
+                if summary.bodyAvailability != .available {
+                    Image(systemName: "icloud.and.arrow.down")
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Body unavailable")
+                }
+                if summary.searchFreshness == .stale {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Search result may be out of date")
+                }
             }
-            if showPreview {
-                Text(note.content.text.replacingOccurrences(of: "\n", with: " "))
+            if let preview, !preview.isEmpty {
+                Text(preview.replacingOccurrences(of: "\n", with: " "))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            if !note.tags.isEmpty {
-                Text(note.tags.joined(separator: ", "))
+            if !summary.tags.isEmpty {
+                Text(summary.tags.joined(separator: ", "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("note.row.\(note.id.description)")
+        .accessibilityIdentifier("note.row.\(summary.id.description)")
+    }
+}
+
+private struct UnavailableNoteDetail: View {
+    let summary: NoteSummary
+    let error: String?
+
+    var body: some View {
+        Group {
+            if summary.bodyAvailability == .downloadPending {
+                ProgressView("Downloading \(summary.title)…")
+            } else {
+                ContentUnavailableView(
+                    title,
+                    systemImage: systemImage,
+                    description: Text(message)
+                )
+            }
+        }
+        .navigationTitle(summary.title)
+        .accessibilityIdentifier("note.bodyUnavailable")
+    }
+
+    private var title: String {
+        switch summary.bodyAvailability {
+        case .notDownloaded, .staleCachedCopy:
+            "Download Required"
+        case .downloadPending:
+            "Downloading Note"
+        case .downloadFailed:
+            "Download Failed"
+        case .deletedOrMissingPendingConfirmation:
+            "Note Unavailable"
+        case .available:
+            "Unable to Open Note"
+        }
+    }
+
+    private var systemImage: String {
+        switch summary.bodyAvailability {
+        case .downloadFailed, .deletedOrMissingPendingConfirmation:
+            "exclamationmark.icloud"
+        default:
+            "icloud.and.arrow.down"
+        }
+    }
+
+    private var message: String {
+        if let error { return error }
+        return switch summary.bodyAvailability {
+        case .notDownloaded:
+            "The note body has not been downloaded on this device. Spiral will not enable editing until it is available and verified."
+        case .staleCachedCopy:
+            "This result came from the last verified search index. Download the current note body before editing."
+        case .downloadPending:
+            "The current note body is being downloaded."
+        case .downloadFailed:
+            "The current note body could not be downloaded. Try again when the collection is available."
+        case .deletedOrMissingPendingConfirmation:
+            "Spiral is waiting for reconciliation before deciding whether this note was deleted."
+        case .available:
+            "The catalog lists this note, but its body could not be opened."
+        }
     }
 }
 

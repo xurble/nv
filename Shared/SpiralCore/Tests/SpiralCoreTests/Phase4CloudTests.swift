@@ -161,7 +161,7 @@ struct CloudReconciliationPolicyTests {
         }
     }
 
-    @Test("Unavailable files request download and never become tombstones")
+    @Test("Unavailable files defer without deletion or an unbounded body download")
     func unavailableIsNotDeletion() async throws {
         let id = NoteID(UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!)
         let data = Data("remote".utf8)
@@ -178,7 +178,7 @@ struct CloudReconciliationPolicyTests {
 
         #expect(report.deferredPaths == ["Delayed.txt"])
         #expect(report.tombstonedIdentities.isEmpty)
-        #expect(documents.requestedDownloads == ["Delayed.txt"])
+        #expect(documents.requestedDownloads.isEmpty)
     }
 
     @Test("Unresolved NSFileVersion data is surfaced without rewriting the canonical file")
@@ -508,7 +508,7 @@ struct SharedCloudNoteStoreTests {
         try await mobile.update(mobileCopy)
 
         try await mac.reloadFromCloud()
-        #expect(await mac.note(id: created.id)?.content.text == "edited on iPhone")
+        #expect(try await mac.note(id: created.id)?.content.text == "edited on iPhone")
         #expect(try records.listDocuments().count == 1)
         #expect(try documents.listDocuments().map(\.relativePath) == ["Shared.txt"])
     }
@@ -539,18 +539,82 @@ struct SharedCloudNoteStoreTests {
         documents.setAvailability(.unavailable, at: "Offline.txt")
         try await store.reloadFromCloud()
 
-        #expect(await store.note(id: created.id) == nil)
+        #expect(documents.requestedDownloads.isEmpty)
         #expect(await store.record(for: created.id)?.isTombstone == false)
         #expect(try directCatalog.summaries().summaries.map(\.id) == [created.id])
-        let summaries = try await store.summaries(limit: 10, offset: 0).summaries
+        var summaries = try await store.summaries(limit: 10, offset: 0).summaries
         #expect(summaries.map(\.id) == [created.id])
-        let summary = try #require(summaries.first)
+        var summary = try #require(summaries.first)
         #expect(summary.bodyAvailability == .notDownloaded)
         #expect(summary.searchFreshness == .stale)
+
+        #expect(try await store.note(id: created.id) == nil)
+        summaries = try await store.summaries(limit: 10, offset: 0).summaries
+        summary = try #require(summaries.first)
+        #expect(summary.bodyAvailability == .downloadPending)
         let results = try await store.search(.init(text: "verified searchable"))
         #expect(results.hits.map(\.id) == [created.id])
         #expect(results.hits[0].summary.searchFreshness == .stale)
         #expect(documents.requestedDownloads == ["Offline.txt"])
+    }
+
+    @Test("Background search hydration never exceeds its concurrency bound")
+    func boundedSearchHydration() async throws {
+        let documents = FaultCloudAdapter(identifier: "hydration-documents")
+        let records = FaultCloudAdapter(identifier: "hydration-records")
+        let root = temporaryRoot("BoundedHydration")
+        defer { try? FileManager.default.removeItem(at: root) }
+        var ids: [NoteID] = []
+        for index in 0..<10 {
+            let id = NoteID()
+            let path = "Hydration \(String(format: "%02d", index)).txt"
+            let data = Data("body \(index)".utf8)
+            ids.append(id)
+            documents.seed(path, data: data, availability: .unavailable)
+            records.seed(
+                "\(id.description).json",
+                data: try encoded(record(id: id, path: path, data: data))
+            )
+        }
+        let store = CloudNoteStore(
+            documents: documents,
+            reconciliationRecords: records,
+            indexURL: root.appendingPathComponent("Catalog.sqlite")
+        )
+
+        try await store.reloadFromCloud()
+        #expect(documents.requestedDownloads.isEmpty)
+        #expect(try await store.summaries(limit: 20, offset: 0).summaries.count == 10)
+
+        let first = try await store.hydrateSearchIndex(maximumConcurrentDownloads: 3)
+        #expect(first.requestedNoteIDs.count == 3)
+        #expect(first.indexedNoteIDs.isEmpty)
+        #expect(first.pendingCount == 3)
+        #expect(first.remainingCount == 7)
+        #expect(documents.requestedDownloads.count == 3)
+
+        let whilePending = try await store.hydrateSearchIndex(maximumConcurrentDownloads: 3)
+        #expect(whilePending.requestedNoteIDs.isEmpty)
+        #expect(whilePending.pendingCount == 3)
+        #expect(whilePending.remainingCount == 7)
+        #expect(documents.requestedDownloads.count == 3)
+
+        for path in documents.requestedDownloads {
+            documents.setAvailability(.available, at: path)
+        }
+        try await store.reloadFromCloud()
+
+        let second = try await store.hydrateSearchIndex(maximumConcurrentDownloads: 3)
+        #expect(second.requestedNoteIDs.count == 3)
+        #expect(second.pendingCount == 3)
+        #expect(second.remainingCount == 4)
+        #expect(documents.requestedDownloads.count == 6)
+        let coverage = try await store.search(.init(text: "")).coverage
+        #expect(coverage.currentCount == 3)
+        #expect(coverage.neverIndexedCount == 7)
+        #expect(Set(first.requestedNoteIDs).isSubset(of: Set(ids)))
+        #expect(Set(second.requestedNoteIDs).isSubset(of: Set(ids)))
+        #expect(Set(first.requestedNoteIDs).isDisjoint(with: Set(second.requestedNoteIDs)))
     }
 
     @Test("Mobile preflight blocks legacy or unrelated public data")

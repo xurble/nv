@@ -344,6 +344,28 @@ public struct NoteSearchPage: Equatable, Sendable {
     }
 }
 
+public struct NoteSearchHydrationProgress: Equatable, Sendable {
+    public let requestedNoteIDs: [NoteID]
+    public let indexedNoteIDs: [NoteID]
+    public let pendingCount: Int
+    public let remainingCount: Int
+
+    public init(
+        requestedNoteIDs: [NoteID] = [],
+        indexedNoteIDs: [NoteID] = [],
+        pendingCount: Int = 0,
+        remainingCount: Int = 0
+    ) {
+        self.requestedNoteIDs = requestedNoteIDs
+        self.indexedNoteIDs = indexedNoteIDs
+        self.pendingCount = max(0, pendingCount)
+        self.remainingCount = max(0, remainingCount)
+    }
+
+    public var incompleteCount: Int { pendingCount + remainingCount }
+    public var isComplete: Bool { incompleteCount == 0 }
+}
+
 public struct NoteRevision: Equatable, Codable, Sendable {
     public let contentHash: String
     public let content: Data
@@ -389,8 +411,10 @@ public enum NoteStoreEvent: Equatable, Sendable {
 
 public protocol NoteStore: Sendable {
     func allNotes() async throws -> [Note]
+    func summary(id: NoteID) async throws -> NoteSummary?
     func summaries(limit: Int, offset: Int) async throws -> NoteSummaryPage
     func search(_ request: NoteSearchRequest) async throws -> NoteSearchPage
+    func hydrateSearchIndex(maximumConcurrentDownloads: Int) async throws -> NoteSearchHydrationProgress
     func note(id: NoteID) async throws -> Note?
     @discardableResult func create(_ note: Note) async throws -> Note
     func update(_ note: Note) async throws
@@ -400,6 +424,8 @@ public protocol NoteStore: Sendable {
 }
 
 public extension NoteStore {
+    func summary(id: NoteID) async throws -> NoteSummary? { nil }
+
     func summaries(limit: Int = 100, offset: Int = 0) async throws -> NoteSummaryPage {
         let notes = try await allNotes().sorted {
             if $0.isPinned != $1.isPinned { return $0.isPinned }
@@ -453,5 +479,11 @@ public extension NoteStore {
                 excludedCount: notes.count - eligible.count
             )
         )
+    }
+
+    func hydrateSearchIndex(
+        maximumConcurrentDownloads: Int
+    ) async throws -> NoteSearchHydrationProgress {
+        NoteSearchHydrationProgress()
     }
 }

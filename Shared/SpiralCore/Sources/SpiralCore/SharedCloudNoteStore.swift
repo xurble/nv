@@ -187,6 +187,8 @@ public enum CloudNoteStoreError: Error, Equatable, Sendable {
 /// document mutation uses CloudDocumentAccess/NSFileCoordinator and every UUID
 /// record is stored in the private synchronized reconciliation directory.
 public actor CloudNoteStore: NoteStore {
+    private static let maximumHydrationBatchSize = 8
+
     public let indexURL: URL
     public let catalogScope: NoteCatalogScope
 
@@ -244,7 +246,36 @@ public actor CloudNoteStore: NoteStore {
         }
     }
 
-    public func note(id: NoteID) -> Note? { notesByID[id] }
+    public func summary(id: NoteID) throws -> NoteSummary? {
+        try catalog().summary(id: id)
+    }
+
+    public func note(id: NoteID) async throws -> Note? {
+        if let note = notesByID[id] { return note }
+        guard let record = recordsByID[id], !record.isTombstone else { return nil }
+        guard let snapshot = try documents.listDocuments().first(where: {
+            $0.relativePath == record.currentRelativePath
+        }) else { return nil }
+
+        switch snapshot.availability {
+        case .available:
+            let note = try decodedNote(record: record, snapshot: snapshot)
+            notesByID[id] = note
+            try catalog().upsert(catalogEntry(note: note, record: record))
+            return note
+
+        case .downloadPending:
+            try markBodyUnavailable(record: record, availability: .downloadPending)
+            return nil
+
+        case .unavailable:
+            if try catalog().summary(id: id)?.bodyAvailability != .downloadPending {
+                try documents.requestDownload(relativePath: record.currentRelativePath)
+                try markBodyUnavailable(record: record, availability: .downloadPending)
+            }
+            return nil
+        }
+    }
 
     @discardableResult
     public func create(_ note: Note) throws -> Note {
@@ -348,13 +379,14 @@ public actor CloudNoteStore: NoteStore {
             } else if let note = notesByID[record.noteID] {
                 try catalog().upsert(catalogEntry(note: note, record: record))
             } else {
-                let isMissing = availability[record.currentRelativePath] == nil
+                let itemAvailability = availability[record.currentRelativePath]
+                let isMissing = itemAvailability == nil
+                let bodyState = itemAvailability.map(bodyAvailability(for:))
+                    ?? .deletedOrMissingPendingConfirmation
                 try catalog().upsert(NoteCatalogEntry(
                     summary: catalogSummary(
                         record: record,
-                        bodyAvailability: isMissing
-                            ? .deletedOrMissingPendingConfirmation
-                            : .notDownloaded,
+                        bodyAvailability: bodyState,
                         pairingState: isMissing ? .missingPendingConfirmation : .awaitingBody
                     ),
                     textUpdate: .preserveAsStale
@@ -369,6 +401,64 @@ public actor CloudNoteStore: NoteStore {
 
     public func search(_ request: NoteSearchRequest) async throws -> NoteSearchPage {
         try catalog().search(request)
+    }
+
+    public func hydrateSearchIndex(
+        maximumConcurrentDownloads: Int
+    ) async throws -> NoteSearchHydrationProgress {
+        let maximum = min(
+            max(0, maximumConcurrentDownloads),
+            Self.maximumHydrationBatchSize
+        )
+        var counts = try catalog().hydrationCounts()
+        guard maximum > 0, counts.pending < maximum else {
+            return NoteSearchHydrationProgress(
+                pendingCount: counts.pending,
+                remainingCount: counts.remaining
+            )
+        }
+
+        let snapshots = Dictionary(uniqueKeysWithValues: try documents.listDocuments().map {
+            ($0.relativePath, $0)
+        })
+        var slots = maximum - counts.pending
+        let inspectionLimit = min(64, max(slots, slots * 4))
+        let candidates = try catalog().hydrationCandidates(limit: inspectionLimit)
+        var requested: [NoteID] = []
+        var indexed: [NoteID] = []
+
+        for summary in candidates where slots > 0 {
+            guard let record = recordsByID[summary.id],
+                  !record.isTombstone,
+                  !record.isPrivate,
+                  let snapshot = snapshots[record.currentRelativePath] else { continue }
+            switch snapshot.availability {
+            case .available:
+                let note = try decodedNote(record: record, snapshot: snapshot)
+                notesByID[record.noteID] = note
+                try catalog().upsert(catalogEntry(note: note, record: record))
+                indexed.append(record.noteID)
+                slots -= 1
+
+            case .unavailable:
+                try documents.requestDownload(relativePath: record.currentRelativePath)
+                try markBodyUnavailable(record: record, availability: .downloadPending)
+                requested.append(record.noteID)
+                slots -= 1
+
+            case .downloadPending:
+                try markBodyUnavailable(record: record, availability: .downloadPending)
+                slots -= 1
+            }
+        }
+
+        counts = try catalog().hydrationCounts()
+        return NoteSearchHydrationProgress(
+            requestedNoteIDs: requested,
+            indexedNoteIDs: indexed,
+            pendingCount: counts.pending,
+            remainingCount: counts.remaining
+        )
     }
 
     public func record(for id: NoteID) -> ReconciliationRecord? { recordsByID[id] }
@@ -404,28 +494,14 @@ public actor CloudNoteStore: NoteStore {
                 try catalog().upsert(NoteCatalogEntry(
                     summary: catalogSummary(
                         record: record,
-                        bodyAvailability: .notDownloaded,
+                        bodyAvailability: bodyAvailability(for: snapshot.availability),
                         pairingState: .awaitingBody
                     ),
                     textUpdate: .preserveAsStale
                 ))
                 continue
             }
-            let data = try documents.read(relativePath: snapshot.relativePath)
-            let content = try codec.decode(data, as: format(for: snapshot.relativePath))
-            nextNotes[record.noteID] = Note(
-                id: record.noteID,
-                title: ((snapshot.relativePath as NSString).lastPathComponent as NSString)
-                    .deletingPathExtension,
-                content: content,
-                tags: record.tags,
-                legacyMetadata: record.legacyMetadata,
-                folder: folder(for: snapshot.relativePath),
-                createdAt: record.createdAt,
-                modifiedAt: record.modifiedAt,
-                isPinned: record.isPinned,
-                isPrivate: record.isPrivate
-            )
+            nextNotes[record.noteID] = try decodedNote(record: record, snapshot: snapshot)
             if let note = nextNotes[record.noteID] {
                 try catalog().upsert(catalogEntry(note: note, record: record))
             }
@@ -464,6 +540,50 @@ public actor CloudNoteStore: NoteStore {
             ),
             textUpdate: .replace(text: note.content.text, revision: record.rawContentHash)
         )
+    }
+
+    private func decodedNote(
+        record: ReconciliationRecord,
+        snapshot: CloudDocumentSnapshot
+    ) throws -> Note {
+        let data = try documents.read(relativePath: snapshot.relativePath)
+        return Note(
+            id: record.noteID,
+            title: ((snapshot.relativePath as NSString).lastPathComponent as NSString)
+                .deletingPathExtension,
+            content: try codec.decode(data, as: format(for: snapshot.relativePath)),
+            tags: record.tags,
+            legacyMetadata: record.legacyMetadata,
+            folder: folder(for: snapshot.relativePath),
+            createdAt: record.createdAt,
+            modifiedAt: record.modifiedAt,
+            isPinned: record.isPinned,
+            isPrivate: record.isPrivate
+        )
+    }
+
+    private func markBodyUnavailable(
+        record: ReconciliationRecord,
+        availability: NoteBodyAvailability
+    ) throws {
+        try catalog().upsert(NoteCatalogEntry(
+            summary: catalogSummary(
+                record: record,
+                bodyAvailability: availability,
+                pairingState: .awaitingBody
+            ),
+            textUpdate: .preserveAsStale
+        ))
+    }
+
+    private func bodyAvailability(
+        for availability: CloudItemAvailability
+    ) -> NoteBodyAvailability {
+        switch availability {
+        case .available: .available
+        case .unavailable: .notDownloaded
+        case .downloadPending: .downloadPending
+        }
     }
 
     private func catalogSummary(

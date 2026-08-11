@@ -111,6 +111,11 @@ public struct NoteCatalogOperationSummary: Equatable, Sendable {
     }
 }
 
+struct NoteCatalogHydrationCounts: Equatable, Sendable {
+    let pending: Int
+    let remaining: Int
+}
+
 /// A local, rebuildable SQLite catalog. The synchronized document and
 /// reconciliation stores remain authoritative; this database exists only to
 /// make body-independent listing, offload-aware search, and recovery fast.
@@ -233,6 +238,40 @@ public final class NoteCatalog: @unchecked Sendable {
                 offset: safeOffset,
                 totalCount: total
             )
+        }
+    }
+
+    func hydrationCounts() throws -> NoteCatalogHydrationCounts {
+        try lock.withLock {
+            let row = try database.query(
+                """
+                SELECT
+                    sum(CASE WHEN body_availability = 'downloadPending' THEN 1 ELSE 0 END),
+                    sum(CASE WHEN body_availability IN ('notDownloaded', 'available') THEN 1 ELSE 0 END)
+                FROM notes
+                WHERE search_eligible = 1 AND search_freshness = 'neverIndexed'
+                """
+            )[0]
+            return NoteCatalogHydrationCounts(
+                pending: Int(row.integer(at: 0)),
+                remaining: Int(row.integer(at: 1))
+            )
+        }
+    }
+
+    func hydrationCandidates(limit: Int) throws -> [NoteSummary] {
+        try lock.withLock {
+            let safeLimit = max(0, min(limit, 64))
+            let rows = try database.query(
+                Self.summarySelect
+                    + " WHERE search_eligible = 1"
+                    + " AND search_freshness = 'neverIndexed'"
+                    + " AND body_availability IN ('notDownloaded', 'available')"
+                    + " ORDER BY is_pinned DESC, modified_at DESC, title COLLATE NOCASE, note_id"
+                    + " LIMIT ?",
+                bindings: [.integer(Int64(safeLimit))]
+            )
+            return try rows.map(Self.decodeSummary)
         }
     }
 

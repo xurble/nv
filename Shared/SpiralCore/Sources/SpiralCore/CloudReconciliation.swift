@@ -196,9 +196,6 @@ public actor CloudCollectionReconciler {
                     where record.currentRelativePath == snapshot.relativePath {
                     claimed.insert(record.noteID)
                 }
-                if snapshot.availability == .unavailable {
-                    try documents.requestDownload(relativePath: snapshot.relativePath)
-                }
                 continue
             }
 
